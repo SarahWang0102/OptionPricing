@@ -1,11 +1,15 @@
-from VolatilityData import *
+from VolatilityData_readpkl import *
 from SVI_CalibrationFun import *
 import math
 import matplotlib.pyplot as plt
 import datetime
 import operator
+from mpl_toolkits.axes_grid1 import host_subplot
+import mpl_toolkits.axisartist as AA
+import plot_util as pu
+from SVI_Calibration_Util import *
 
-w.start()
+#w.start()
 # Evaluation Settings
 calendar   = ql.China()
 daycounter = ql.ActualActual()
@@ -13,29 +17,11 @@ daycounter = ql.ActualActual()
 #endDate = ql.Date(4,8,2016)
 endDate  = ql.Date(20,7,2017)
 #evalDate = endDate
-evalDate = ql.Date(13,7,2016)
+evalDate = ql.Date(1,6,2017)
 evalDate = calendar.advance(evalDate, ql.Period(1, ql.Days))
 begDate  = evalDate
 
-def get_data_from_wind(next_i_month,curve):
-    vols, expiration_date, strikes, spot = get_impliedvolmat_wind_oneMaturity('认购',evalDate,next_i_month)
-    risk_free_rate  =   curve.zeroRate(expiration_date,daycounter,ql.Continuous).rate()
-    return vols, expiration_date, strikes, spot, risk_free_rate
-
-def get_underlying_ts(evalDate,endDate):
-    evalDate_str = str(evalDate.year()) + "-" + str(evalDate.month()) + "-" + str(evalDate.dayOfMonth())
-    endDate_str  = str(endDate.year()) + "-" + str(endDate.month()) + "-" + str(endDate.dayOfMonth())
-    underlyingdata = w.wsd("510050.SH", "close", evalDate_str, endDate_str, "Fill=Previous;PriceAdj=F")
-    dates_ts  = underlyingdata.Times
-    spot_ts   = underlyingdata.Data[0]
-    spot_dic  = {}
-    for idx_dt,dt in enumerate(dates_ts):
-        date_tmp = pd.to_datetime(dt)
-        date_ql = ql.Date(date_tmp.day, date_tmp.month, date_tmp.year)
-        spot_dic.update({date_ql:spot_ts[idx_dt]})
-    return spot_dic
-
-spotprice_dic = get_underlying_ts(evalDate,endDate)
+spotprice_dic = get_underlying_ts()
 print('spotprice_dic : ',spotprice_dic)
 #spot_last_close = spotprice_dic.get(begDate)
 
@@ -65,8 +51,8 @@ while evalDate <= endDate:
                 spread = put_vol_dict_sorted.get(k) - call_vol_dict_sorted.get(k)
                 vol_spreads.append(spread)
             spreads_avg.append(sum(vol_spreads)/len(vol_spreads))
-            print(call_vol_dict_sorted.keys())
-            print(call_volatilities)
+            #print(call_vol_dict_sorted.keys())
+            #print(call_volatilities)
             #.figure(idx_month)
             #plt.plot(strikes,call_volatilities,'b*-')
             #plt.plot(strikes, put_volatilities,'r*-')
@@ -74,7 +60,7 @@ while evalDate <= endDate:
         print('evalDate ',evalDate, ' finished')
         plt.show()
     except:
-        print(evalDate,' get data failed')
+        print('E:',evalDate,' get data failed')
         continue
 print('spreads_avg_ts : ',spreads_avg_ts)
 
@@ -90,18 +76,26 @@ for key in spreads_avg_ts.keys():
     if key not in spotprice_dic.keys(): continue
     dt_pd = datetime.date(key.year(), key.month(), key.dayOfMonth())
     dates.append(dt_pd)
+    spread_this_month.append(spreads_avg_ts.get(key)[0])
     spread_next_month.append(spreads_avg_ts.get(key)[1])
+    spread_next_season.append(spreads_avg_ts.get(key)[2])
+    spread_far_month.append(spreads_avg_ts.get(key)[3])
     underlying_chg.append((spotprice_dic.get(key) - spot_last_close)/spot_last_close)
     spot_last_close = spotprice_dic.get(key)
 
+'''
 for key in spreads_avg_ts.keys():
+    if key not in spotprice_dic.keys(): continue
     spread_far_month.append(spreads_avg_ts.get(key)[3])
 
 for key in spreads_avg_ts.keys():
+    if key not in spotprice_dic.keys(): continue
     spread_this_month.append(spreads_avg_ts.get(key)[0])
 
 for key in spreads_avg_ts.keys():
+    if key not in spotprice_dic.keys(): continue
     spread_next_season.append(spreads_avg_ts.get(key)[2])
+'''
 
 print('dates: ',dates)
 print('underlying_chg:',underlying_chg)
@@ -110,6 +104,34 @@ print('spread_next_month: ',spread_next_month)
 print('spread_far_month: ', spread_far_month)
 print('spread_next_season: ',spread_next_season)
 
+
+host = host_subplot(111, axes_class=AA.Axes)
+plt.subplots_adjust(right=0.75)
+par1 = host.twinx()
+
+#host.set_xlim(0, 2)
+#host.set_ylim(-1, 1)
+#par1.set_ylim(-1, 1)
+
+host.set_xlabel("Date")
+host.set_ylabel("Underlying")
+par1.set_ylabel("Spread")
+#dash = [8,2,3,2]
+line1, = host.plot(dates, underlying_chg, color = pu.c1,linestyle = pu.l1,linewidth = 2,label="Underlying")
+line2, = par1.plot(dates, spread_next_month, color = pu.c2,linestyle = pu.l2,linewidth = 2,label="Spread next month")
+line3, = par1.plot(dates, spread_far_month,color = pu.c3,linestyle = pu.l3,linewidth = 2,label="Spread far month")
+line4, = par1.plot(dates,spread_next_season,color = pu.c4,linestyle = pu.l4,linewidth = 2,label = "Spread next season")
+line4.set_dashes(pu.dash)
+
+host.legend()
+
+host.axis["left"].label.set_color(line1.get_color())
+par1.axis["right"].label.set_color(line2.get_color())
+
+
+plt.draw()
+plt.show()
+'''
 plt.figure(1)
 l2,= plt.plot(dates,spread_next_month,'b--')
 l1,= plt.plot(dates,underlying_chg, 'k-')
@@ -125,4 +147,4 @@ a5 = 'put call spread next season'
 plt.title('spreads')
 plt.legend([l1,l4,l2,l5,l3],[a1,a4,a2,a5,a3])
 plt.show()
-
+'''
