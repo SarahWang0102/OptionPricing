@@ -1,5 +1,6 @@
 import datetime
 import matplotlib.pyplot as plt
+import numpy as np
 
 dates = [datetime.date(2015, 7, 20), datetime.date(2015, 8, 3), datetime.date(2015, 8, 10), datetime.date(2015, 8, 17), datetime.date(2015, 8, 24), datetime.date(2015, 9, 7), datetime.date(2015, 9, 14), datetime.date(2015, 9, 21), datetime.date(2015, 10, 8), datetime.date(2015, 10, 15), datetime.date(2015, 11, 5), datetime.date(2015, 11, 12), datetime.date(2015, 11, 19), datetime.date(2015, 12, 3), datetime.date(2015, 12, 10), datetime.date(2015, 12, 17), datetime.date(2016, 1, 7), datetime.date(2016, 1, 14), datetime.date(2016, 1, 21), datetime.date(2016, 2, 4), datetime.date(2016, 2, 15), datetime.date(2016, 2, 22), datetime.date(2016, 3, 7), datetime.date(2016, 3, 14), datetime.date(2016, 3, 21), datetime.date(2016, 4, 5), datetime.date(2016, 4, 12), datetime.date(2016, 4, 19), datetime.date(2016, 4, 26), datetime.date(2016, 5, 3), datetime.date(2016, 5, 10), datetime.date(2016, 5, 17), datetime.date(2016, 5, 24), datetime.date(2016, 6, 7), datetime.date(2016, 6, 14), datetime.date(2016, 6, 21), datetime.date(2016, 7, 5), datetime.date(2016, 7, 12), datetime.date(2016, 7, 19), datetime.date(2016, 7, 26), datetime.date(2016, 8, 2), datetime.date(2016, 8, 9), datetime.date(2016, 8, 16), datetime.date(2016, 8, 23), datetime.date(2016, 9, 6), datetime.date(2016, 9, 13), datetime.date(2016, 9, 20), datetime.date(2016, 9, 27), datetime.date(2016, 10, 10), datetime.date(2016, 10, 17), datetime.date(2016, 10, 24), datetime.date(2016, 11, 7), datetime.date(2016, 11, 14), datetime.date(2016, 11, 21), datetime.date(2016, 12, 5), datetime.date(2016, 12, 12), datetime.date(2016, 12, 19), datetime.date(2016, 12, 26), datetime.date(2017, 1, 3), datetime.date(2017, 1, 10), datetime.date(2017, 1, 17), datetime.date(2017, 1, 24), datetime.date(2017, 2, 3), datetime.date(2017, 2, 10), datetime.date(2017, 2, 17), datetime.date(2017, 3, 3), datetime.date(2017, 3, 10), datetime.date(2017, 3, 17), datetime.date(2017, 4, 7), datetime.date(2017, 4, 14), datetime.date(2017, 4, 21), datetime.date(2017, 5, 5), datetime.date(2017, 5, 12), datetime.date(2017, 5, 19), datetime.date(2017, 6, 2), datetime.date(2017, 6, 9), datetime.date(2017, 6, 16), datetime.date(2017, 6, 23), datetime.date(2017, 7, 7), datetime.date(2017, 7, 14)]
 
@@ -13,7 +14,7 @@ spread_this_month = [-0.7488781810047951, 0.06977613083724374, -0.30587667379930
 
 spread_next_season =  [0.00772991658584797, 0.07492185821485833, 0.028716158188933895, 0.11265945556143095, 0.10232443593918912, 0.21675221712868578, 0.32041747101476703, 0.08721845662448141, -0.15510353863651996, -0.17966919234605702, 0.06502823163904674, -0.10395975304558913, 0.00037590654467972717, -0.027954275990402712, -0.020116229361996116, -0.046410205235562656, -0.0719597992371527, -0.03133799952571843, 0.12319801587740396, 0.08979153708559785, 0.08901665039236979, 0.13155190183661514, 0.14211973681245818, 0.07806850014642774, -0.024231372695143652, -0.08741308853731306, -0.15635657164369268, -0.1783906665576132, -0.12750286346141818, -0.004271653155945811, -0.0014594213611464396, 0.020116991737854174, 0.008090496030251436, -0.06780989021171775, -0.02036901617849726, -0.015984745583561024, -0.07795625772941103, -0.11635165670648656, -0.14945514426511752, -0.16751470484733777, 0.08210492403730571, 0.08278529821056646, 0.014523467280221858, 0.07983861034616835, 0.053819791483533504, 0.07052602874554405, 0.07967054794918908, 0.0680917259678449, 0.07755971038482952, 0.09728725547876328, 0.10662292104759728, 0.10193767426250458, 0.11013103960302999, 0.12218848271479542, 0.06034758328393498, 0.08107793797938087, 0.07516034938297272, 0.09325819469783261, 0.052512252092331645, 0.042489486696354106, 0.08055599751703348, 0.04086665471745871, 0.02649908844541542, 0.04201709503489717, 0.03763630130924285, 0.030747026107450448, 0.05938359082271908, 0.05688218147714841, 0.06947713982700378, 0.04518926379612552, 0.06538436742980086, 0.06732118074041507, 0.08266971440641051, 0.06721305326503899, 0.07083474387884924, 0.08564261569293101, 0.07175007901605597, 0.093843751084482, 0.0986300556260544, 0.12218136141869297]
 
-
+'''
 plt.figure(1)
 l2,= plt.plot(dates,spread_next_month,'b--')
 l1,= plt.plot(dates,underlying_chg, 'k-')
@@ -28,4 +29,16 @@ a4 = 'put call spread this month'
 a5 = 'put call spread next season'
 plt.title('spreads')
 plt.legend([l1,l4,l2,l5,l3],[a1,a4,a2,a5,a3])
+plt.show()
+'''
+# Simple data to display in various forms
+x = np.linspace(0, 2 * np.pi, 400)
+y = np.sin(x ** 2)
+
+
+f, axarr = plt.subplots(2, sharex=True)
+axarr[0].stackplot(dates, underlying_chg)
+axarr[0].set_title('Underlying v.s. CPIV')
+axarr[1].plot(dates, spread_far_month)
+axarr[0].grid()
 plt.show()
