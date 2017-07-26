@@ -1,4 +1,5 @@
 .idea
+*.pyc
 __pycache__
 retiredcodes
 results
