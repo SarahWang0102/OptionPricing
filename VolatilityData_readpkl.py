@@ -209,9 +209,11 @@ def get_call_put_impliedVols_moneyness_PCPrate(
     put_volatilites_1 = {}
     put_volatilites_2 = {}
     put_volatilites_3 = {}
+    e_date0, e_date1, e_date2, e_date3 = 0,0,0,0
     try:
         # Get PC parity implied risk free rates
         rf_Ks_months = calculate_PCParity_riskFreeRate(evalDate, daycounter, calendar)
+        print(rf_Ks_months)
         # Get Wind Market Data
         vols, spot, mktData, mktFlds, optionData, optionFlds,optionids = get_wind_data(evalDate)
         ql.Settings.instance().evaluationDate = evalDate
@@ -221,28 +223,30 @@ def get_call_put_impliedVols_moneyness_PCPrate(
         for idx,optionid in enumerate(optionids):
             optionDataIdx   = optionData[optionFlds.index('wind_code')].index(optionid)
             mdate           = pd.to_datetime(optionData[optionFlds.index('exercise_date')][optionDataIdx])
-            maturitydt  = ql.Date(mdate.day, mdate.month, mdate.year)
-            mktindex    = mktData[mktFlds.index('option_code')].index(optionid)
-            strike      = optionData[optionFlds.index('exercise_price')][optionDataIdx]
-            close       = mktData[mktFlds.index('close')][mktindex]
-            ttm         = daycounter.yearFraction(evalDate, maturitydt)
-            nbr_month = maturitydt.month()
+            maturitydt      = ql.Date(mdate.day, mdate.month, mdate.year)
+            mktindex        = mktData[mktFlds.index('option_code')].index(optionid)
+            strike          = optionData[optionFlds.index('exercise_price')][optionDataIdx]
+            close           = mktData[mktFlds.index('close')][mktindex]
+            ttm             = daycounter.yearFraction(evalDate, maturitydt)
+            nbr_month       = maturitydt.month()
             if nbr_month == month_indexs[0]:
+                e_date0     = maturitydt
                 rf = rf_Ks_months.get(0).get(strike)
                 Ft = spot * math.exp(rf * ttm)
-                moneyness = math.log(strike / Ft, math.e)
-                yield_ts = ql.YieldTermStructureHandle(ql.FlatForward(evalDate,rf,daycounter))
+                moneyness   = math.log(strike / Ft, math.e)
+                yield_ts    = ql.YieldTermStructureHandle(ql.FlatForward(evalDate,rf,daycounter))
                 if optionData[optionFlds.index('call_or_put')][optionDataIdx] == '认购':
                     optiontype = ql.Option.Call
                     implied_vol, error = calculate_vol_BS(maturitydt, optiontype, strike, spot, dividend_ts,yield_ts,
                                                           close, evalDate, calendar, daycounter, precision, maxVol,step)
-                    call_volatilities_0.update({moneyness:implied_vol})
+                    call_volatilities_0.update({moneyness:[implied_vol,strike]})
                 else:
                     optiontype = ql.Option.Put
                     implied_vol, error = calculate_vol_BS(maturitydt, optiontype, strike, spot, dividend_ts, yield_ts,
                                                           close, evalDate, calendar, daycounter, precision, maxVol,step)
-                    put_volatilites_0.update({moneyness: implied_vol})
+                    put_volatilites_0.update({moneyness: [implied_vol,strike]})
             elif nbr_month == month_indexs[1]:
+                e_date1 = maturitydt
                 rf = rf_Ks_months.get(1).get(strike)
                 Ft = spot * math.exp(rf * ttm)
                 moneyness = math.log(strike / Ft, math.e)
@@ -251,13 +255,14 @@ def get_call_put_impliedVols_moneyness_PCPrate(
                     optiontype = ql.Option.Call
                     implied_vol, error = calculate_vol_BS(maturitydt, optiontype, strike, spot, dividend_ts,yield_ts,
                                                           close, evalDate, calendar, daycounter, precision, maxVol,step)
-                    call_volatilities_1.update({moneyness:implied_vol})
+                    call_volatilities_1.update({moneyness:[implied_vol,strike]})
                 else:
                     optiontype = ql.Option.Put
                     implied_vol, error = calculate_vol_BS(maturitydt, optiontype, strike, spot, dividend_ts, yield_ts,
                                                           close, evalDate, calendar, daycounter, precision, maxVol,step)
-                    put_volatilites_1.update({moneyness: implied_vol})
+                    put_volatilites_1.update({moneyness: [implied_vol,strike]})
             elif nbr_month == month_indexs[2]:
+                e_date2 = maturitydt
                 rf = rf_Ks_months.get(2).get(strike)
                 Ft = spot * math.exp(rf * ttm)
                 moneyness = math.log(strike / Ft, math.e)
@@ -266,13 +271,14 @@ def get_call_put_impliedVols_moneyness_PCPrate(
                     optiontype = ql.Option.Call
                     implied_vol, error = calculate_vol_BS(maturitydt, optiontype, strike, spot, dividend_ts,yield_ts,
                                                           close, evalDate, calendar, daycounter, precision, maxVol,step)
-                    call_volatilities_2.update({moneyness:implied_vol})
+                    call_volatilities_2.update({moneyness:[implied_vol,strike]})
                 else:
                     optiontype = ql.Option.Put
                     implied_vol, error = calculate_vol_BS(maturitydt, optiontype, strike, spot, dividend_ts, yield_ts,
                                                           close, evalDate, calendar, daycounter, precision, maxVol,step)
-                    put_volatilites_2.update({moneyness: implied_vol})
+                    put_volatilites_2.update({moneyness: [implied_vol,strike]})
             else:
+                e_date3 = maturitydt
                 rf = rf_Ks_months.get(3).get(strike)
                 Ft = spot * math.exp(rf * ttm)
                 moneyness = math.log(strike / Ft, math.e)
@@ -281,19 +287,19 @@ def get_call_put_impliedVols_moneyness_PCPrate(
                     optiontype = ql.Option.Call
                     implied_vol, error = calculate_vol_BS(maturitydt, optiontype, strike, spot, dividend_ts,yield_ts,
                                                           close, evalDate, calendar, daycounter, precision, maxVol,step)
-                    call_volatilities_3.update({moneyness:implied_vol})
+                    call_volatilities_3.update({moneyness:[implied_vol,strike]})
                 else:
                     optiontype = ql.Option.Put
                     implied_vol, error = calculate_vol_BS(maturitydt, optiontype, strike, spot, dividend_ts, yield_ts,
                                                           close, evalDate, calendar, daycounter, precision, maxVol,step)
-                    put_volatilites_3.update({moneyness: implied_vol})
-
+                    put_volatilites_3.update({moneyness: [implied_vol,strike]})
+        expiration_dates = [e_date0,e_date1,e_date2,e_date3]
         cal_vols = [call_volatilities_0,call_volatilities_1,call_volatilities_2,call_volatilities_3]
         put_vols = [put_volatilites_0,put_volatilites_1,put_volatilites_2,put_volatilites_3]
     except:
         print('VolatilityData -- get_call_put_impliedVols failed')
         return
-    return cal_vols,put_vols
+    return cal_vols,put_vols,expiration_dates,spot
 
 
 def get_impliedvolmat_BS_OTM_oneMaturity(
@@ -714,37 +720,6 @@ def get_impliedvolmat_call_wind_givenKs(evalDate):
     #print('close prices: ', close_prices)
     return data,expiration_dates,strikes,spot
 
-
-
-'''
-def get_curve_depo(evalDate,daycounter):
-    datestr = str(evalDate.year()) + "-" + str(evalDate.month()) + "-" + str(evalDate.dayOfMonth())
-    data   = w.wsd("DR001.IB,DR007.IB,DR014.IB,DR021.IB,DR1M.IB,DR2M.IB,DR3M.IB,DR4M.IB,DR6M.IB,DR9M.IB,DR1Y.IB",
-        "ytm_b", datestr, datestr, "returnType=1")
-    calendar = ql.China()
-    dates  = [
-              calendar.advance(evalDate , ql.Period(1,ql.Days)),
-              calendar.advance(evalDate , ql.Period(7,ql.Days)),
-              calendar.advance(evalDate , ql.Period(14,ql.Days)),
-              calendar.advance(evalDate , ql.Period(21,ql.Days)),
-              calendar.advance(evalDate , ql.Period(1,ql.Months)),
-              calendar.advance(evalDate , ql.Period(2,ql.Months)),
-              calendar.advance(evalDate , ql.Period(3,ql.Months)),
-              calendar.advance(evalDate , ql.Period(4,ql.Months)),
-              calendar.advance(evalDate , ql.Period(6,ql.Months)),
-              calendar.advance(evalDate , ql.Period(9,ql.Months)),
-              calendar.advance(evalDate , ql.Period(1,ql.Years))]
-    try:
-        krates = np.divide( data.Data[0], 100)
-        #print(dates)
-        #print(krates)
-        curve  = ql.ForwardCurve(dates,krates,daycounter)
-    except:
-        print(evalDate,' get curve failed')
-        return
-    #print(curve.referenceDate(),' , ',curve.maxDate())
-    return curve
-
 def get_impliedvolmat_wind_oneMaturity(type,evalDate,i):
     # Get Wind Market Data
     vols, spot, mktData, mktFlds, optionData, optionFlds,optionids = get_wind_data(evalDate)
@@ -776,6 +751,37 @@ def get_impliedvolmat_wind_oneMaturity(type,evalDate,i):
     #print('vols:', vol_data)
     #print('close prices: ', close_prices)
     return vol_data,expiration_date,strikes,spot
+
+
+'''
+def get_curve_depo(evalDate,daycounter):
+    datestr = str(evalDate.year()) + "-" + str(evalDate.month()) + "-" + str(evalDate.dayOfMonth())
+    data   = w.wsd("DR001.IB,DR007.IB,DR014.IB,DR021.IB,DR1M.IB,DR2M.IB,DR3M.IB,DR4M.IB,DR6M.IB,DR9M.IB,DR1Y.IB",
+        "ytm_b", datestr, datestr, "returnType=1")
+    calendar = ql.China()
+    dates  = [
+              calendar.advance(evalDate , ql.Period(1,ql.Days)),
+              calendar.advance(evalDate , ql.Period(7,ql.Days)),
+              calendar.advance(evalDate , ql.Period(14,ql.Days)),
+              calendar.advance(evalDate , ql.Period(21,ql.Days)),
+              calendar.advance(evalDate , ql.Period(1,ql.Months)),
+              calendar.advance(evalDate , ql.Period(2,ql.Months)),
+              calendar.advance(evalDate , ql.Period(3,ql.Months)),
+              calendar.advance(evalDate , ql.Period(4,ql.Months)),
+              calendar.advance(evalDate , ql.Period(6,ql.Months)),
+              calendar.advance(evalDate , ql.Period(9,ql.Months)),
+              calendar.advance(evalDate , ql.Period(1,ql.Years))]
+    try:
+        krates = np.divide( data.Data[0], 100)
+        #print(dates)
+        #print(krates)
+        curve  = ql.ForwardCurve(dates,krates,daycounter)
+    except:
+        print(evalDate,' get curve failed')
+        return
+    #print(curve.referenceDate(),' , ',curve.maxDate())
+    return curve
+
 
 def get_impliedvolmat_BS_oneMaturity(type, evalDate,daycounter,calendar,i,maxVol=1.0,step=0.0001,precision=0.001,show=True):
     # Get Wind Market Data
@@ -848,4 +854,5 @@ def get_impliedvolmat_BS_oneMaturity(type, evalDate,daycounter,calendar,i,maxVol
     #print('vols:', vol_data)
     #print('close prices: ', close_prices)
     return vol_data,maturitydt,strikes,spot,close_prices,logMoneynesses
+
 '''

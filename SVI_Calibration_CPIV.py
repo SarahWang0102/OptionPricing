@@ -8,6 +8,7 @@ from mpl_toolkits.axes_grid1 import host_subplot
 import mpl_toolkits.axisartist as AA
 import plot_util as pu
 from SVI_Calibration_Util import *
+from matplotlib.patches import Rectangle
 
 w.start()
 # Evaluation Settings
@@ -17,8 +18,8 @@ daycounter = ql.ActualActual()
 #endDate = ql.Date(4,8,2016)
 endDate  = ql.Date(20,7,2017)
 #evalDate = endDate
-#evalDate = ql.Date(1,1,2015)
-evalDate = ql.Date(7,6,2017)
+evalDate = ql.Date(1,1,2015)
+#evalDate = ql.Date(7,6,2017)
 evalDate = calendar.advance(evalDate, ql.Period(1, ql.Days))
 begDate  = calendar.advance(evalDate, ql.Period(1, ql.Weeks))
 
@@ -49,7 +50,7 @@ while evalDate <= endDate:
                 strikes.append(k)
                 call_volatilities.append(call_vol_dict_sorted.get(k))
                 put_volatilities.append(put_vol_dict_sorted.get(k))
-                spread = put_vol_dict_sorted.get(k) - call_vol_dict_sorted.get(k)
+                spread = call_vol_dict_sorted.get(k) - put_vol_dict_sorted.get(k)
                 vol_spreads.append(spread)
             spreads_avg.append(sum(vol_spreads)/len(vol_spreads))
         spreads_avg_ts.update({evalDate:spreads_avg})
@@ -118,14 +119,17 @@ host.legend()
 f, axarr = plt.subplots(2, sharex=True)
 
 line1, =axarr[0].stackplot(dates, underlying_close,color = pu.c3)
-axarr[0].set_title('Underlying v.s. PCIV')
-line2, = axarr[1].plot(dates, spread_next_month, color = pu.c1,linestyle = pu.l1,linewidth = 2,label="PCIV next month")
-line3, = axarr[1].plot(dates, spread_season,color = pu.c2,linestyle = pu.l2,linewidth = 2,label = "PCIV this season")
-line4, = axarr[1].plot(dates, spread_far_month,color = pu.c3,linestyle = pu.l3,linewidth = 2,label="PCIV next season")
+axarr[0].set_title('Underlying v.s. CPIV')
+line2, = axarr[1].plot(dates, spread_next_month, color = pu.c1,linestyle = pu.l1,linewidth = 2,label="CPIV next month")
+line3, = axarr[1].plot(dates, spread_season,color = pu.c2,linestyle = pu.l2,linewidth = 2,label = "CPIV this season")
+line4, = axarr[1].plot(dates, spread_far_month,color = pu.c3,linestyle = pu.l3,linewidth = 2,label="CPIV next season")
 
 line5, = axarr[1].plot(dates,[0]*len(dates),color = (0,0,0),linestyle = pu.l5,linewidth = 1)
 axarr[0].set_ylim(min(underlying_close),max(underlying_close))
+axarr[0].legend(['50 ETF'])
+
 axarr[1].legend()
+#axarr[0].legend(line1,"50ETF")
 axarr[1].grid()
 axarr[0].grid()
 plt.draw()
