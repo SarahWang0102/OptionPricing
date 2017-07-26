@@ -22,7 +22,8 @@ class SVI_NelderMeadOptimization:
     def outter_fun(self,params):
         m,sigma = params
         sigma = max(0,sigma)
-        adc_0 = np.array(self.init_adc)
+        adc_0 = np.random.random([1,3]) * np.array([max(self.data[1]),4*sigma,4*sigma])
+        #adc_0 = np.array(self.init_adc)
         def inner_fun(params):
             a,d,c = params
             sum = 0.0
@@ -91,7 +92,7 @@ class SVI_NelderMeadOptimization:
 
     def optimization(self):
         #[m0,sigma0] = [0.1,0.1]
-        outter_res = minimize(self.outter_fun, np.array(self.init_msigma), method='Nelder-Mead', tol=1e-6)
+        outter_res = minimize(self.outter_fun, np.random.random([1,2]), method='Nelder-Mead', tol=1e-6)
         m_star,sigma_star = outter_res.x
         #print(outter_res.x)
         #print(outter_res)
