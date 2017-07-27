@@ -100,31 +100,32 @@ def get_call_put_impliedVols_strikes(
             mktindex    = mktData[mktFlds.index('option_code')].index(optionid)
             strike      = optionData[optionFlds.index('exercise_price')][optionDataIdx]
             close       = mktData[mktFlds.index('close')][mktindex]
+            amount      = mktData[mktFlds.index('amount')][mktindex]
             if optionData[optionFlds.index('call_or_put')][optionDataIdx] == '认购':
                 optiontype  = ql.Option.Call
                 implied_vol,error = calculate_vol_BS(maturitydt, optiontype, strike, spot, dividend_ts, yield_ts,
                                                          close, evalDate,calendar, daycounter, precision, maxVol, step)
                 if mdate.month == month_indexs[0]:
-                    call_volatilities_0.update({strike:implied_vol})
+                    call_volatilities_0.update({strike:[implied_vol,amount]})
                 elif mdate.month == month_indexs[1]:
-                    call_volatilities_1.update({strike:implied_vol})
+                    call_volatilities_1.update({strike:[implied_vol,amount]})
                 elif mdate.month == month_indexs[2]:
-                    call_volatilities_2.update({strike:implied_vol})
+                    call_volatilities_2.update({strike:[implied_vol,amount]})
                 else:
-                    call_volatilities_3.update({strike:implied_vol})
+                    call_volatilities_3.update({strike:[implied_vol,amount]})
                 close_call.append(close)
             else:
                 optiontype = ql.Option.Put
                 implied_vol, error = calculate_vol_BS(maturitydt, optiontype, strike, spot, dividend_ts, yield_ts,
                                                           close, evalDate,calendar, daycounter, precision, maxVol, step)
                 if mdate.month   == month_indexs[0]:
-                    put_volatilites_0.update({strike:implied_vol})
+                    put_volatilites_0.update({strike:[implied_vol,amount]})
                 elif mdate.month == month_indexs[1]:
-                    put_volatilites_1.update({strike:implied_vol})
+                    put_volatilites_1.update({strike:[implied_vol,amount]})
                 elif mdate.month == month_indexs[2]:
-                    put_volatilites_2.update({strike:implied_vol})
+                    put_volatilites_2.update({strike:[implied_vol,amount]})
                 else:
-                    put_volatilites_3.update({strike:implied_vol})
+                    put_volatilites_3.update({strike:[implied_vol,amount]})
                 close_put.append(close)
         cal_vols = [call_volatilities_0,call_volatilities_1,call_volatilities_2,call_volatilities_3]
         put_vols = [put_volatilites_0,put_volatilites_1,put_volatilites_2,put_volatilites_3]
