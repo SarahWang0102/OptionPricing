@@ -1,8 +1,7 @@
 from WindPy import *
-import QuantLib as ql
 import pandas as pd
-import numpy as np
 import os
+import QuantLib as ql
 
 def save_optionsinfo(evalDate):
     # 50ETF currently trading contracts
@@ -11,6 +10,7 @@ def save_optionsinfo(evalDate):
                          "exchange=sse;windcode=510050.SH;status=all;field=wind_code,call_or_put,exercise_price,exercise_date")
     df_option   = pd.DataFrame(data = optioncontractbasicinfo.Data,index=optioncontractbasicinfo.Fields)
     df_option.to_pickle(os.getcwd()+'\marketdata\optioncontractbasicinfo' + '.pkl')
+    df_option.to_json(os.getcwd() + '\marketdata\optioncontractbasicinfo' + '.json')
     return optioncontractbasicinfo.ErrorCode
 def save_optionmkt(evalDate):
     # 50ETF market price data
@@ -19,6 +19,7 @@ def save_optionmkt(evalDate):
     optionmkt   = w.wset("optiondailyquotationstastics",query)
     df          = pd.DataFrame(data = optionmkt.Data,index=optionmkt.Fields)
     df.to_pickle(os.getcwd()+'\marketdata\optionmkt_' + datestr+'.pkl')
+    df.to_json(os.getcwd() + '\marketdata\optionmkt_' + datestr + '.json')
     return optionmkt.ErrorCode
 
 def save_curve_treasuryBond(evalDate,daycounter):
@@ -27,6 +28,7 @@ def save_curve_treasuryBond(evalDate,daycounter):
                      "ytm_b", datestr, datestr, "returnType=1")
     df          = pd.DataFrame(data = curvedata.Data,index=curvedata.Fields)
     df.to_pickle(os.getcwd()+'\marketdata\curvedata_tb_' + datestr+'.pkl')
+    df.to_json(os.getcwd() + '\marketdata\curvedata_tb_' + datestr + '.json')
     return curvedata.ErrorCode
 
 def save_underlying_ts(evalDate,endDate):
@@ -35,13 +37,13 @@ def save_underlying_ts(evalDate,endDate):
     underlyingdata  = w.wsd("510050.SH", "close", evalDate_str, endDate_str, "Fill=Previous;PriceAdj=F")
     df              = pd.DataFrame(data = underlyingdata.Data[0],index=underlyingdata.Times)
     df.to_pickle(os.getcwd()+'\marketdata\spotclose' +'.pkl')
+    df.to_json(os.getcwd() + '\marketdata\spotclose' + '.json')
     return underlyingdata.ErrorCode
-
 
 
 '''
 w.start()
-get_underlying_ts(ql.Date(1,1,2015),ql.Date(20,7,2017))
+save_underlying_ts(ql.Date(1,1,2015),ql.Date(20,7,2017))
 spot = pd.read_pickle(os.getcwd()+'\marketdata\spotclose' +'.pkl')
 print(spot)
 

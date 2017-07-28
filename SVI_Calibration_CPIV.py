@@ -1,14 +1,7 @@
-from VolatilityData_readpkl import *
-from SVI_Calibration_Optimization_Util import *
-import math
 import matplotlib.pyplot as plt
-import datetime
 import operator
-from mpl_toolkits.axes_grid1 import host_subplot
-import mpl_toolkits.axisartist as AA
 import plot_util as pu
 from SVI_Calibration_Util import *
-from matplotlib.patches import Rectangle
 
 w.start()
 # Evaluation Settings
@@ -18,8 +11,8 @@ daycounter = ql.ActualActual()
 #endDate = ql.Date(4,8,2016)
 endDate  = ql.Date(20,7,2017)
 #evalDate = endDate
-evalDate = ql.Date(7,1,2015)
-#evalDate = ql.Date(7,6,2017)
+#evalDate = ql.Date(7,1,2015)
+evalDate = ql.Date(7,6,2017)
 #evalDate = calendar.advance(evalDate, ql.Period(1, ql.Days))
 #begDate  = calendar.advance(evalDate, ql.Period(1, ql.Weeks))
 
@@ -32,7 +25,7 @@ callvol_avg_ts = {}
 putvol_avg_ts = {}
 trading_volum_dic = {}
 while evalDate <= endDate:
-    evalDate = calendar.advance(evalDate, ql.Period(1, ql.Weeks))
+    evalDate = calendar.advance(evalDate, ql.Period(1, ql.Days))
     spreads_avg = []
     callvol_avg = []
     putvol_avg = []
