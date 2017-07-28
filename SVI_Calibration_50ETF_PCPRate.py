@@ -1,40 +1,6 @@
-from WindPy import *
 import matplotlib.pyplot as plt
-from VolatilityData_readpkl import *
 from SVI_Calibration_Util import *
-import math
-from SVI_NelderMeadOptimization_2 import SVI_NelderMeadOptimization
 
-def get_data_from_BS_OTM_PCPRate(evalDate,daycounter,calendar,curve,show=True):
-
-    cal_vols_data_moneyness, put_vols_data_monetness,expiration_dates,spot = get_call_put_impliedVols_moneyness_PCPrate(evalDate, curve,
-                                                                                                  daycounter, calendar,
-                                                                                                  maxVol=1.0,
-                                                                                                  step=0.0001,
-                                                                                                  precision=0.001,
-                                                                                                  show=False)
-    data_for_optimiztion_months = {}
-    for idx_month, call_data in enumerate(cal_vols_data_moneyness):
-        expiration_date = expiration_dates[idx_month]
-        ttm = daycounter.yearFraction(evalDate, expiration_date)
-        put_data = put_vols_data_monetness[idx_month]
-        vols = []
-        logMoneynesses = []
-        total_variance = []
-        for moneyness in call_data.keys():
-            strike = call_data.get(moneyness)[0]
-            #if strike >=spot: # K>Ft,OTM Call
-            if moneyness >= 0:
-                vol = call_data.get(moneyness)[0]
-            else:
-                vol = put_data.get(moneyness)[0]
-            tv = (vol ** 2) * ttm
-            total_variance.append(tv)
-            vols.append(vol)
-            logMoneynesses.append(moneyness)
-        data = [logMoneynesses, total_variance,expiration_date]
-        data_for_optimiztion_months.update({idx_month:data})
-    return data_for_optimiztion_months
 
 w.start()
 # Evaluation Settings
@@ -46,7 +12,8 @@ month_indexs = get_contract_months(evalDate)
 ql.Settings.instance().evaluationDate = evalDate
 # Calibrate SVI total variance curve
 curve = get_curve_treasuryBond(evalDate, daycounter)
-data_months = get_data_from_BS_OTM_PCPRate(evalDate,daycounter,calendar,curve,False)
+data_months,risk_free_rates = get_data_from_BS_OTM_PCPRate(evalDate,daycounter,calendar,curve,False)
+print(risk_free_rates)
 
 i = 3
 nbr_month = month_indexs[i]
@@ -62,7 +29,8 @@ print('expiration date: ',expiration_date)
 ## NelderMeadOptimization
 #nm   = SVI_NelderMeadOptimization(data, init_adc = [0.5,0.5,0.5], init_msigma = [1,1])
 nm   = SVI_NelderMeadOptimization(data)
-_a_star, _d_star, _c_star, m_star, sigma_star = nm.optimization()
+calibrated_params,obj = nm.optimization()
+_a_star, _d_star, _c_star, m_star, sigma_star = calibrated_params
 x_svi  = np.arange(min(logMoneynesses)-0.05, max(logMoneynesses)+0.05, 0.1 / 100)  # log_forward_moneyness
 y_svi  = np.divide((x_svi - m_star), sigma_star)
 tv_svi = _a_star + _d_star * y_svi + _c_star * np.sqrt(y_svi**2 + 1)  # totalvariance objective fution values

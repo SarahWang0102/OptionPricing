@@ -13,6 +13,69 @@ def get_underlying_ts():
         spot_dic.update({date_ql:spot_ts[idx_dt][0]})
     return spot_dic
 
+def get_data_from_BS_OTM_PCPRate(evalDate,daycounter,calendar,curve,show=True):
+
+    cal_vols_data_moneyness, put_vols_data_monetness,expiration_dates,spot,rf_Ks_months \
+        = get_call_put_impliedVols_moneyness_PCPrate(evalDate, curve,daycounter, calendar,
+                                                     maxVol=1.0,step=0.0001,precision=0.001,show=False)
+    data_for_optimiztion_months = {}
+    for idx_month, call_data in enumerate(cal_vols_data_moneyness):
+        expiration_date = expiration_dates[idx_month]
+        ttm = daycounter.yearFraction(evalDate, expiration_date)
+        put_data = put_vols_data_monetness[idx_month]
+        vols = []
+        logMoneynesses = []
+        total_variance = []
+        for moneyness in call_data.keys():
+            strike = call_data.get(moneyness)[0]
+            #if strike >=spot: # K>Ft,OTM Call
+            if moneyness >= 0:
+                vol = call_data.get(moneyness)[0]
+            else:
+                vol = put_data.get(moneyness)[0]
+            tv = (vol ** 2) * ttm
+            total_variance.append(tv)
+            vols.append(vol)
+            logMoneynesses.append(moneyness)
+        data = [logMoneynesses, total_variance,expiration_date]
+        data_for_optimiztion_months.update({idx_month:data})
+    return data_for_optimiztion_months,rf_Ks_months
+
+def get_data_from_BS_put_cnvt(evalDate,daycounter,calendar,nbr_month,curve,show=True):
+
+    call_volatilities, put_converted_volatilites, strikes_call, strikes_put, \
+    close_call, close_put, logMoneyness_call, logMoneyness_put, expiration_date, spot = \
+        get_impliedvolmat_BS_put_cnvt_oneMaturity(
+            evalDate, curve,daycounter, calendar, nbr_month,1.0, 0.0001, 0.001, False)
+    vols           = []
+    strikes        = []
+    logMoneynesses = []
+    closes         = []
+    total_variance = []
+    if show:
+        print("PUT (cnvt) : ")
+        print("=" * 110)
+        print("%10s %10s %10s %25s %25s %20s" % ("Spot", "Strike", "close", "moneyness", "impliedVol", "Error (%)"))
+        print("-" * 110)
+    risk_free_rate = curve.zeroRate(expiration_date, daycounter, ql.Continuous).rate()
+    ttm = daycounter.yearFraction(evalDate, expiration_date)
+    for idx_put , k in enumerate(strikes_put):
+        m       = logMoneyness_put[idx_put]
+        vol = put_converted_volatilites[idx_put]
+        cls = close_put[idx_put]
+        tv = (vol ** 2) * ttm
+        total_variance.append(tv)
+        closes.append(cls)
+        vols.append(vol)
+        strikes.append(k)
+        logMoneynesses.append(m)
+        if show: print("%10s %10s %10s %25s %25s %20s" % (spot, k, cls, m, vol, 0.0))
+    data_for_optimiztion = [logMoneynesses, total_variance,expiration_date]
+
+    if show: print("-" * 110)
+    return data_for_optimiztion
+    #return vols,expiration_date,strikes,spot,risk_free_rate,closes,logMoneynesses
+
 def get_data_from_BS_OTM(evalDate,daycounter,calendar,nbr_month,curve,show=True):
 
     call_volatilities, put_converted_volatilites, strikes_call, strikes_put, \
@@ -74,41 +137,6 @@ def get_data_from_BS_OTM(evalDate,daycounter,calendar,nbr_month,curve,show=True)
     return data_for_optimiztion
     #return vols,expiration_date,strikes,spot,risk_free_rate,closes,logMoneynesses
 
-def get_data_from_BS_put_cnvt(evalDate,daycounter,calendar,nbr_month,curve,show=True):
-
-    call_volatilities, put_converted_volatilites, strikes_call, strikes_put, \
-    close_call, close_put, logMoneyness_call, logMoneyness_put, expiration_date, spot = \
-        get_impliedvolmat_BS_put_cnvt_oneMaturity(
-            evalDate, curve,daycounter, calendar, nbr_month,1.0, 0.0001, 0.001, False)
-    vols           = []
-    strikes        = []
-    logMoneynesses = []
-    closes         = []
-    total_variance = []
-    if show:
-        print("PUT (cnvt) : ")
-        print("=" * 110)
-        print("%10s %10s %10s %25s %25s %20s" % ("Spot", "Strike", "close", "moneyness", "impliedVol", "Error (%)"))
-        print("-" * 110)
-    risk_free_rate = curve.zeroRate(expiration_date, daycounter, ql.Continuous).rate()
-    ttm = daycounter.yearFraction(evalDate, expiration_date)
-    for idx_put , k in enumerate(strikes_put):
-        m       = logMoneyness_put[idx_put]
-        vol = put_converted_volatilites[idx_put]
-        cls = close_put[idx_put]
-        tv = (vol ** 2) * ttm
-        total_variance.append(tv)
-        closes.append(cls)
-        vols.append(vol)
-        strikes.append(k)
-        logMoneynesses.append(m)
-        if show: print("%10s %10s %10s %25s %25s %20s" % (spot, k, cls, m, vol, 0.0))
-    data_for_optimiztion = [logMoneynesses, total_variance,expiration_date]
-
-    if show: print("-" * 110)
-    return data_for_optimiztion
-    #return vols,expiration_date,strikes,spot,risk_free_rate,closes,logMoneynesses
-
 def get_data_from_BS_put(evalDate,daycounter,calendar,nbr_month,type,next_i_month,curve,show=True):
 
     print('Put')
@@ -144,7 +172,6 @@ def get_data_from_BS_put(evalDate,daycounter,calendar,nbr_month,type,next_i_mont
     print("-" * 110)
     return data_for_optimiztion
     #return vols,expiration_date,strikes,spot,risk_free_rate,closes,logMoneynesses
-
 
 def get_data_from_wind(evalDate,daycounter,next_i_month,curve):
     vols, expiration_date, strikes, spot = get_impliedvolmat_wind_oneMaturity('认购',evalDate,next_i_month)

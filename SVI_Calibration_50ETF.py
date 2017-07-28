@@ -1,86 +1,62 @@
 import matplotlib.pyplot as plt
-from VolatilityData_Copied import *
-from SVI_CalibrationFun import *
-import math
-from SVI_NelderMeadOptimization import SVI_NelderMeadOptimization
-import datetime
-#month_indexs = [1,3,6] # 0,1,3,6
-month_indexs = [0,1,3,6]
-w.start()
+from SVI_Calibration_Util import *
 
+
+w.start()
 # Evaluation Settings
 calendar = ql.China()
 daycounter = ql.ActualActual()
-evalDate = ql.Date(12,6,2017)
+evalDate = ql.Date(13,7,2017)
+evalDate = calendar.advance(evalDate, ql.Period(1, ql.Days))
+month_indexs = get_contract_months(evalDate)
 ql.Settings.instance().evaluationDate = evalDate
+# Calibrate SVI total variance curve
+curve = get_curve_treasuryBond(evalDate, daycounter)
+data_months,risk_free_rates = get_data_from_BS_OTM_PCPRate(evalDate,daycounter,calendar,curve,False)
+print(risk_free_rates)
 
-def get_data_from_wind(next_i_month):
-    vols, expiration_date, strikes, spot = get_impliedvolmat_call_wind_oneMaturity(evalDate,next_i_month)
-    curve           =   get_curve_depo(evalDate,daycounter)
-    risk_free_rate  =   curve.zeroRate(expiration_date,daycounter,ql.Continuous).rate()
-    return vols, expiration_date, strikes, spot, risk_free_rate
+i = 1
+# a_star,b_star,rho_star, m_star, sigma_star :  0.013133617016 0.177082095191 0.403855212213 0.00459161356109 0.0644783617415
 
-def get_data_from_BS(next_i_month):
-    vols1,maturitydate,strikes1,spot1 = get_impliedvolmat_call_wind_oneMaturity(evalDate,next_i_month)
-    # Construct yield term structure
-    curve           =   get_curve_depo(evalDate,daycounter)
-    risk_free_rate  =   curve.zeroRate(maturitydate,daycounter,ql.Continuous).rate()
+nbr_month = month_indexs[i]
 
-    vols,expiration_date,strikes,spot = get_impliedvolmat_call_BS_oneMaturity(evalDate,daycounter,calendar,next_i_month)
-    return vols,expiration_date,strikes,spot,risk_free_rate
-
-
-for i, next_i_month in enumerate([0]):
-    print('rate is : ', )
-    vols, expiration_date, strikes, spot, risk_free_rate = get_data_from_BS(next_i_month)
-    init_adc = [0.1,0.1,0.1]
-    if next_i_month == 0:
-        init_adc = [0.01,0.01,0.01]
-    elif next_i_month == 1:
-        init_adc = [0.02, 0.02, 0.02]
-    elif next_i_month == 2:
-        init_adc = [0.5, 0.5, 0.5]
-    #x, vol, x_svi, vol_svi = svi_calibration(evalDate,init_adc,calendar,daycounter,risk_free_rate,vols,expiration_date,strikes,spot)
-    log_fmoneyness, totalvariance, volatility, _a_star, _d_star, _c_star, m_star, sigma_star = svi_calibration3('nm',evalDate,init_adc,calendar,daycounter,risk_free_rate,vols,expiration_date,strikes,spot)
-    x_svi  = np.arange(min(log_fmoneyness), max(log_fmoneyness), 0.1 / 100)  # log_forward_moneyness
+data = data_months.get(i)
+print('evaluation date: ', evalDate)
+print('data_for_optimiztion : ', data)
+logMoneynesses  = data[0]
+totalvariance   = data[1]
+expiration_date = data[2]
+print('expiration date: ',expiration_date)
+## NelderMeadOptimization
+min_obj  = 1.0
+for iter in range(50):
+    nm   = SVI_NelderMeadOptimization(data)
+    calibrated_params, obj = nm.optimization()
+    if obj >= min_obj : continue
+    _a_star, _d_star, _c_star, m_star, sigma_star = calibrated_params
+    x_svi  = np.arange(min(logMoneynesses)-0.05, max(logMoneynesses)+0.05, 0.1 / 100)  # log_forward_moneyness
     y_svi  = np.divide((x_svi - m_star), sigma_star)
-    tv_svi = _a_star + _d_star * y_svi + _c_star * np.sqrt(y_svi ** 2 + 1)  # totalvariance objective fution values
-    ########################################################################################################################
+    tv_svi = _a_star + _d_star * y_svi + _c_star * np.sqrt(y_svi**2 + 1)  # totalvariance objective fution values
+    #print('_a_star, _d_star, _c_star, m_star, sigma_star',_a_star, _d_star, _c_star, m_star, sigma_star)
+    ## Get a,b,rho
+    ttm = daycounter.yearFraction(evalDate, expiration_date)
+    a_star = np.divide(_a_star, ttm)
+    b_star = np.divide(_c_star, (sigma_star * ttm))
+    rho_star = np.divide(_d_star, _c_star)
+    tv_svi2 = np.multiply(a_star + b_star * (rho_star * (x_svi - m_star) + np.sqrt((x_svi - m_star) ** 2 + sigma_star ** 2)), ttm)
+    print(iter,' : a_star,b_star,rho_star, m_star, sigma_star : ',a_star,b_star,rho_star, m_star, sigma_star)
+    parameters = [a_star,b_star,rho_star, m_star, sigma_star]
+
     # plot input data -- moneyness-totalvariance
-    plt.figure(i)
-    plt.plot(log_fmoneyness, totalvariance, 'ro')
-
-    ########################################################################################################################
+    plt.figure(iter)
+    plt.plot(logMoneynesses, totalvariance, 'ro')
     # Plot SVI volatility smile -- moneyness-totalvariance
-    plt.plot(x_svi, tv_svi, 'b--')
-    t = str( daycounter.yearFraction(evalDate,expiration_date))
+    #plt.plot(x_svi, tv_svi, 'b--')
+    plt.plot(x_svi, tv_svi2, 'b--')
+    t = str( round( daycounter.yearFraction(evalDate,expiration_date),4))
     plt.title('SVI total variance, T = ' + t)
-
-    #plt.figure(10)
-    #if i==0:
-    #    plt.plot(log_fmoneyness, totalvariance, 'bo')
-    #    l1,=plt.plot(x_svi, tv_svi, 'b--',label = 'T = ' + t)
-    #    a1 = 'T = ' + t
-    #elif i==1:
-    #    plt.plot(log_fmoneyness, totalvariance, 'g*')
-    #    l2,=plt.plot(x_svi, tv_svi, 'g-',label = 'T = ' + t)
-    #    a2 = 'T = ' + t
-    #elif i == 2:
-    #    plt.plot(log_fmoneyness, totalvariance, 'y+')
-    #    l3,=plt.plot(x_svi, tv_svi, 'y-.', label='T = ' + t)
-    #    a3 = 'T = ' + t
-    #elif i == 3:
-    #    plt.plot(log_fmoneyness, totalvariance, 'ko')
-    #    l4,=plt.plot(x_svi, tv_svi, 'k--', label='T = ' + t)
-    #    a4 ='T = ' + t
-
-#plt.title('SVI total variance for all maturities')
-
-#plt.legend([l1,l2,l3,l4],[a1,a2,a3,a4])
 
 plt.show()
 
 
-
 w.stop()
-

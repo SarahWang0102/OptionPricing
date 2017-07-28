@@ -281,7 +281,8 @@ def get_call_put_impliedVols_moneyness_PCPrate(
             nbr_month       = maturitydt.month()
             if nbr_month == month_indexs[0]:
                 e_date0     = maturitydt
-                rf = rf_Ks_months.get(0).get(strike)
+                rf = min(0.0002,rf_Ks_months.get(0).get(strike))
+                #rf = rf_Ks_months.get(0).get(strike)
                 Ft = spot * math.exp(rf * ttm)
                 moneyness   = math.log(strike / Ft, math.e)
                 yield_ts    = ql.YieldTermStructureHandle(ql.FlatForward(evalDate,rf,daycounter))
@@ -349,7 +350,7 @@ def get_call_put_impliedVols_moneyness_PCPrate(
     except:
         print('VolatilityData -- get_call_put_impliedVols failed')
         return
-    return cal_vols,put_vols,expiration_dates,spot
+    return cal_vols,put_vols,expiration_dates,spot,rf_Ks_months
 
 
 def get_impliedvolmat_BS_OTM_oneMaturity(

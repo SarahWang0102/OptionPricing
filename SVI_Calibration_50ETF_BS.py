@@ -1,10 +1,5 @@
 import matplotlib.pyplot as plt
-from VolatilityData_readpkl import *
 from SVI_Calibration_Util import *
-import math
-from SVI_NelderMeadOptimization import SVI_NelderMeadOptimization
-
-
 
 ########################################################################################################################
 #w.start()

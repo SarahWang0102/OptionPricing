@@ -4,7 +4,6 @@ import math
 from SVI_NelderMeadOptimization import SVI_NelderMeadOptimization
 
 
-
 def svi_calibration(evalDate,init_adc,calendar,daycounter,risk_free_rate,vols,expiration_date,strikes,spot):
     ql.Settings.instance().evaluationDate = evalDate
 
