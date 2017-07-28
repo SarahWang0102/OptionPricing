@@ -1,15 +1,8 @@
 # -*- coding:utf-8 -*-
-from VolatilityData_readpkl import *
-from SVI_Calibration_Optimization_Util import *
-import math
 import matplotlib.pyplot as plt
-import datetime
-import operator
-from mpl_toolkits.axes_grid1 import host_subplot
-import mpl_toolkits.axisartist as AA
 import plot_util as pu
-from SVI_Calibration_Util import *
-from matplotlib.patches import Rectangle
+import datetime
+import numpy as np
 
 dates =  [datetime.date(2015, 3, 11), datetime.date(2015, 3, 18), datetime.date(2015, 3, 25), datetime.date(2015, 4, 1), datetime.date(2015, 4, 8), datetime.date(2015, 4, 15), datetime.date(2015, 4, 22), datetime.date(2015, 5, 6), datetime.date(2015, 5, 13), datetime.date(2015, 5, 20), datetime.date(2015, 5, 27), datetime.date(2015, 6, 3), datetime.date(2015, 6, 10), datetime.date(2015, 6, 17), datetime.date(2015, 6, 24), datetime.date(2015, 7, 1), datetime.date(2015, 7, 8), datetime.date(2015, 7, 15), datetime.date(2015, 7, 22), datetime.date(2015, 8, 5), datetime.date(2015, 8, 12), datetime.date(2015, 8, 19), datetime.date(2015, 8, 26), datetime.date(2015, 9, 2), datetime.date(2015, 9, 9), datetime.date(2015, 9, 16), datetime.date(2015, 9, 23), datetime.date(2015, 10, 8), datetime.date(2015, 10, 15), datetime.date(2015, 11, 5), datetime.date(2015, 11, 12), datetime.date(2015, 11, 19), datetime.date(2015, 12, 3), datetime.date(2015, 12, 10), datetime.date(2015, 12, 17), datetime.date(2016, 1, 7), datetime.date(2016, 1, 14), datetime.date(2016, 1, 21), datetime.date(2016, 2, 4), datetime.date(2016, 2, 15), datetime.date(2016, 2, 22), datetime.date(2016, 3, 7), datetime.date(2016, 3, 14), datetime.date(2016, 3, 21), datetime.date(2016, 4, 5), datetime.date(2016, 4, 12), datetime.date(2016, 4, 19), datetime.date(2016, 4, 26), datetime.date(2016, 5, 3), datetime.date(2016, 5, 10), datetime.date(2016, 5, 17), datetime.date(2016, 5, 24), datetime.date(2016, 6, 7), datetime.date(2016, 6, 14), datetime.date(2016, 6, 21), datetime.date(2016, 7, 5), datetime.date(2016, 7, 12), datetime.date(2016, 7, 19), datetime.date(2016, 7, 26), datetime.date(2016, 8, 2), datetime.date(2016, 8, 9), datetime.date(2016, 8, 16), datetime.date(2016, 8, 23), datetime.date(2016, 9, 6), datetime.date(2016, 9, 13), datetime.date(2016, 9, 20), datetime.date(2016, 9, 27), datetime.date(2016, 10, 10), datetime.date(2016, 10, 17), datetime.date(2016, 10, 24), datetime.date(2016, 11, 7), datetime.date(2016, 11, 14), datetime.date(2016, 11, 21), datetime.date(2016, 12, 5), datetime.date(2016, 12, 12), datetime.date(2016, 12, 19), datetime.date(2016, 12, 26), datetime.date(2017, 1, 3), datetime.date(2017, 1, 10), datetime.date(2017, 1, 17), datetime.date(2017, 1, 24), datetime.date(2017, 2, 3), datetime.date(2017, 2, 10), datetime.date(2017, 2, 17), datetime.date(2017, 3, 3), datetime.date(2017, 3, 10), datetime.date(2017, 3, 17), datetime.date(2017, 4, 7), datetime.date(2017, 4, 14), datetime.date(2017, 4, 21), datetime.date(2017, 5, 5), datetime.date(2017, 5, 12), datetime.date(2017, 5, 19), datetime.date(2017, 6, 2), datetime.date(2017, 6, 9), datetime.date(2017, 6, 16), datetime.date(2017, 6, 23), datetime.date(2017, 7, 7), datetime.date(2017, 7, 14)]
 spread_this_month   =  [0.30802400520197604, 0.6362465039558417, -0.33899111948384764, 0.380407846860783, 0.47258977208253, 0.732330622950662, -0.8758490651017118, 0.3345063634685523, 0.4004035633553534, 0.5645381538454931, -0.6390727043912271, 0.39845704606617127, 0.5008914091235059, 0.611131939405795, -0.13969031870112944, 0.3641296479697344, -0.20506787644294378, 0.187988409308488, 0.5045015387098133, 0.16683926000187904, 0.32094363484964356, 0.3952028359976596, 0.8962927163711749, -0.9526018799239896, 0.23640339849775868, 0.435103318431958, 0.32449969887930985, 0.2188975588553398, 0.31952500561112646, 0.15417276716921138, 0.374411897107853, 0.49051193418438266, 0.23435607584660179, 0.38179432380999956, 0.609871194544425, 0.2384602345402555, 0.38312061816925086, 0.4532971044248226, 0.22151740650338742, 0.3671931147221845, 0.7842030714614241, 0.23426840615812075, 0.38789687235623777, 0.9748280045014109, 0.280647058119479, 0.36078513026109094, 0.45067761086027114, 1.0905648125288492, 0.23525819163747066, 0.2630139561604395, 0.3072844940469849, 0.7086760049055474, 0.3154455305855643, 0.3713120557713687, 1.157853422577419, 0.21783733459090227, 0.33565002783896625, 0.3759082270057391, 1.2057025165485424, 0.24112335983180944, 0.2735745876849005, 0.4276163959137983, 1.2333171759848613, 0.3405865511220713, 0.3350064871306649, 0.4306431413833859, 0.867765979955968, 0.2623848026063304, 0.28136109689749383, 0.8106340967463993, 0.26341300569381704, 0.3698201468182222, 0.8193929054194673, -0.06981884663218621, -0.09063175116150458, -0.11219919065321554, -0.20157349682353348, -0.00956362624513823, -0.03228189301890084, -0.006052088603387302, -0.17049226440373774, 0.010850309379646456, -0.05975438180712321, 0.07528365744438369, -0.05300425308319085, -0.05914458393311956, -0.08229858668626507, -0.06989014409688231, -2.8015138967687826e-05, -0.04114843698184845, -0.05516474196687549, -0.10403626596519669, -0.07865979792072197, -0.07199327067700534, -0.0788989443294124, -0.0670105908453427, -0.13993939751576656, -0.06070674494443849, -0.13152338212308431]
@@ -36,13 +29,14 @@ line6.set_dashes(pu.dash)
 axarr[3].bar(dates,volum_next_month,6,color = pu.c6)
 
 axarr[0].set_ylim(min(underlying_close),max(underlying_close))
-axarr[0].legend(['50 ETF'],loc = 0)
-axarr[1].legend(loc = 0)
-axarr[2].legend(loc = 0)
-axarr[3].legend(['Volume (million)'],loc = 0)
+axarr[0].legend(['50 ETF'],loc = 0,bbox_to_anchor=(1.2,1))
+axarr[1].legend(loc = 0,bbox_to_anchor=(1.5,1.5))
+axarr[2].legend(loc = 0,bbox_to_anchor=(1.5,1.5))
+axarr[3].legend(['Volume (million)'],loc = 0,bbox_to_anchor=(1.5,1.5))
 #axarr[0].legend(line1,"50ETF")
 axarr[1].grid()
 axarr[0].grid()
 axarr[2].grid()
 plt.draw()
+#f.savefig('image_output.png', dpi=300, format='png', bbox_extra_artists=(legend,), bbox_inches='tight')
 plt.show()
