@@ -65,8 +65,8 @@ t = str( round( daycounter.yearFraction(evalDate,expiration_date),4))
 plt.title('SVI total variance, T = ' + t)
 
 i = 3
-a_star,b_star,rho_star, m_star, sigma_star =  0.013133617016, 0.177082095191, 0.403855212213, 0.00459161356109, 0.0644783617415
-
+#a_star,b_star,rho_star, m_star, sigma_star =  0.013133617016, 0.177082095191, 0.403855212213, 0.00459161356109, 0.0644783617415
+a_star,b_star,rho_star, m_star, sigma_star =  0.0107047521466, 0.297485230118, 0.647754886901, 0.0262354285707, 0.0554674716145
 data = data_months.get(i)
 print('evaluation date: ', evalDate)
 logMoneynesses  = data[0]
@@ -74,7 +74,7 @@ totalvariance   = data[1]
 expiration_date = data[2]
 print('expiration date: ',expiration_date)
 
-x_svi  = np.arange(min(logMoneynesses)-0.05, max(logMoneynesses)+0.05, 0.1 / 100)  # log_forward_moneyness
+x_svi  = np.arange(min(logMoneynesses)-0.05, max(logMoneynesses)+0.01, 0.1 / 100)  # log_forward_moneyness
 
 ttm = daycounter.yearFraction(evalDate, expiration_date)
 

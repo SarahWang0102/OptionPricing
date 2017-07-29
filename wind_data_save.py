@@ -1,7 +1,6 @@
 from WindPy import *
 import pandas as pd
 import os
-import QuantLib as ql
 
 def save_optionsinfo(evalDate):
     # 50ETF currently trading contracts

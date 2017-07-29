@@ -15,7 +15,7 @@ curve = get_curve_treasuryBond(evalDate, daycounter)
 data_months,risk_free_rates = get_data_from_BS_OTM_PCPRate(evalDate,daycounter,calendar,curve,False)
 print(risk_free_rates)
 
-i = 1
+i = 3
 # a_star,b_star,rho_star, m_star, sigma_star :  0.013133617016 0.177082095191 0.403855212213 0.00459161356109 0.0644783617415
 
 nbr_month = month_indexs[i]

@@ -1,5 +1,4 @@
 import QuantLib as ql
-import pandas as pd
 import math
 import numpy as np
 from wind_data_save import *
@@ -243,10 +242,11 @@ def get_call_put_impliedVols_moneyness(
         cal_vols = [call_volatilities_0,call_volatilities_1,call_volatilities_2,call_volatilities_3]
         put_vols = [put_volatilites_0,put_volatilites_1,put_volatilites_2,put_volatilites_3]
     except:
-        print('VolatilityData -- get_call_put_impliedVols failed')
+        print('Error -- get_call_put_impliedVols failed')
         return
     return cal_vols,put_vols
 
+# Currently used for combine OTM calls and OTM puts into one SVI calibrated IV curve
 def get_call_put_impliedVols_moneyness_PCPrate(
         evalDate,curve,daycounter,calendar,maxVol=1.0,step=0.0001,precision=0.05,show=True):
     close_call = []
@@ -348,10 +348,9 @@ def get_call_put_impliedVols_moneyness_PCPrate(
         cal_vols = [call_volatilities_0,call_volatilities_1,call_volatilities_2,call_volatilities_3]
         put_vols = [put_volatilites_0,put_volatilites_1,put_volatilites_2,put_volatilites_3]
     except:
-        print('VolatilityData -- get_call_put_impliedVols failed')
+        print('Error -- get_call_put_impliedVols failed')
         return
     return cal_vols,put_vols,expiration_dates,spot,rf_Ks_months
-
 
 def get_impliedvolmat_BS_OTM_oneMaturity(
         evalDate,curve,daycounter,calendar,month,maxVol=1.0,step=0.0001,precision=0.001,show=True):
@@ -443,6 +442,7 @@ def get_impliedvolmat_BS_OTM_oneMaturity(
     return call_volatilities,put_converted_volatilites,strikes_call,strikes_put,\
            close_call,close_put,logMoneyness_call,logMoneyness_put,maturitydt,spot
 
+# Use only put option impied vols for SVI calibrated IV curve
 def get_impliedvolmat_BS_put_cnvt_oneMaturity(
         evalDate,curve,daycounter,calendar,month,maxVol=1.0,step=0.0001,precision=0.001,show=True):
     try:
