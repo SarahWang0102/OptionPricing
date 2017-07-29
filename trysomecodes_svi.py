@@ -1,13 +1,18 @@
 import matplotlib.pyplot as plt
-from svi_calibration_util import *
-from svi_NelderMead_optimization import *
+import svi_calibration_utility as svi_util
+import svi_prepare_vol_data as svi_data
+from svi_NelderMead_optimization import  SVI_NelderMeadOptimization
+import QuantLib as ql
+import numpy as np
+from WindPy import w
+
 
 # Evaluation Settings
 calendar = ql.China()
 daycounter = ql.ActualActual()
 evalDate = ql.Date(13,7,2017)
 evalDate = calendar.advance(evalDate, ql.Period(1, ql.Days))
-month_indexs = get_contract_months(evalDate)
+month_indexs = svi_data.get_contract_months(evalDate)
 ql.Settings.instance().evaluationDate = evalDate
 # month = 0
 # data =[[-0.1474550505757443, -0.12588402678393043, -0.10483765743073895, -0.08422217589933623, -0.06406353103003588, -0.04424381464711353, -0.02483149669961696, -0.005799740518179994, 0.012940699597022558, 0.031331166499017744], [0.0034992450333533667, 0.0028288432209828715, 0.0022826973487887797, 0.001562574173896798, 0.001395687015211137, 0.0011062564527481483, 0.000937295143504338, 0.0008106238480090267, 0.0006248047322452892, 0.0008217378917747827], ql.Date(26,7,2017)]
@@ -29,7 +34,8 @@ for i in range(10):
     ## NelderMeadOptimization
     #nm   = SVI_NelderMeadOptimization(data, init_adc = [0.5,0.5,0.5], init_msigma = [1,1])
     nm   = SVI_NelderMeadOptimization(data)
-    _a_star, _d_star, _c_star, m_star, sigma_star = nm.optimization()
+    params,obj = nm.optimization()
+    _a_star, _d_star, _c_star, m_star, sigma_star = params
     x_svi  = np.arange(min(logMoneynesses)-0.05, max(logMoneynesses)+0.05, 0.1 / 100)  # log_forward_moneyness
     y_svi  = np.divide((x_svi - m_star), sigma_star)
     tv_svi = _a_star + _d_star * y_svi + _c_star * np.sqrt(y_svi**2 + 1)  # totalvariance objective fution values

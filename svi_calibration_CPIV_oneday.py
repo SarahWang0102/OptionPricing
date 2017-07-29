@@ -1,7 +1,7 @@
 import operator
 import matplotlib.pyplot as plt
 import svi_prepare_vol_data as svi_data
-import svi_calibration_util as svi_util
+import svi_calibration_utility as svi_util
 import QuantLib as ql
 import plot_util as pu
 from WindPy import w
