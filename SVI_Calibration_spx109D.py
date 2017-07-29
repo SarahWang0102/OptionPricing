@@ -2,9 +2,9 @@ import xlrd
 import QuantLib as ql
 from WindPy import *
 import numpy as np
-from SVI_CalibrationFun import *
 import matplotlib.pyplot as plt
 import datetime
+import svi_calibration_util as svi_util
 
 ###############################################################################
 ## Settings
@@ -77,7 +77,7 @@ method = 'nm'
 init_adc = [1,1,1] # Never used for ols optimization
 init_msigma = [1,1]
 log_forward_moneyness, totalvariance,volatility, _a_star, _d_star, _c_star, m_star, sigma_star \
-    = svi_calibration3(method,evalDate, init_adc,init_msigma, calendar, daycounter, risk_free_rate, vols, expiration_date, strikes, spot)
+    = svi_util.svi_calibration_helper(method,evalDate, init_adc,init_msigma, calendar, daycounter, risk_free_rate, vols, expiration_date, strikes, spot)
 x_svi  = np.arange(min(log_forward_moneyness), max(log_forward_moneyness), 0.1 / 100) # log_forward_moneyness
 y_svi  = np.divide((x_svi - m_star),sigma_star)
 tv_svi = _a_star + _d_star*y_svi + _c_star* np.sqrt(y_svi**2 + 1) # totalvariance objective fution values

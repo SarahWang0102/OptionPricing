@@ -1,9 +1,6 @@
-from WindPy import *
 import matplotlib.pyplot as plt
-from VolatilityData_readpkl import *
-from SVI_Calibration_Util import *
-import math
-from SVI_NelderMeadOptimization_2 import SVI_NelderMeadOptimization
+from svi_calibration_util import *
+from svi_NelderMead_optimization import *
 
 # Evaluation Settings
 calendar = ql.China()

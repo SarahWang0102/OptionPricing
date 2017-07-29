@@ -1,7 +1,10 @@
-import matplotlib.pyplot as plt
 import operator
-from SVI_Calibration_Util import *
+import matplotlib.pyplot as plt
+import svi_prepare_vol_data as svi_data
+import svi_calibration_util as svi_util
+import QuantLib as ql
 import plot_util as pu
+from WindPy import w
 
 
 
@@ -62,15 +65,15 @@ evalDate = ql.Date(13,7,2017)
 begDate  = evalDate
 
 # Underlying close prices
-spotprice_dic = get_underlying_ts()
+spotprice_dic = svi_util.get_underlying_ts()
 
 
-curve = get_curve_treasuryBond(evalDate, daycounter)
+curve = svi_data.get_curve_treasury_bond(evalDate, daycounter)
 
 #rf_avg_months =  calculate_PCParity_riskFreeRate(evalDate,daycounter,calendar)
 
 #cal_vols_data, put_vols_data = get_call_put_impliedVols_strikes(evalDate,curve,daycounter,calendar,maxVol=1.0,step=0.0001,precision=0.001,show=False)
-cal_vols_data_moneyness, put_vols_data_monetness,expiration_dates,spot,x = get_call_put_impliedVols_moneyness_PCPrate(evalDate,curve,daycounter,calendar,maxVol=1.0,step=0.0001,precision=0.001,show=False)
+cal_vols_data_moneyness, put_vols_data_monetness,expiration_dates,spot,x = svi_data.get_call_put_impliedVols_moneyness_PCPrate(evalDate,curve,daycounter,calendar,maxVol=1.0,step=0.0001,precision=0.001,show=False)
 strikes_op_m,call_volatilities_op_m,put_volatilities_op_m =get_iv_plot_data_PCPRate(cal_vols_data_moneyness, put_vols_data_monetness)
 #cal_vols_data_moneyness, put_vols_data_monetness = get_call_put_impliedVols_moneyness(evalDate,curve,daycounter,calendar,maxVol=1.0,step=0.0001,precision=0.001,show=False)
 #strikes_op_m,call_volatilities_op_m,put_volatilities_op_m =get_iv_plot_data(cal_vols_data_moneyness, put_vols_data_monetness)

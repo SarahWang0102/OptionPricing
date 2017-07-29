@@ -1,14 +1,7 @@
-from WindPy import *
-import QuantLib as ql
-import pandas as pd
-import numpy as np
-from mpl_toolkits.mplot3d import Axes3D
-import matplotlib.pyplot as plt
-from matplotlib import cm
-from VolatilityData_Copied import *
+from svi_prepare_vol_data import *
 from scipy.optimize import root
 from scipy.optimize import least_squares
-from CalibrationPerformenceFuns import *
+from heston_calibration_performence import *
 
 # Evaluation Settings
 w.start()
@@ -16,7 +9,7 @@ calendar        = ql.China()
 daycounter      = ql.ActualActual()
 evalDate        = ql.Date(12,6,2017)
 # Construct interest rate term structure from depo
-curve           = get_curve_depo(evalDate, daycounter)
+curve           = get_curve_treasury_bond(evalDate, daycounter)
 yield_ts        = ql.YieldTermStructureHandle(curve)
 dividend_ts     = ql.YieldTermStructureHandle(ql.FlatForward(evalDate,0.0,daycounter))
 flat_vol_ts     = ql.BlackVolTermStructureHandle(ql.BlackConstantVol(evalDate, calendar, 0.0, daycounter))
@@ -25,7 +18,7 @@ summary         = []
 
 # Vol Surface matrix data
 #data,expiration_dates,strikes,spot  = get_impliedvolmat_call_BS(evalDate, daycounter,calendar)
-data,expiration_dates,strikes,spot = get_impliedvolmat_call_wind(evalDate)
+data,mat,expiration_dates,strikes,spot = get_impliedvolmat_call_wind_givenKs(evalDate)
 init1 = (0.02,0.2,0.5,0.1,0.01)
 ########################################################################################################################
 # Calibrate using QuantLib Levenberg-Marquardt Solver

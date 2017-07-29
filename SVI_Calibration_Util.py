@@ -1,5 +1,9 @@
-from VolatilityData_readpkl import *
-from SVI_Calibration_Optimization_Util import *
+import svi_prepare_vol_data as svi_data
+from svi_NelderMead_optimization import  SVI_NelderMeadOptimization
+import QuantLib as ql
+import pandas as pd
+import os
+import math
 
 
 def get_underlying_ts():
@@ -16,7 +20,7 @@ def get_underlying_ts():
 def get_data_from_BS_OTM_PCPRate(evalDate,daycounter,calendar,curve,show=True):
 
     cal_vols_data_moneyness, put_vols_data_monetness,expiration_dates,spot,rf_Ks_months \
-        = get_call_put_impliedVols_moneyness_PCPrate(evalDate, curve,daycounter, calendar,
+        = svi_data.get_call_put_impliedVols_moneyness_PCPrate(evalDate, curve,daycounter, calendar,
                                                      maxVol=1.0,step=0.0001,precision=0.001,show=False)
     data_for_optimiztion_months = {}
     for idx_month, call_data in enumerate(cal_vols_data_moneyness):
@@ -41,11 +45,12 @@ def get_data_from_BS_OTM_PCPRate(evalDate,daycounter,calendar,curve,show=True):
         data_for_optimiztion_months.update({idx_month:data})
     return data_for_optimiztion_months,rf_Ks_months
 
+# One Maturity
 def get_data_from_BS_put_cnvt(evalDate,daycounter,calendar,nbr_month,curve,show=True):
 
     call_volatilities, put_converted_volatilites, strikes_call, strikes_put, \
     close_call, close_put, logMoneyness_call, logMoneyness_put, expiration_date, spot = \
-        get_impliedvolmat_BS_put_cnvt_oneMaturity(
+        svi_data.get_impliedvolmat_BS_put_cnvt_oneMaturity(
             evalDate, curve,daycounter, calendar, nbr_month,1.0, 0.0001, 0.001, False)
     vols           = []
     strikes        = []
@@ -80,7 +85,7 @@ def get_data_from_BS_OTM(evalDate,daycounter,calendar,nbr_month,curve,show=True)
 
     call_volatilities, put_converted_volatilites, strikes_call, strikes_put, \
     close_call, close_put, logMoneyness_call, logMoneyness_put, expiration_date, spot = \
-        get_impliedvolmat_BS_OTM_oneMaturity(
+        svi_data.get_impliedvolmat_BS_OTM_oneMaturity(
             evalDate,curve, daycounter, calendar, nbr_month,1.0, 0.0001, 0.001, True)
     vols           = []
     strikes        = []
@@ -140,7 +145,7 @@ def get_data_from_BS_OTM(evalDate,daycounter,calendar,nbr_month,curve,show=True)
 def get_data_from_BS_put(evalDate,daycounter,calendar,nbr_month,type,next_i_month,curve,show=True):
 
     print('Put')
-    vols_put, expiration_date, strikes_put, spot,close_put,logMoneyness_put = get_impliedvolmat_BS_oneMaturity(
+    vols_put, expiration_date, strikes_put, spot,close_put,logMoneyness_put = svi_data.get_impliedvolmat_BS_oneMaturity(
         type,evalDate, daycounter, calendar, nbr_month,1.0,0.0001,0.001,show)
     ## Select OTM options from Calls and Puts
     vols           = []
@@ -173,7 +178,37 @@ def get_data_from_BS_put(evalDate,daycounter,calendar,nbr_month,type,next_i_mont
     return data_for_optimiztion
     #return vols,expiration_date,strikes,spot,risk_free_rate,closes,logMoneynesses
 
-def get_data_from_wind(evalDate,daycounter,next_i_month,curve):
-    vols, expiration_date, strikes, spot = get_impliedvolmat_wind_oneMaturity('认购',evalDate,next_i_month)
-    risk_free_rate  =   curve.zeroRate(expiration_date,daycounter,ql.Continuous).rate()
-    return vols, expiration_date, strikes, spot, risk_free_rate
+def svi_calibration_helper(method,evalDate, init_adc, init_msigma,calendar, daycounter,
+                     risk_free_rate, vols, expiration_date, strikes, spot):
+    ql.Settings.instance().evaluationDate = evalDate
+
+    # x: log(K/Ft) log-forward moneyness
+    # v: implied molatilities
+    log_fmoneyness  = []
+    totalvariance   = []
+    volatility = []
+    ttm = daycounter.yearFraction(evalDate, expiration_date)
+    Ft  = spot * math.exp(risk_free_rate * ttm)
+    for j, K in enumerate(strikes):
+        if vols[j] <= 0: continue
+        tv = (vols[j] ** 2) * ttm  # w = ttm*vol^2
+        moneyness = math.log(K / Ft, math.e)
+        log_fmoneyness.append(moneyness)
+        totalvariance.append(tv)
+        volatility.append(vols[j])
+    data = [log_fmoneyness, totalvariance, volatility, ttm, strikes, Ft]
+    print('data for optimization:')
+    print('data = [log_fmoneyness, totalvariance, volatility, ttm, strikes, Ft] ')
+    print('data : ',data)
+    print('log_fmoneyness : ',log_fmoneyness)
+    print('totalvariance : ', totalvariance)
+    nm = SVI_NelderMeadOptimization(data)
+    if method == 'nm': # Nelder-Mead Optimization
+        cal_params,obj = nm.optimization()
+        _a_star, _d_star, _c_star, m_star, sigma_star = cal_params
+    elif method == 'ols':
+        _a_star, _d_star, _c_star, m_star, sigma_star = nm.optimization_SLSQP()
+    else:
+        return
+
+    return log_fmoneyness, totalvariance,volatility, _a_star, _d_star, _c_star, m_star, sigma_star

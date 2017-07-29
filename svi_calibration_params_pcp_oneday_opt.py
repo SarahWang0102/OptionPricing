@@ -1,5 +1,9 @@
 import matplotlib.pyplot as plt
-from SVI_Calibration_Util import *
+import svi_calibration_util as svi_util
+import svi_prepare_vol_data as svi_data
+from svi_NelderMead_optimization import  SVI_NelderMeadOptimization
+import QuantLib as ql
+from WindPy import w
 
 
 w.start()
@@ -8,11 +12,11 @@ calendar = ql.China()
 daycounter = ql.ActualActual()
 evalDate = ql.Date(13,7,2017)
 evalDate = calendar.advance(evalDate, ql.Period(1, ql.Days))
-month_indexs = get_contract_months(evalDate)
+month_indexs = svi_data.get_contract_months(evalDate)
 ql.Settings.instance().evaluationDate = evalDate
 # Calibrate SVI total variance curve
-curve = get_curve_treasuryBond(evalDate, daycounter)
-data_months,risk_free_rates = get_data_from_BS_OTM_PCPRate(evalDate,daycounter,calendar,curve,False)
+curve = svi_data.get_curve_treasury_bond(evalDate, daycounter)
+data_months,risk_free_rates = svi_util.get_data_from_BS_OTM_PCPRate(evalDate,daycounter,calendar,curve,False)
 print(risk_free_rates)
 
 i = 3
@@ -27,9 +31,8 @@ logMoneynesses  = data[0]
 totalvariance   = data[1]
 expiration_date = data[2]
 print('expiration date: ',expiration_date)
-## NelderMeadOptimization
 min_obj  = 1.0
-for iter in range(50):
+for iter in range(5):
     nm   = SVI_NelderMeadOptimization(data)
     calibrated_params, obj = nm.optimization()
     if obj >= min_obj : continue
@@ -37,7 +40,6 @@ for iter in range(50):
     x_svi  = np.arange(min(logMoneynesses)-0.05, max(logMoneynesses)+0.05, 0.1 / 100)  # log_forward_moneyness
     y_svi  = np.divide((x_svi - m_star), sigma_star)
     tv_svi = _a_star + _d_star * y_svi + _c_star * np.sqrt(y_svi**2 + 1)  # totalvariance objective fution values
-    #print('_a_star, _d_star, _c_star, m_star, sigma_star',_a_star, _d_star, _c_star, m_star, sigma_star)
     ## Get a,b,rho
     ttm = daycounter.yearFraction(evalDate, expiration_date)
     a_star = np.divide(_a_star, ttm)
@@ -47,16 +49,11 @@ for iter in range(50):
     print(iter,' : a_star,b_star,rho_star, m_star, sigma_star : ',a_star,b_star,rho_star, m_star, sigma_star)
     parameters = [a_star,b_star,rho_star, m_star, sigma_star]
 
-    # plot input data -- moneyness-totalvariance
     plt.figure(iter)
     plt.plot(logMoneynesses, totalvariance, 'ro')
-    # Plot SVI volatility smile -- moneyness-totalvariance
-    #plt.plot(x_svi, tv_svi, 'b--')
     plt.plot(x_svi, tv_svi2, 'b--')
     t = str( round( daycounter.yearFraction(evalDate,expiration_date),4))
     plt.title('SVI total variance, T = ' + t)
 
 plt.show()
-
-
 w.stop()
