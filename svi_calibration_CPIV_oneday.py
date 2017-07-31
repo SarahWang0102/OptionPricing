@@ -61,7 +61,7 @@ w.start()
 # Evaluation Settings
 calendar   = ql.China()
 daycounter = ql.ActualActual()
-evalDate = ql.Date(13,7,2017)
+evalDate = ql.Date(14,7,2017)
 begDate  = evalDate
 
 # Underlying close prices
@@ -72,14 +72,14 @@ curve = svi_data.get_curve_treasury_bond(evalDate, daycounter)
 
 #rf_avg_months =  calculate_PCParity_riskFreeRate(evalDate,daycounter,calendar)
 
-#cal_vols_data, put_vols_data = get_call_put_impliedVols_strikes(evalDate,curve,daycounter,calendar,maxVol=1.0,step=0.0001,precision=0.001,show=False)
+cal_vols_data, put_vols_data = svi_data.get_call_put_impliedVols_strikes(evalDate,curve,daycounter,calendar,maxVol=1.0,step=0.0001,precision=0.001,show=False)
 cal_vols_data_moneyness, put_vols_data_monetness,expiration_dates,spot,x = svi_data.get_call_put_impliedVols_moneyness_PCPrate(evalDate,curve,daycounter,calendar,maxVol=1.0,step=0.0001,precision=0.001,show=False)
 strikes_op_m,call_volatilities_op_m,put_volatilities_op_m =get_iv_plot_data_PCPRate(cal_vols_data_moneyness, put_vols_data_monetness)
 #cal_vols_data_moneyness, put_vols_data_monetness = get_call_put_impliedVols_moneyness(evalDate,curve,daycounter,calendar,maxVol=1.0,step=0.0001,precision=0.001,show=False)
 #strikes_op_m,call_volatilities_op_m,put_volatilities_op_m =get_iv_plot_data(cal_vols_data_moneyness, put_vols_data_monetness)
 
-'''
-strikes_op,call_volatilities_op,put_volatilities_op =get_iv_plot_data(cal_vols_data, put_vols_data)
+
+strikes_op,call_volatilities_op,put_volatilities_op =get_iv_plot_data_PCPRate(cal_vols_data, put_vols_data)
 f, axarr = plt.subplots(nrows=2, ncols=2, figsize=(6, 6), sharey=True)
 index = 0
 line1, = axarr[0,0].plot(strikes_op.get(index), call_volatilities_op.get(index),color = pu.c1,marker = "*",linestyle = pu.l1,linewidth = 2,label="call iv")
@@ -102,7 +102,7 @@ axarr[0,0].legend()
 axarr[0,1].legend()
 axarr[1,0].legend()
 axarr[1,1].legend()
-'''
+
 
 f_m, axarr_m = plt.subplots(nrows=2, ncols=2, figsize=(6, 6), sharey=True)
 index = 0

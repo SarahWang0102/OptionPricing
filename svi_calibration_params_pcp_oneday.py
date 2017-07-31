@@ -3,6 +3,7 @@ import svi_calibration_utility as svi_util
 import svi_prepare_vol_data as svi_data
 from svi_NelderMead_optimization import  SVI_NelderMeadOptimization
 import QuantLib as ql
+import numpy as np
 from WindPy import w
 
 w.start()
@@ -18,7 +19,7 @@ curve = svi_data.get_curve_treasury_bond(evalDate, daycounter)
 data_months,risk_free_rates = svi_util.get_data_from_BS_OTM_PCPRate(evalDate,daycounter,calendar,curve,False)
 print(risk_free_rates)
 
-i = 3
+i = 1
 nbr_month = month_indexs[i]
 
 #for i, nbr_month in enumerate(month_indexs):

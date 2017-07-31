@@ -1,24 +1,9 @@
-from svi_read_data import *
+from svi_read_data import get_wind_data,get_curve_treasury_bond,get_contract_months
+import QuantLib as ql
+import math
+import pandas as pd
+from WindPy import w
 
-def get_contract_months(evalDate):
-    if evalDate.month() == 12:
-        m2 = 1
-    else:
-        m2 = evalDate.month() + 1
-    if evalDate.month() in [11,12,1]:
-        m3 = 3
-        m4 = 6
-    elif evalDate.month() in [2,3,4]:
-        m3 = 6
-        m4 = 9
-    elif evalDate.month() in [5,6,7]:
-        m3 = 9
-        m4 = 12
-    else:
-        m3 = 12
-        m4 = 3
-    month_indexs = [evalDate.month(), m2, m3, m4]
-    return month_indexs
 
 def get_call_put_impliedVols_strikes(
         evalDate,curve,daycounter,calendar,maxVol=1.0,step=0.0001,precision=0.001,show=True):
@@ -161,12 +146,12 @@ def get_call_put_impliedVols_moneyness_PCPrate(
     e_date0, e_date1, e_date2, e_date3 = 0,0,0,0
     try:
         # Get PC parity implied risk free rates
-        rf_Ks_months = calculate_PCParity_riskFreeRate(evalDate, daycounter, calendar)
+        rf_Ks_months = calculate_PCParity_ATM_riskFreeRate(evalDate, daycounter, calendar)
+        #rf_Ks_months = calculate_PCParity_riskFreeRate(evalDate, daycounter, calendar)
         print(rf_Ks_months)
         # Get Wind Market Data
         vols, spot, mktData, mktFlds, optionData, optionFlds,optionids = get_wind_data(evalDate)
         ql.Settings.instance().evaluationDate = evalDate
-
         dividend_ts = ql.YieldTermStructureHandle(ql.FlatForward(evalDate,0.0,daycounter))
         month_indexs = get_contract_months(evalDate)
         for idx, optionid in enumerate(optionids):
@@ -180,8 +165,8 @@ def get_call_put_impliedVols_moneyness_PCPrate(
             nbr_month       = maturitydt.month()
             if nbr_month == month_indexs[0]:
                 e_date0     = maturitydt
-                rf = min(0.0002,rf_Ks_months.get(0).get(strike))
                 #rf = rf_Ks_months.get(0).get(strike)
+                rf = rf_Ks_months.get(0)
                 Ft = spot * math.exp(rf * ttm)
                 moneyness   = math.log(strike / Ft, math.e)
                 yield_ts    = ql.YieldTermStructureHandle(ql.FlatForward(evalDate,rf,daycounter))
@@ -197,7 +182,8 @@ def get_call_put_impliedVols_moneyness_PCPrate(
                     put_volatilites_0.update({moneyness: [implied_vol,strike]})
             elif nbr_month == month_indexs[1]:
                 e_date1 = maturitydt
-                rf = rf_Ks_months.get(1).get(strike)
+                #rf = rf_Ks_months.get(1).get(strike)
+                rf = rf_Ks_months.get(1)
                 Ft = spot * math.exp(rf * ttm)
                 moneyness = math.log(strike / Ft, math.e)
                 yield_ts = ql.YieldTermStructureHandle(ql.FlatForward(evalDate, rf, daycounter))
@@ -213,7 +199,8 @@ def get_call_put_impliedVols_moneyness_PCPrate(
                     put_volatilites_1.update({moneyness: [implied_vol,strike]})
             elif nbr_month == month_indexs[2]:
                 e_date2 = maturitydt
-                rf = rf_Ks_months.get(2).get(strike)
+                #rf = rf_Ks_months.get(2).get(strike)
+                rf = rf_Ks_months.get(2)
                 Ft = spot * math.exp(rf * ttm)
                 moneyness = math.log(strike / Ft, math.e)
                 yield_ts = ql.YieldTermStructureHandle(ql.FlatForward(evalDate, rf, daycounter))
@@ -229,7 +216,8 @@ def get_call_put_impliedVols_moneyness_PCPrate(
                     put_volatilites_2.update({moneyness: [implied_vol,strike]})
             else:
                 e_date3 = maturitydt
-                rf = rf_Ks_months.get(3).get(strike)
+                #rf = rf_Ks_months.get(3).get(strike)
+                rf = rf_Ks_months.get(3)
                 Ft = spot * math.exp(rf * ttm)
                 moneyness = math.log(strike / Ft, math.e)
                 yield_ts = ql.YieldTermStructureHandle(ql.FlatForward(evalDate, rf, daycounter))
@@ -289,6 +277,61 @@ def calculate_vol_BS(
         implied_vol = sigma
     return implied_vol,error
 
+def calculate_PCParity_ATM_riskFreeRate(evalDate,daycounter,calendar):
+    vols, spot, mktData, mktFlds, optionData, optionFlds,optionids = get_wind_data(evalDate)
+    rf_atm_months = {}
+    call_month0 = {}
+    call_month1 = {}
+    call_month2 = {}
+    call_month3 = {}
+    put_month0 = {}
+    put_month1 = {}
+    put_month2 = {}
+    put_month3 = {}
+    ttm = 0.0
+    month_indexs = get_contract_months(evalDate)
+    for idx,optionid in enumerate(optionids):
+        optionDataIdx   = optionData[optionFlds.index('wind_code')].index(optionid)
+        mdate = pd.to_datetime(optionData[optionFlds.index('exercise_date')][optionDataIdx])
+        mktindex = mktData[mktFlds.index('option_code')].index(optionid)
+        close = mktData[mktFlds.index('close')][mktindex]
+        strike = optionData[optionFlds.index('exercise_price')][optionDataIdx]
+        maturitydt = ql.Date(mdate.day, mdate.month, mdate.year)
+        ttm = daycounter.yearFraction(evalDate, maturitydt)
+        if mdate.month == month_indexs[0]:
+            if optionData[optionFlds.index('call_or_put')][optionDataIdx] == '认购':
+                call_month0.update({strike:close})
+            else:
+                put_month0.update({strike:close})
+        elif mdate.month == month_indexs[1]:
+            if optionData[optionFlds.index('call_or_put')][optionDataIdx] == '认购':
+                call_month1.update({strike:close})
+            else:
+                put_month1.update({strike:close})
+        elif mdate.month == month_indexs[2]:
+            if optionData[optionFlds.index('call_or_put')][optionDataIdx] == '认购':
+                call_month2.update({strike:close})
+            else:
+                put_month2.update({strike:close})
+        else:
+            if optionData[optionFlds.index('call_or_put')][optionDataIdx] == '认购':
+                call_month3.update({strike:close})
+            else:
+                put_month3.update({strike:close})
+    call_months = [call_month0,call_month1,call_month2,call_month3]
+    put_months = [put_month0, put_month1, put_month2, put_month3]
+    for idx_month,call in enumerate(call_months):
+        put = put_months[idx_month]
+        min_diff = 10
+        r_f = 0.0002
+        for idx_k, strike in enumerate(call.keys()):
+            diff = strike - spot
+            if diff < min_diff and diff >= 0:
+                min_diff = diff
+                r_f = max(0.0002,(1/ttm)*math.log((spot+put.get(strike)-call.get(strike))/strike,math.e))
+        rf_atm_months.update({idx_month:r_f})
+    return rf_atm_months
+
 def calculate_PCParity_riskFreeRate(evalDate,daycounter,calendar):
     vols, spot, mktData, mktFlds, optionData, optionFlds,optionids = get_wind_data(evalDate)
     rf_Ks_months = {}
@@ -337,7 +380,7 @@ def calculate_PCParity_riskFreeRate(evalDate,daycounter,calendar):
         count = len(call.keys())
         put = put_months[idx_month]
         for idx_k, strike in enumerate(call.keys()):
-            r = (1/ttm)*math.log((spot+put.get(strike)-call.get(strike))/strike,math.e)
+            r = max(0.0002,(1/ttm)*math.log((spot+put.get(strike)-call.get(strike))/strike,math.e))
             r_f.update({strike:r})
         rf_Ks_months.update({idx_month:r_f})
     return rf_Ks_months

@@ -59,6 +59,27 @@ def get_curve_treasury_bond(evalDate, daycounter):
         return
     return curve
 
+
+def get_contract_months(evalDate):
+    if evalDate.month() == 12:
+        m2 = 1
+    else:
+        m2 = evalDate.month() + 1
+    if evalDate.month() in [11,12,1]:
+        m3 = 3
+        m4 = 6
+    elif evalDate.month() in [2,3,4]:
+        m3 = 6
+        m4 = 9
+    elif evalDate.month() in [5,6,7]:
+        m3 = 9
+        m4 = 12
+    else:
+        m3 = 12
+        m4 = 3
+    month_indexs = [evalDate.month(), m2, m3, m4]
+    return month_indexs
+
 # w.start()
 # vols,spot,mktData,mktFlds,optionData,optionFlds,optionids = get_wind_data_pkl(ql.Date(14,7,2017))
 # vols,spot,mktData,mktFlds,optionData,optionFlds,optionids = get_wind_data(ql.Date(14,7,2017))
