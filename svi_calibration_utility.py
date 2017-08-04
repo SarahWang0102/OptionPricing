@@ -1,21 +1,86 @@
 import svi_prepare_vol_data as svi_data
 from svi_NelderMead_optimization import  SVI_NelderMeadOptimization
 import QuantLib as ql
+import numpy as np
 import pandas as pd
 import os
 import math
 
 
-def get_underlying_ts():
-    underlyingdata = pd.read_pickle(os.getcwd()+'\marketdata\spotclose' +'.pkl')
-    dates_ts  = underlyingdata.index.tolist()
-    spot_ts   = underlyingdata.values.tolist()
-    spot_dic  = {}
-    for idx_dt,dt in enumerate(dates_ts):
-        date_tmp = pd.to_datetime(dt)
-        date_ql = ql.Date(date_tmp.day, date_tmp.month, date_tmp.year)
-        spot_dic.update({date_ql:spot_ts[idx_dt][0]})
-    return spot_dic
+def get_svi_optimal_params(data,ttm,sim_no = 100):
+    logMoneynesses = data[0]
+    totalvariance = data[1]
+    min_sse = 10
+    calibrated_params = []
+    ms_rnd = np.random.random([sim_no, 2])*5
+    adc_rnd = np.random.random([sim_no, 3])*5
+    for iter in range(sim_no):
+        ms_0 = ms_rnd[iter,:]
+        #adc_0 = adc_rnd[iter,:]*np.array([max(data[1]), 4*ms_0.item(1), 4*ms_0.item(1)])
+        adc_0 = adc_rnd[iter, :]
+        nm = SVI_NelderMeadOptimization(data,adc_0,ms_0,1e-7)
+        calibrated_params, obj = nm.optimization()
+        _a_star, _d_star, _c_star, m_star, sigma_star = calibrated_params
+        sse = 0.0
+        for i, m in enumerate(logMoneynesses):
+            tv = totalvariance[i]
+            y_1 = np.divide((m - m_star), sigma_star)
+            tv_1 = _a_star + _d_star * y_1 + _c_star * np.sqrt(y_1 ** 2 + 1)
+            sse += (tv - tv_1) ** 2
+        if sse >= min_sse: continue
+        min_sse = sse
+    if min_sse > 5*10**(-7):
+        ms_rnd = np.random.random([sim_no, 2]) * 0.5
+        adc_rnd = np.random.random([sim_no, 3]) * 0.5
+        for iter in range(sim_no):
+            ms_0 = ms_rnd[iter, :]
+            # adc_0 = adc_rnd[iter,:]*np.array([max(data[1]), 4*ms_0.item(1), 4*ms_0.item(1)])
+            adc_0 = adc_rnd[iter, :]
+            nm = SVI_NelderMeadOptimization(data, adc_0, ms_0, 1e-7)
+            calibrated_params, obj = nm.optimization()
+            _a_star, _d_star, _c_star, m_star, sigma_star = calibrated_params
+            sse = 0.0
+            for i, m in enumerate(logMoneynesses):
+                tv = totalvariance[i]
+                y_1 = np.divide((m - m_star), sigma_star)
+                tv_1 = _a_star + _d_star * y_1 + _c_star * np.sqrt(y_1 ** 2 + 1)
+                sse += (tv - tv_1) ** 2
+            if sse >= min_sse: continue
+            min_sse = sse
+    print(' minum SSE:', min_sse)
+    _a_star, _d_star, _c_star, m_star, sigma_star = calibrated_params
+    a_star = np.divide(_a_star, ttm)
+    b_star = np.divide(_c_star, (sigma_star * ttm))
+    rho_star = np.divide(_d_star, _c_star)
+    final_parames = [a_star, b_star, rho_star, m_star, sigma_star]
+    return final_parames
+
+def orgnize_data_for_optimization(
+        evalDate,daycounter,cal_vols_data_moneyness,
+        put_vols_data_monetness,expiration_dates,spot):
+    data_for_optimiztion_months = {}
+    for idx_month, call_data in enumerate(cal_vols_data_moneyness):
+        expiration_date = expiration_dates[idx_month]
+        ttm = daycounter.yearFraction(evalDate, expiration_date)
+        put_data = put_vols_data_monetness[idx_month]
+        vols = []
+        logMoneynesses = []
+        total_variance = []
+        for moneyness in call_data.keys():
+            strike = call_data.get(moneyness)[0]
+            #if strike >=spot: # K>Ft,OTM Call
+            if moneyness >= 0:
+                vol = call_data.get(moneyness)[0]
+            else:
+                vol = put_data.get(moneyness)[0]
+            tv = (vol ** 2) * ttm
+            total_variance.append(tv)
+            vols.append(vol)
+            logMoneynesses.append(moneyness)
+        data = [logMoneynesses, total_variance,expiration_date]
+        data_for_optimiztion_months.update({idx_month:data})
+    return data_for_optimiztion_months
+
 
 def get_data_from_BS_OTM_PCPRate(evalDate,daycounter,calendar,curve,show=True):
 

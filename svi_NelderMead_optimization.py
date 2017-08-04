@@ -6,19 +6,16 @@ import math
 class SVI_NelderMeadOptimization:
 
 
-    def __init__(self,data):
-        #self.init_msigma = init_msigma
-        #self.init_adc = init_adc
-        #self._a_star = 0.0
-        #self._d_star = 0.0
-        #self._c_star = 0.0
+    def __init__(self,data,init_adc,init_msigma,tol):
+        self.init_msigma = init_msigma
+        self.init_adc = init_adc
+        self.tol = tol
         self.data = data
-        # data[0]:log-moneyness:x ; data[1]:variance:v
 
     def outter_fun(self,params):
         m,sigma = params
         sigma = max(0,sigma)
-        adc_0 = np.random.random([1,3]) * np.array([max(self.data[1]),4*sigma,4*sigma])
+        adc_0 = self.init_adc
         def inner_fun(params):
             a,d,c = params
             sum = 0.0
@@ -30,8 +27,8 @@ class SVI_NelderMeadOptimization:
         #print(m,sigma)
         # Constraints: 0 <= c <=4sigma; |d| <= c and |d| <= 4sigma - c; 0 <= a <= max{vi}
         #print("m",m,";\tsigma",sigma)
-        bnds = ((1e-10,max(self.data[1])),(-4*sigma,4*sigma),(0, 4*sigma))
-        #bnds = ((None, max(self.data[1])), (-4 * sigma, 4 * sigma), (0, 4 * sigma))
+        #bnds = ((1e-10,max(self.data[1])),(-4*sigma,4*sigma),(0, 4*sigma))
+        bnds = ((None, max(self.data[1])), (-4 * sigma, 4 * sigma), (0, 4 * sigma))
         b = np.array(bnds,float)
         cons = (
             {'type':'ineq','fun': lambda x: x[2] - abs(x[1])},
@@ -50,7 +47,7 @@ class SVI_NelderMeadOptimization:
         return sum
 
     def optimization(self):
-        outter_res = minimize(self.outter_fun, np.random.random([1,2]), method='Nelder-Mead', tol=1e-6)
+        outter_res = minimize(self.outter_fun, self.init_msigma, method='Nelder-Mead', tol=self.tol)
         m_star,sigma_star = outter_res.x
         #print(outter_res.x)
         #print(outter_res)

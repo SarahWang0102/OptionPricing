@@ -7,6 +7,17 @@ import datetime
 
 
 # Load Data from json file
+def get_underlying_ts():
+    underlyingdata = pd.read_pickle(os.getcwd()+'\marketdata\spotclose' +'.pkl')
+    dates_ts  = underlyingdata.index.tolist()
+    spot_ts   = underlyingdata.values.tolist()
+    spot_dic  = {}
+    for idx_dt,dt in enumerate(dates_ts):
+        date_tmp = pd.to_datetime(dt)
+        date_ql = ql.Date(date_tmp.day, date_tmp.month, date_tmp.year)
+        spot_dic.update({date_ql:spot_ts[idx_dt][0]})
+    return spot_dic
+
 def get_wind_data(evalDate):
     datestr = str(evalDate.year()) + "-" + str(evalDate.month()) + "-" + str(evalDate.dayOfMonth())
 

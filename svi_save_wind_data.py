@@ -2,7 +2,7 @@ from WindPy import w
 import pandas as pd
 import os
 import QuantLib as ql
-
+import numpy as np
 
 def save_optionsinfo(evalDate):
     # 50ETF currently trading contracts
@@ -63,40 +63,45 @@ def save_ts_data(evalDate,endDate,daycounter,calendar):
 
 '''
 w.start()
-save_underlying_ts(ql.Date(1,1,2015),ql.Date(20,7,2017))
-spot = pd.read_pickle(os.getcwd()+'\marketdata\spotclose' +'.pkl')
-print(spot)
-
-
-
-evalDate = ql.Date(18,7,2017)
+#save_underlying_ts(ql.Date(1,1,2015),ql.Date(20,7,2017))
+#spot = pd.read_pickle(os.getcwd()+'\marketdata\spotclose' +'.pkl')
+#print(spot)
+begDate = ql.Date(1, 1, 2016)
+#begDate = ql.Date(10, 7, 2017)
+endDate = ql.Date(20, 7, 2017)
+calendar = ql.China()
 daycounter = ql.ActualActual()
-datestr = str(evalDate.year()) + "-" + str(evalDate.month()) + "-" + str(evalDate.dayOfMonth())
-print(os.getcwd())
+evalDate = begDate
 
-try:
-    optionmkt = pd.read_pickle(os.getcwd()+'\marketdata\optionmkt_' + datestr+'.pkl')
-except FileNotFoundError:
-    save_optionmkt(evalDate)
-    optionmkt = pd.read_pickle(os.getcwd()+'\marketdata\optionmkt_' + datestr + '.pkl')
+while evalDate <= endDate:
+    evalDate = calendar.advance(evalDate, ql.Period(1, ql.Days))
+    print(evalDate)
+    datestr = str(evalDate.year()) + "-" + str(evalDate.month()) + "-" + str(evalDate.dayOfMonth())
+    #print(os.getcwd())
 
-print(optionmkt.index)
-print(optionmkt.values)
+    try:
+        optionmkt = pd.read_json(os.getcwd() + '\marketdata\optionmkt_' + datestr + '.json')
+    except :
+        save_optionmkt(evalDate)
+        optionmkt = pd.read_json(os.getcwd() + '\marketdata\optionmkt_' + datestr + '.json')
+
+    #print(optionmkt.index)
+    #print(optionmkt.values)
 
 
-try:
-    optioncontractbasicinfo = pd.read_pickle('optioncontractbasicinfo' + '.pkl')
-except:
-    save_optionsinfo(evalDate)
-    optioncontractbasicinfo = pd.read_pickle('optioncontractbasicinfo' + '.pkl')
+    try:
+        optioncontractbasicinfo = pd.read_json(os.getcwd() +'\marketdata\optioncontractbasicinfo' + '.json')
+    except:
+        save_optionsinfo(evalDate)
+        optioncontractbasicinfo = pd.read_json(os.getcwd() +'\marketdata\optioncontractbasicinfo' + '.json')
 
-try:
-    curvedata = pd.read_pickle('curvedata_tb_' + datestr + '.pkl')
-except FileNotFoundError:
-    save_curve_treasuryBond(evalDate,daycounter)
-    curvedata = pd.read_pickle('curvedata_tb_' + datestr + '.pkl')
-rates = curvedata.values[0]
-print(rates)
-krates = np.divide(rates, 100)
-print(krates)
+    try:
+        curvedata = pd.read_json(os.getcwd() +'\marketdata\curvedata_tb_' + datestr + '.json')
+    except :
+        save_curve_treasury_bond(evalDate,daycounter)
+        curvedata = pd.read_json(os.getcwd() +'\marketdata\curvedata_tb_' + datestr + '.json')
+    #rates = curvedata.values[0]
+    #print(rates)
+    #krates = np.divide(rates, 100)
+    #print(krates)
 '''
