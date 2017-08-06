@@ -15,6 +15,7 @@ underlying_close    = [2.659, 2.702, 2.71]
 
 plt.rcParams['font.sans-serif'] = ['STKaiti']
 f, axarr = plt.subplots(3, sharex=True)
+
 #axarr[0].set_title(u"看涨看跌期权隐含波动率差(CPIV)")
 line1, = axarr[0].plot(dates, spread_this_month, color=pu.c1, linestyle=pu.l1, linewidth=2, label=u'CPIV当月')
 line2, = axarr[0].plot(dates, spread_next_month, color=pu.c2, linestyle=pu.l2, linewidth=2, label=u'CPIV下月')
@@ -30,15 +31,15 @@ line7, = axarr[2].plot(dates, putvol_next_month, color=pu.c7, linestyle=pu.l7, l
 box0 = axarr[0].get_position()
 axarr[0].set_position([box0.x0, box0.y0, box0.width * 0.8, box0.height])
 # Put a legend to the right of the current axis
-lgd0 = axarr[0].legend(loc='center left', bbox_to_anchor=(1, 0.5))
+lgd0 = axarr[0].legend(loc='center left', bbox_to_anchor=(1, 0.5),frameon=False)
 
 box1 = axarr[1].get_position()
 axarr[1].set_position([box1.x0, box1.y0, box1.width * 0.8, box1.height])
-lgd1 = axarr[1].legend(loc='center left', bbox_to_anchor=(1, 0.5))
+lgd1 = axarr[1].legend(loc='center left', bbox_to_anchor=(1, 0.5),frameon=False)
 
 box2 = axarr[2].get_position()
 axarr[2].set_position([box2.x0, box2.y0, box2.width * 0.8, box2.height])
-lgd2 = axarr[2].legend(loc='center left', bbox_to_anchor=(1, 0.5))
+lgd2 = axarr[2].legend(loc='center left', bbox_to_anchor=(1, 0.5),frameon=False)
 
 f.savefig('image_output.png', dpi=300, format='png', bbox_extra_artists=(lgd0,lgd1,lgd2,), bbox_inches='tight')
 #axarr[3].legend()
