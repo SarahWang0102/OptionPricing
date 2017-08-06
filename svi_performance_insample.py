@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import svi_read_data as wind_data
 import svi_prepare_vol_data as svi_data
 import QuantLib as ql

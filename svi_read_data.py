@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import QuantLib as ql
 import math
 import numpy as np

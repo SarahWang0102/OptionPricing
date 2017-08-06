@@ -1,8 +1,11 @@
+# -*- coding:utf-8 -*-
 import matplotlib.pyplot as plt
+import matplotlib
 import operator
 import plot_util as pu
 import svi_calibration_utility as svi_util
 import svi_prepare_vol_data as svi_data
+import svi_read_data as raw_data
 import QuantLib as ql
 import datetime
 from WindPy import w
@@ -16,9 +19,9 @@ daycounter = ql.ActualActual()
 endDate  = ql.Date(20,7,2017)
 #evalDate = endDate
 #evalDate = ql.Date(7,1,2015)
-evalDate = ql.Date(7,7,2017)
+evalDate = ql.Date(1,7,2017)
 
-spotprice_dic = svi_util.get_underlying_ts()
+spotprice_dic = raw_data.get_underlying_ts()
 
 spreads_avg_ts = {}
 callvol_avg_ts = {}
@@ -32,7 +35,7 @@ while evalDate <= endDate:
     trading_volums = []
     ql.Settings.instance().evaluationDate = evalDate
     try:
-        curve = svi_util.get_curve_treasury_bond(evalDate, daycounter)
+        curve = raw_data.get_curve_treasury_bond(evalDate, daycounter)
         cal_vols_data, put_vols_data = svi_data.get_call_put_impliedVols_strikes(evalDate,curve,daycounter,calendar,maxVol=1.0,step=0.0001,precision=0.001,show=False)
         # Loop through contract months
         for idx_month,call_vol_dict in enumerate(cal_vols_data):
@@ -110,25 +113,38 @@ print('callvol_next_month = ',callvol_next_month)
 print('putvol_next_month = ',putvol_next_month)
 print('underlying_close =',underlying_close)
 
-f, axarr = plt.subplots(4, sharex=True)
+plt.rcParams['font.sans-serif'] = ['STKaiti']
+f, axarr = plt.subplots(3, sharex=True)
+#axarr[0].set_title(u"看涨看跌期权隐含波动率差(CPIV)")
+line1, = axarr[0].plot(dates, spread_this_month, color=pu.c1, linestyle=pu.l1, linewidth=2, label=u'CPIV当月')
+line2, = axarr[0].plot(dates, spread_next_month, color=pu.c2, linestyle=pu.l2, linewidth=2, label=u'CPIV下月')
+line3, = axarr[0].plot(dates, spread_this_season, color=pu.c3, linestyle=pu.l3, linewidth=2, label=u'CPIV当季')
+line4, = axarr[0].plot(dates, spread_next_season, color=pu.c4, linestyle=pu.l4, linewidth=2, label=u'CPIV下季')
+line4.set_dashes(pu.dash)
+line5, = axarr[1].plot(dates, volum_next_month, color=pu.c5, linestyle=pu.l5, linewidth=2, label="成交量(百万)")
 
-line1, = axarr[0].stackplot(dates, underlying_close,color = pu.c3)
-axarr[0].set_title('Underlying v.s. CPIV')
-line2, = axarr[1].plot(dates, spread_next_month, color = pu.c1,linestyle = pu.l1,linewidth = 2,label="CPIV next month")
-line3, = axarr[1].plot(dates, spread_this_season,color = pu.c2,linestyle = pu.l2,linewidth = 2,label = "CPIV this season")
-line4, = axarr[1].plot(dates, spread_next_season,color = pu.c3,linestyle = pu.l3,linewidth = 2,label="CPIV next season")
-line5, = axarr[1].plot(dates,[0]*len(dates),color = (0,0,0),linestyle = pu.l5,linewidth = 1)
-axarr[2].bar(dates,volum_next_month,2,color = pu.c2)
-line6, = axarr[3].plot(dates, callvol_next_month,color = pu.c4,linestyle = pu.l4,linewidth = 2,label="Call IV next month")
-line7, = axarr[3].plot(dates, putvol_next_month,color = pu.c5,linestyle = pu.l5,linewidth = 2,label="Put IV next month")
-line6.set_dashes(pu.dash)
-axarr[0].set_ylim(min(underlying_close),max(underlying_close))
-axarr[0].legend(['50 ETF'])
-axarr[1].legend()
-axarr[2].legend(['Trading Volume(million)'])
-axarr[3].legend()
+line6, = axarr[2].plot(dates, callvol_next_month, color=pu.c6, linestyle=pu.l6, linewidth=2, label="隐含波动率-看涨")
+line7, = axarr[2].plot(dates, putvol_next_month, color=pu.c7, linestyle=pu.l7, linewidth=2, label="隐含波动率-看跌")
+
+# Shrink current axis by 20%
+box0 = axarr[0].get_position()
+axarr[0].set_position([box0.x0, box0.y0, box0.width * 0.8, box0.height])
+# Put a legend to the right of the current axis
+lgd0 = axarr[0].legend(loc='center left', bbox_to_anchor=(1, 0.5))
+
+box1 = axarr[1].get_position()
+axarr[1].set_position([box1.x0, box1.y0, box1.width * 0.8, box1.height])
+lgd1 = axarr[1].legend(loc='center left', bbox_to_anchor=(1, 0.5))
+
+box2 = axarr[2].get_position()
+axarr[2].set_position([box2.x0, box2.y0, box2.width * 0.8, box2.height])
+lgd2 = axarr[2].legend(loc='center left', bbox_to_anchor=(1, 0.5))
+
+f.savefig('image_output.png', dpi=300, format='png', bbox_extra_artists=(lgd0,lgd1,lgd2,), bbox_inches='tight')
+#axarr[3].legend()
 axarr[1].grid()
 axarr[0].grid()
-axarr[3].grid()
+#axarr[3].grid()
 plt.draw()
 plt.show()
+

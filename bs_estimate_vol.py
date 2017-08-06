@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import svi_read_data as wind_data
 import QuantLib as ql
 import pandas as pd

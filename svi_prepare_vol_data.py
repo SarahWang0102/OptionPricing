@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from svi_read_data import get_wind_data,get_curve_treasury_bond,get_contract_months
 import QuantLib as ql
 import math
