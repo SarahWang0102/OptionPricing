@@ -8,31 +8,27 @@ import plot_util as pu
 
 def get_params(nbr_month):
     if nbr_month == 0:
-        a_star, b_star, rho_star, m_star, sigma_star = 0.00303818564725, 0.943866632898, -0.655133160796, -0.0441899659817, 0.0328596710248
+        a_star, b_star, rho_star, m_star, sigma_star = 0.0112241619438, 0.559223130867, -0.961864812914, -0.0702778567422, 0.0577631677156
     elif nbr_month == 1:
-        a_star, b_star, rho_star, m_star, sigma_star = 1.04285714449e-09, 0.433736858281, 0.60283692011, 0.0584661562289, 0.0830983263998
+        a_star, b_star, rho_star, m_star, sigma_star = 0.0252928022052, 0.0564924387201, 0.319285421937, 0.0348294627737, 0.0168594330178
     elif nbr_month == 2:
-        a_star, b_star, rho_star, m_star, sigma_star = 5.21428571429e-10, 4.07510645669, -0.992541363872, -0.330330182155, 0.0585082991884
+        a_star, b_star, rho_star, m_star, sigma_star = 4.86666666921e-10, 0.748819737987, -0.963176175917, -0.282121059606, 0.116778563693
     else:
-        a_star, b_star, rho_star, m_star, sigma_star = 2.26708074534e-10, 4.30644841179, -0.999999041513, -0.689347803313, 0.0955918124989
+        a_star, b_star, rho_star, m_star, sigma_star = 2.1987951839e-10, 0.368896397562, 0.742325933862, 0.102341857317, 0.100541406157
     return a_star, b_star, rho_star, m_star, sigma_star
 
 w.start()
 # Evaluation Settings
 calendar = ql.China()
 daycounter = ql.ActualActual()
-evalDate = ql.Date(18,7,2017)
+evalDate = ql.Date(13,7,2017)
 evalDate = calendar.advance(evalDate, ql.Period(1, ql.Days))
 print(evalDate)
 month_indexs = svi_data.get_contract_months(evalDate)
 ql.Settings.instance().evaluationDate = evalDate
 # Calibrate SVI total variance curve
 curve = svi_data.get_curve_treasury_bond(evalDate, daycounter)
-#data_months,risk_free_rates = svi_util.get_data_from_BS_OTM_PCPRate(evalDate,daycounter,calendar,curve,False)
-cal_vols,put_vols,expiration_dates,spot,risk_free_rates = svi_data.get_call_put_impliedVols_moneyness_PCPrate(
-        evalDate,curve,daycounter,calendar,maxVol=1.0,step=0.0001,precision=0.001,show=False)
-data_months = svi_util.orgnize_data_for_optimization(
-        evalDate,daycounter,cal_vols,put_vols,expiration_dates,spot)
+data_months,risk_free_rates = svi_util.get_data_from_BS_OTM_PCPRate(evalDate,daycounter,calendar,curve,False)
 #print(risk_free_rates)
 mark = "o"
 line = pu.l3
@@ -48,7 +44,7 @@ for i in range(4):
     impliedvol = data[3]
 
     print('expiration date: ',expiration_date)
-    x_svi  = np.arange(min(logMoneynesses)-0.02, max(logMoneynesses)+0.001, 0.1 / 100)  # log_forward_moneyness
+    x_svi  = np.arange(min(logMoneynesses)-0.02, max(logMoneynesses)+0.01, 0.1 / 100)  # log_forward_moneyness
     ttm = daycounter.yearFraction(evalDate, expiration_date)
     tv_svi = np.multiply(a_star + b_star * (rho_star * (x_svi - m_star) + np.sqrt((x_svi - m_star) ** 2 + sigma_star ** 2)), ttm)
     print(iter,' : a_star,b_star,rho_star, m_star, sigma_star : ',a_star,b_star,rho_star, m_star, sigma_star)
@@ -83,8 +79,8 @@ for i in range(4):
     ax1.yaxis.set_ticks_position('left')
     ax1.xaxis.set_ticks_position('bottom')
 
-    f1.savefig('St'+title1 + '.png', dpi=300, format='png')
-    f2.savefig('St'+title2 + '.png', dpi=300, format='png')
+    f1.savefig(title1 + '.png', dpi=300, format='png')
+    f2.savefig(title2 + '.png', dpi=300, format='png')
 
 f, axarr = plt.subplots()
 for j in range(4):
@@ -117,7 +113,7 @@ for j in range(4):
         l4.set_dashes(pu.dash)
         label4 = 'T = ' + t
 axarr.legend([l1,l2,l3,l4],[label1,label2,label3,label4])
-f.savefig('St total_variances '+ str(evalDate) +'.png', dpi=300, format='png')
+f.savefig('total_variances '+ str(evalDate) +'.png', dpi=300, format='png')
 plt.show()
 
 

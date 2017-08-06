@@ -66,6 +66,7 @@ def orgnize_data_for_optimization(
         vols = []
         logMoneynesses = []
         total_variance = []
+        impliedvols = []
         for moneyness in call_data.keys():
             strike = call_data.get(moneyness)[0]
             #if strike >=spot: # K>Ft,OTM Call
@@ -77,9 +78,56 @@ def orgnize_data_for_optimization(
             total_variance.append(tv)
             vols.append(vol)
             logMoneynesses.append(moneyness)
-        data = [logMoneynesses, total_variance,expiration_date]
+            impliedvols.append(vol)
+        data = [logMoneynesses, total_variance,expiration_date,impliedvols]
         data_for_optimiztion_months.update({idx_month:data})
     return data_for_optimiztion_months
+
+def orgnize_data_for_optimization_put(
+        evalDate,daycounter,cal_vols_data_moneyness,
+        put_vols_data_moneyness,expiration_dates,spot):
+    data_for_optimiztion_months = {}
+    for idx_month, put_data in enumerate(put_vols_data_moneyness):
+        expiration_date = expiration_dates[idx_month]
+        ttm = daycounter.yearFraction(evalDate, expiration_date)
+        vols = []
+        logMoneynesses = []
+        total_variance = []
+        impliedvols = []
+        for moneyness in put_data.keys():
+            strike = put_data.get(moneyness)[0]
+            vol = put_data.get(moneyness)[0]
+            tv = (vol ** 2) * ttm
+            total_variance.append(tv)
+            impliedvols.append(vol)
+            vols.append(vol)
+            logMoneynesses.append(moneyness)
+        data = [logMoneynesses, total_variance,expiration_date,impliedvols]
+        data_for_optimiztion_months.update({idx_month:data})
+    return data_for_optimiztion_months
+def orgnize_data_for_optimization_call(
+        evalDate,daycounter,call_vols_data_moneyness,
+        put_vols_data_moneyness,expiration_dates,spot):
+    data_for_optimiztion_months = {}
+    for idx_month, put_data in enumerate(call_vols_data_moneyness):
+        expiration_date = expiration_dates[idx_month]
+        ttm = daycounter.yearFraction(evalDate, expiration_date)
+        vols = []
+        logMoneynesses = []
+        total_variance = []
+        impliedvols = []
+        for moneyness in put_data.keys():
+            strike = put_data.get(moneyness)[0]
+            vol = put_data.get(moneyness)[0]
+            tv = (vol ** 2) * ttm
+            total_variance.append(tv)
+            impliedvols.append(vol)
+            vols.append(vol)
+            logMoneynesses.append(moneyness)
+        data = [logMoneynesses, total_variance,expiration_date,impliedvols]
+        data_for_optimiztion_months.update({idx_month:data})
+    return data_for_optimiztion_months
+
 
 
 def get_data_from_BS_OTM_PCPRate(evalDate,daycounter,calendar,curve,show=True):
