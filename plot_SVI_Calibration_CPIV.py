@@ -34,12 +34,12 @@ line3, = axarr[0].plot(dates, spread_this_season, color=pu.c2, linestyle=pu.l2, 
 line4, = axarr[0].plot(dates, spread_next_season, color=pu.c3, linestyle=pu.l3, linewidth=2)
 l, = axarr[0].plot(dates, [0.0]*len(dates), color=pu.c4, linestyle=pu.l4, linewidth=1)
 l.set_dashes(pu.dash)
-labels_1 = ['看涨期权成交量(百万)','看跌期权成交量(百万)']
+labels_1 = ['看涨期权总成交量(百万)','看跌期权总成交量(百万)']
 line5, = axarr[1].plot(dates, call_volum_months_sum, color=pu.c5, linestyle=pu.l5, linewidth=2)
 line5_1, = axarr[1].plot(dates, put_volum_months_sum, color=pu.c6, linestyle=pu.l6, linewidth=2)
 
-line6, = axarr[2].plot(dates, callvol_months_avg, color=pu.c7, linestyle=pu.l7, linewidth=2, label=u"隐含波动率-看涨")
-line7, = axarr[2].plot(dates, putvol_months_avg, color=pu.c8, linestyle=pu.l8, linewidth=2, label=u"隐含波动率-看跌")
+line6, = axarr[2].plot(dates, callvol_months_avg, color=pu.c7, linestyle=pu.l7, linewidth=2, label=u"看涨期权平均隐含波动率")
+line7, = axarr[2].plot(dates, putvol_months_avg, color=pu.c8, linestyle=pu.l8, linewidth=2, label=u"看涨期权平均隐含波动率")
 
 box0 = axarr[0].get_position()
 axarr[0].set_position([box0.x0, box0.y0, box0.width * 0.8, box0.height])
@@ -53,7 +53,6 @@ lgd1 = axarr[1].legend([line5,line5_1],labels_1,loc='center left', bbox_to_ancho
 box2 = axarr[2].get_position()
 axarr[2].set_position([box2.x0, box2.y0, box2.width * 0.8, box2.height])
 lgd2 = axarr[2].legend(loc='center left', bbox_to_anchor=(1, 0.5),frameon=False)
-
 
 for i in range(3):
     # Hide the right and top spines
