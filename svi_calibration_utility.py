@@ -95,6 +95,7 @@ def get_data_from_BS_OTM_PCPRate(evalDate,daycounter,calendar,curve,show=True):
         vols = []
         logMoneynesses = []
         total_variance = []
+        implied_vols = []
         for moneyness in call_data.keys():
             strike = call_data.get(moneyness)[0]
             #if strike >=spot: # K>Ft,OTM Call
@@ -104,9 +105,10 @@ def get_data_from_BS_OTM_PCPRate(evalDate,daycounter,calendar,curve,show=True):
                 vol = put_data.get(moneyness)[0]
             tv = (vol ** 2) * ttm
             total_variance.append(tv)
+            implied_vols.append(vol)
             vols.append(vol)
             logMoneynesses.append(moneyness)
-        data = [logMoneynesses, total_variance,expiration_date]
+        data = [logMoneynesses, total_variance,expiration_date,implied_vols]
         data_for_optimiztion_months.update({idx_month:data})
     return data_for_optimiztion_months,rf_Ks_months
 

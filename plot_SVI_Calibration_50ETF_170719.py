@@ -36,6 +36,7 @@ for i in range(4):
     logMoneynesses  = data[0]
     totalvariance   = data[1]
     expiration_date = data[2]
+    impliedvol = data[3]
 
     print('expiration date: ',expiration_date)
     x_svi  = np.arange(min(logMoneynesses)-0.02, max(logMoneynesses)+0.002, 0.1 / 100)  # log_forward_moneyness
@@ -45,19 +46,23 @@ for i in range(4):
     v_svi = np.sqrt(a_star + b_star * (rho_star * (x_svi - m_star) + np.sqrt((x_svi - m_star) ** 2 + sigma_star ** 2)))
 
     # plot input data -- moneyness-totalvariance
-    plt.figure()
+    f1 = plt.figure()
     plt.scatter(logMoneynesses, totalvariance, marker = mark,color = pu.c2)
     plt.plot(x_svi, tv_svi,color = pu.c1,linestyle = line,linewidth = 2,label="SVI Implied Total Variance")
-    scale1 = (max(totalvariance) - min(totalvariance)) / 10
-    plt.ylim(min(totalvariance) - scale1 / 2, max(totalvariance) + scale1)
+    scale1 = (max(totalvariance) - min(totalvariance))/13
+    plt.ylim(min(totalvariance)-scale1,max(totalvariance)+scale1)
     t = str( round( daycounter.yearFraction(evalDate,expiration_date),4))
-    plt.title('SVI total variance, T = ' + t)
-    plt.figure()
+    title1 = 'SVI Total Variance, T = ' + t + ' ,' + str(evalDate)
+    plt.title(title1)
+    f1.savefig(title1 + '.png', dpi=300, format='png')
+    f2 = plt.figure()
+    plt.scatter(logMoneynesses, impliedvol, marker=mark, color=pu.c2)
     plt.plot(x_svi, v_svi,color = pu.c1,linestyle = line,linewidth = 2,label="SVI Implied Volatility")
-    scale2 = (max(v_svi) - min(v_svi)) / 10
-    plt.ylim(min(v_svi) - scale2 / 2, max(v_svi) + scale2)
-    t = str( round( daycounter.yearFraction(evalDate,expiration_date),4))
-    plt.title('SVI implied volatility, T = ' + t)
+    scale1 = (max(impliedvol) - min(impliedvol))/13
+    plt.ylim(min(impliedvol)-scale1,max(impliedvol)+scale1)
+    title2 = 'SVI Implied Volatility, T = ' + t +' ,'+ str(evalDate)
+    plt.title(title2)
+    f2.savefig(title2+'.png', dpi=300, format='png')
 plt.show()
 
 
