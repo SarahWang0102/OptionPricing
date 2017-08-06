@@ -26,13 +26,15 @@ spotprice_dic = raw_data.get_underlying_ts()
 spreads_avg_ts = {}
 callvol_avg_ts = {}
 putvol_avg_ts = {}
-trading_volum_dic = {}
+call_trading_volum_dic = {}
+put_trading_volum_dic = {}
 while evalDate <= endDate:
     evalDate = calendar.advance(evalDate, ql.Period(1, ql.Days))
     spreads_avg = []
     callvol_avg = []
     putvol_avg = []
-    trading_volums = []
+    trading_volums_call = []
+    trading_volums_put = []
     ql.Settings.instance().evaluationDate = evalDate
     try:
         curve = raw_data.get_curve_treasury_bond(evalDate, daycounter)
@@ -49,28 +51,36 @@ while evalDate <= endDate:
             spread_weightsum    = 0.0
             callvol_weightsum   = 0.0
             putvol_weightsum    = 0.0
-            amount_strikesum    = 0.0
+            call_amount_strikesum = 0.0
+            put_amount_strikesum = 0.0
+            amount_strikesum = 0.0
             for k in call_vol_dict_sorted.keys():
                 strikes.append(k)
-                amount              = call_vol_dict_sorted.get(k)[1]  + put_vol_dict_sorted.get(k)[1]
+                call_amount = call_vol_dict_sorted.get(k)[1]
+                put_amount = put_vol_dict_sorted.get(k)[1]
+                amount              = call_amount  + put_amount
                 spread_weight       = (call_vol_dict_sorted.get(k)[0] - put_vol_dict_sorted.get(k)[0])*amount
                 spread_weightsum    = spread_weightsum  + spread_weight
-                callvol_weightsum   = callvol_weightsum + call_vol_dict_sorted.get(k)[0] * amount
-                putvol_weightsum    = putvol_weightsum  + put_vol_dict_sorted.get(k)[0] * amount
+                callvol_weightsum   = callvol_weightsum + call_vol_dict_sorted.get(k)[0] * call_amount
+                putvol_weightsum    = putvol_weightsum  + put_vol_dict_sorted.get(k)[0] * put_amount
                 amount_strikesum    = amount_strikesum  + amount
+                call_amount_strikesum = call_amount_strikesum + call_amount
+                put_amount_strikesum = put_amount_strikesum + put_amount
             spreads_avg.append(spread_weightsum  / amount_strikesum)
             callvol_avg.append(callvol_weightsum / amount_strikesum)
             putvol_avg.append(putvol_weightsum   / amount_strikesum)
-            trading_volums.append(amount_strikesum/1000000)
+            trading_volums_call.append(call_amount_strikesum/1000000)
+            trading_volums_put.append(put_amount_strikesum / 1000000)
         spreads_avg_ts.update({evalDate:spreads_avg})
-        trading_volum_dic.update({evalDate:trading_volums})
+        call_trading_volum_dic.update({evalDate:trading_volums_call})
+        put_trading_volum_dic.update({evalDate: trading_volums_put})
         callvol_avg_ts.update({evalDate:callvol_avg})
         putvol_avg_ts.update({evalDate:putvol_avg})
         print('evalDate ',evalDate, ' finished')
     except:
         print('Warning:',evalDate,' get Spread failed')
         continue
-print('spreads_avg_ts : ',spreads_avg_ts)
+#print('spreads_avg_ts : ',spreads_avg_ts)
 
 dates = []
 spread_this_month = []
@@ -93,7 +103,8 @@ putvol_next_season = []
 underlying_chg = []
 underlying_close = []
 
-volum_months_sum = []
+call_volum_months_sum = []
+put_volum_months_sum = []
 '''
 volum_next_month = []
 volum_this_season = []
@@ -110,8 +121,8 @@ for key in spreads_avg_ts.keys():
     underlying_close.append(spotprice_dic.get(key))
     callvol_months_avg.append(sum(callvol_avg_ts.get(key))/len(callvol_avg_ts.get(key)))
     putvol_months_avg.append(sum(putvol_avg_ts.get(key))/len(putvol_avg_ts.get(key)))
-    volum_months_sum.append(sum(trading_volum_dic.get(key)))
-
+    call_volum_months_sum.append(sum(call_trading_volum_dic.get(key)))
+    put_volum_months_sum.append(sum(put_trading_volum_dic.get(key)))
 
 print('dates = ',dates)
 #print('underlying_chg =',underlying_chg)
@@ -119,7 +130,8 @@ print('spread_this_month = ',spread_this_month)
 print('spread_next_month = ',spread_next_month)
 print('spread_this_season = ', spread_this_season)
 print('spread_next_season = ',spread_next_season)
-print('volum_months_sum = ',volum_months_sum)
+print('call_volum_months_sum = ',call_volum_months_sum)
+print('put_volum_months_sum = ',put_volum_months_sum)
 print('callvol_months_avg = ',callvol_months_avg)
 print('putvol_months_avg = ',putvol_months_avg)
 print('underlying_close =',underlying_close)
@@ -151,7 +163,7 @@ box2 = axarr[2].get_position()
 axarr[2].set_position([box2.x0, box2.y0, box2.width * 0.8, box2.height])
 lgd2 = axarr[2].legend(loc='center left', bbox_to_anchor=(1, 0.5),frameon=False)
 
-f.savefig('image_output.png', dpi=300, format='png', bbox_extra_artists=(lgd0,lgd1,lgd2,), bbox_inches='tight')
+#f.savefig('image_output.png', dpi=300, format='png', bbox_extra_artists=(lgd0,lgd1,lgd2,), bbox_inches='tight')
 #axarr[3].legend()
 axarr[1].grid()
 axarr[0].grid()
