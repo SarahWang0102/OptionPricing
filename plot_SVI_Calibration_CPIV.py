@@ -15,28 +15,37 @@ putvol_next_month   =  [0.13596929556927592, 0.23001297495606884, 0.178687327362
 underlying_close    =  [2.3228528158563764, 2.5547467153331924, 2.547897528428814, 2.693687363964871, 2.835563378412712, 2.9461288241548225, 3.17117353672726, 3.016577603742716, 3.0175560590147703, 2.9999438641177965, 3.2142255686976395, 3.122250773124556, 3.2484715032195317, 3.1065954887716907, 2.952978011059201, 2.6692259821635194, 2.547897528428814, 2.689773542876655, 2.678032079612006, 2.4373320826867033, 2.5087593175466507, 2.3747109452752424, 1.9040739594172316, 2.187825988312914, 2.1614076959674535, 2.193696719945238, 2.1330324930778857, 2.1486877774307507, 2.2543609468125907, 2.3923231401722154, 2.4167845219735677, 2.4177629772456215, 2.4069999692530266, 2.3042621656873488, 2.349271108201836, 2.130097127261723, 2.0850881847472356, 1.9989841208064771, 1.935384528122962, 1.907009325233394, 2.009747128799072, 2.0655190793061546, 2.0312731447842616, 2.1447739563425343, 2.128140216717615, 2.0958511927398304, 2.114441842908858, 2.1056357454603716, 2.1124849323647497, 2.025402413151937, 2.0322516000563158, 2.024423957879883, 2.0968296480118847, 2.0557345265856135, 2.0664975345782084, 2.137924769438156, 2.1848906224967517, 2.1682568828718325, 2.179019890864427, 2.1428170457984264, 2.1731491592321026, 2.256317857356699, 2.2406625730038336, 2.2367487519156177, 2.193696719945238, 2.190761354129076, 2.1809768014085353, 2.2132658253863196, 2.201524362121671, 2.273930052253672, 2.279800783885997, 2.3228528158563764, 2.3385081002092414, 2.373, 2.386, 2.293, 2.298, 2.307, 2.313, 2.329, 2.354, 2.342, 2.366, 2.361, 2.343, 2.335, 2.343, 2.384, 2.35, 2.341, 2.313, 2.37, 2.355, 2.47, 2.517, 2.46, 2.543, 2.561, 2.665]
 volum_next_month    =  np.divide( volum_next_month, 100)
 
-f, axarr = plt.subplots(4, sharex=True)
+plt.rcParams['font.sans-serif'] = ['STKaiti']
+f, axarr = plt.subplots(3, sharex=True)
+#axarr[0].set_title(u"看涨看跌期权隐含波动率差(CPIV)")
+line1, = axarr[0].plot(dates, spread_this_month, color=pu.c1, linestyle=pu.l1, linewidth=2, label=u'CPIV当月')
+line2, = axarr[0].plot(dates, spread_next_month, color=pu.c2, linestyle=pu.l2, linewidth=2, label=u'CPIV下月')
+line3, = axarr[0].plot(dates, spread_this_season, color=pu.c3, linestyle=pu.l3, linewidth=2, label=u'CPIV当季')
+line4, = axarr[0].plot(dates, spread_next_season, color=pu.c4, linestyle=pu.l4, linewidth=2, label=u'CPIV下季')
+line4.set_dashes(pu.dash)
+line5, = axarr[1].plot(dates, volum_months_sum, color=pu.c5, linestyle=pu.l5, linewidth=2, label=u"总成交量(百万)")
 
+line6, = axarr[2].plot(dates, callvol_months_avg, color=pu.c6, linestyle=pu.l6, linewidth=2, label=u"隐含波动率-看涨")
+line7, = axarr[2].plot(dates, putvol_months_avg, color=pu.c7, linestyle=pu.l7, linewidth=2, label=u"隐含波动率-看跌")
 
-axarr[0].set_title('Underlying v.s. CPIV')
-line1, = axarr[0].stackplot(dates, underlying_close,color = pu.c3)
-line2, = axarr[1].plot(dates, spread_next_month, color = pu.c1,linestyle = pu.l1,linewidth = 2,label="Spread next month")
-line3, = axarr[1].plot(dates, spread_this_season,color = pu.c2,linestyle = pu.l2,linewidth = 2,label = "Spread this season")
-line4, = axarr[1].plot(dates, spread_next_season,color = pu.c3,linestyle = pu.l3,linewidth = 2,label="Spread next season")
-line6, = axarr[2].plot(dates, callvol_next_month,color = pu.c4,linestyle = pu.l4,linewidth = 2,label="Call IV next month")
-line7, = axarr[2].plot(dates, putvol_next_month,color = pu.c5,linestyle = pu.l5,linewidth = 2,label="Put IV next month")
-line6.set_dashes(pu.dash)
-axarr[3].bar(dates,volum_next_month,6,color = pu.c6)
+# Shrink current axis by 20%
+box0 = axarr[0].get_position()
+axarr[0].set_position([box0.x0, box0.y0, box0.width * 0.8, box0.height])
+# Put a legend to the right of the current axis
+lgd0 = axarr[0].legend(loc='center left', bbox_to_anchor=(1, 0.5),frameon=False)
 
-axarr[0].set_ylim(min(underlying_close),max(underlying_close))
-axarr[0].legend(['50 ETF'],loc = 0,bbox_to_anchor=(1.2,1))
-axarr[1].legend(loc = 0,bbox_to_anchor=(1.5,1.5))
-axarr[2].legend(loc = 0,bbox_to_anchor=(1.5,1.5))
-axarr[3].legend(['Volume (million)'],loc = 0,bbox_to_anchor=(1.5,1.5))
-#axarr[0].legend(line1,"50ETF")
+box1 = axarr[1].get_position()
+axarr[1].set_position([box1.x0, box1.y0, box1.width * 0.8, box1.height])
+lgd1 = axarr[1].legend(loc='center left', bbox_to_anchor=(1, 0.5),frameon=False)
+
+box2 = axarr[2].get_position()
+axarr[2].set_position([box2.x0, box2.y0, box2.width * 0.8, box2.height])
+lgd2 = axarr[2].legend(loc='center left', bbox_to_anchor=(1, 0.5),frameon=False)
+
+f.savefig('image_output.png', dpi=300, format='png', bbox_extra_artists=(lgd0,lgd1,lgd2,), bbox_inches='tight')
+#axarr[3].legend()
 axarr[1].grid()
 axarr[0].grid()
-axarr[2].grid()
+#axarr[3].grid()
 plt.draw()
-#f.savefig('image_output.png', dpi=300, format='png', bbox_extra_artists=(legend,), bbox_inches='tight')
 plt.show()
