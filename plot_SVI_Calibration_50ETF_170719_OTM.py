@@ -8,13 +8,16 @@ import plot_util as pu
 
 def get_params(nbr_month):
     if nbr_month == 0:
-        a_star, b_star, rho_star, m_star, sigma_star = 0.00303818564725, 0.943866632898, -0.655133160796, -0.0441899659817, 0.0328596710248
+        #a_star, b_star, rho_star, m_star, sigma_star = 0.00392946245464, 0.932829724957, -0.674532827132, -0.0446916864921, 0.0326894289419
+        #a_star, b_star, rho_star, m_star, sigma_star = 0.00333255956535, 0.936390822665, -0.677761064666, -0.0450928349118, 0.0337258851728
+        a_star, b_star, rho_star, m_star, sigma_star = 0.0038415182727, 0.92391459895, -0.744434878181, -0.0490826326399, 0.0379394405895
     elif nbr_month == 1:
-        a_star, b_star, rho_star, m_star, sigma_star = 1.04285714449e-09, 0.433736858281, 0.60283692011, 0.0584661562289, 0.0830983263998
+        a_star, b_star, rho_star, m_star, sigma_star = 0.0202858609804,0.907688022355,0.867498561699,0.0238060958095,0.0180937230185
     elif nbr_month == 2:
-        a_star, b_star, rho_star, m_star, sigma_star = 5.21428571429e-10, 4.07510645669, -0.992541363872, -0.330330182155, 0.0585082991884
+        a_star, b_star, rho_star, m_star, sigma_star = 0.00815684394433, 3.34024630745, 0.950774727626, 0.0518029569264, 0.0212819968057
+        #a_star, b_star, rho_star, m_star, sigma_star = 0.0105133312325, 0.274698338398, 0.292223667381, -0.000540665540219, 0.0776321826581
     else:
-        a_star, b_star, rho_star, m_star, sigma_star = 2.26708074534e-10, 4.30644841179, -0.999999041513, -0.689347803313, 0.0955918124989
+        a_star, b_star, rho_star, m_star, sigma_star = 0.0252339030552, 3.67875932103, 0.982658824086, 0.0210387531491, 0.0050963364926
     return a_star, b_star, rho_star, m_star, sigma_star
 
 w.start()
@@ -48,7 +51,7 @@ for i in range(4):
     impliedvol = data[3]
 
     print('expiration date: ',expiration_date)
-    x_svi  = np.arange(min(logMoneynesses)-0.02, max(logMoneynesses)+0.001, 0.1 / 100)  # log_forward_moneyness
+    x_svi  = np.arange(min(logMoneynesses)-0.02, max(logMoneynesses)+0.01, 0.1 / 100)  # log_forward_moneyness
     ttm = daycounter.yearFraction(evalDate, expiration_date)
     tv_svi = np.multiply(a_star + b_star * (rho_star * (x_svi - m_star) + np.sqrt((x_svi - m_star) ** 2 + sigma_star ** 2)), ttm)
     print(iter,' : a_star,b_star,rho_star, m_star, sigma_star : ',a_star,b_star,rho_star, m_star, sigma_star)
@@ -84,7 +87,7 @@ for i in range(4):
     ax1.yaxis.set_ticks_position('left')
     ax1.xaxis.set_ticks_position('bottom')
 
-    f1.savefig('St'+title1 + '.png', dpi=300, format='png')
+    f1.savefig(title1 + '.png', dpi=300, format='png')
     #f2.savefig('St'+title2 + '.png', dpi=300, format='png')
 
 f, axarr = plt.subplots()
@@ -98,7 +101,7 @@ for j in range(4):
     impliedvol = data[3]
 
     print('expiration date: ',expiration_date)
-    x_svi  = np.arange(-0.3, 0.1, 0.1 / 100)  # log_forward_moneyness
+    x_svi  = np.arange(-0.2, 0.02, 0.1 / 100)  # log_forward_moneyness
     ttm = daycounter.yearFraction(evalDate, expiration_date)
     tv_svi = np.multiply(a_star + b_star * (rho_star * (x_svi - m_star) + np.sqrt((x_svi - m_star) ** 2 + sigma_star ** 2)), ttm)
     print(iter,' : a_star,b_star,rho_star, m_star, sigma_star : ',a_star,b_star,rho_star, m_star, sigma_star)
@@ -118,7 +121,7 @@ for j in range(4):
         l4.set_dashes(pu.dash)
         label4 = 'T = ' + t
 axarr.legend([l1,l2,l3,l4],[label1,label2,label3,label4])
-f.savefig('St total_variances '+ str(evalDate) +'.png', dpi=300, format='png')
+f.savefig('total_variances '+ str(evalDate) +'.png', dpi=300, format='png')
 plt.show()
 
 

@@ -173,7 +173,7 @@ prices_dib = []
 prices_uib = []
 prices_uob = []
 noise = np.random.normal(0,1,(N,len(dates)))
-
+step = 0.01
 
 while barrier_pct < 1.0:
     barrier = strike * barrier_pct
@@ -182,7 +182,7 @@ while barrier_pct < 1.0:
     prices_dob.append(price)
     price_dib, path_container_dib, in_times_dib = down_in_barrier_npv(begDate, maturityDate, daycounter, calendar, N, S0, strike,barrier, rf, delta_t, params, noise)
     prices_dib.append(price_dib)
-    barrier_pct += 0.01
+    barrier_pct += step
 
 
 barrier_pct2 = 1.0
@@ -193,23 +193,60 @@ while barrier_pct2 < 1.18:
     prices_uib.append(price_uib)
     price_uob, path_container_uob, in_times_uob = up_out_barrier_npv(begDate, maturityDate, daycounter, calendar, N, S0, strike,barrier, rf, delta_t, params, noise)
     prices_uob.append(price_uob)
-    barrier_pct2 += 0.01
+    barrier_pct2 += step
 
+plt.rcParams['font.sans-serif'] = ['STKaiti']
+f1,ax1 = plt.subplots()
+ax1.plot(barriers_down,prices_dob,color = pu.c1,marker = '^',linestyle = pu.l1,linewidth = 2,label = 'DOB价格')
+ax1.legend()
+# plt.title('DOB-'+ str(begDate))
+ax1.set_xlabel('障碍行权价比')
+# Hide the right and top spines
+ax1.spines['right'].set_visible(False)
+ax1.spines['top'].set_visible(False)
+# Only show ticks on the left and bottom spines
+ax1.yaxis.set_ticks_position('left')
+ax1.xaxis.set_ticks_position('bottom')
+f1.savefig( 'DOB-'+ str(begDate)+ '.png', dpi=300, format='png')
 
-plt.figure(1)
-plt.plot(barriers_down,prices_dob,color = pu.c1,marker = 'o')
-plt.title('DOB-'+ str(begDate))
-plt.figure(2)
-plt.plot(barriers_down,prices_dib,color = pu.c1,marker = 'o')
-plt.title('DIB-'+str(begDate))
+f2,ax2 = plt.subplots()
+ax2.plot(barriers_down,prices_dib,color = pu.c1,marker = '^',linestyle = pu.l1,linewidth = 2,label = 'DIB价格')
+ax2.legend()
+#plt.title('DIB-'+str(begDate))
+ax2.set_xlabel('障碍行权价比')
+# Hide the right and top spines
+ax2.spines['right'].set_visible(False)
+ax2.spines['top'].set_visible(False)
+# Only show ticks on the left and bottom spines
+ax2.yaxis.set_ticks_position('left')
+ax2.xaxis.set_ticks_position('bottom')
+f2.savefig( 'DIB-'+ str(begDate)+ '.png', dpi=300, format='png')
 
-plt.figure(3)
-plt.plot(barrier_up,prices_uib,color = pu.c1,marker = 'o')
-plt.title('UIB-'+str(begDate))
+f3,ax3 = plt.subplots()
+ax3.plot(barrier_up,prices_uib,color = pu.c1,marker = '^',linestyle = pu.l1,linewidth = 2,label = 'UIB价格')
+ax3.legend()
+#plt.title('UIB-'+str(begDate))
+ax3.set_xlabel('障碍行权价比')
+# Hide the right and top spines
+ax3.spines['right'].set_visible(False)
+ax3.spines['top'].set_visible(False)
+# Only show ticks on the left and bottom spines
+ax3.yaxis.set_ticks_position('left')
+ax3.xaxis.set_ticks_position('bottom')
+f3.savefig( 'UIB-'+ str(begDate)+ '.png', dpi=300, format='png')
 
-plt.figure(4)
-plt.plot(barrier_up,prices_uob,color = pu.c1,marker = 'o')
-plt.title('UOB-'+str(begDate))
+f4,ax4 = plt.subplots()
+ax4.plot(barrier_up,prices_uob,color = pu.c1,marker = '^',linestyle = pu.l1,linewidth = 2,label = 'UOB价格')
+ax4.legend()
+#plt.title('UOB-'+str(begDate))
+ax4.set_xlabel('障碍行权价比')
+# Hide the right and top spines
+ax4.spines['right'].set_visible(False)
+ax4.spines['top'].set_visible(False)
+# Only show ticks on the left and bottom spines
+ax4.yaxis.set_ticks_position('left')
+ax4.xaxis.set_ticks_position('bottom')
+f4.savefig( 'UOB-'+ str(begDate)+ '.png', dpi=300, format='png')
 
 '''
 for path in path_container:

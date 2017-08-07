@@ -38,19 +38,19 @@ underlying_close = [2.3130682631358352, 2.283714604974213, 2.34535728711362, 2.3
 plt.rcParams['font.sans-serif'] = ['STKaiti']
 f, axarr = plt.subplots(3, sharex=True)
 #axarr[0].set_title(u"看涨看跌期权隐含波动率差(CPIV)")
-labels_0 = ['看涨看跌隐含波动率之差-下月','看涨看跌隐含波动率之差-当季','看涨看跌隐含波动率之差-下季']
+labels_0 = ['认购认沽隐含波动率之差-下月','认购认沽隐含波动率之差-当季','认购认沽隐含波动率之差-下季']
 #line1, = axarr[0].plot(dates, spread_this_month, color=pu.c1, linestyle=pu.l1, linewidth=2)
 line2, = axarr[0].plot(dates, spread_next_month, color=pu.c1, linestyle=pu.l1, linewidth=2)
 line3, = axarr[0].plot(dates, spread_this_season, color=pu.c2, linestyle=pu.l2, linewidth=2)
 line4, = axarr[0].plot(dates, spread_next_season, color=pu.c3, linestyle=pu.l3, linewidth=2)
 l, = axarr[0].plot(dates, [0.0]*len(dates), color=pu.c4, linestyle=pu.l4, linewidth=1)
 l.set_dashes(pu.dash)
-labels_1 = ['看涨期权总成交量(百万)','看跌期权总成交量(百万)']
+labels_1 = ['认购期权总成交量(百万)','认沽期权总成交量(百万)']
 line5, = axarr[1].plot(dates, call_volum_months_sum, color=pu.c5, linestyle=pu.l5, linewidth=2)
 line5_1, = axarr[1].plot(dates, put_volum_months_sum, color=pu.c6, linestyle=pu.l6, linewidth=2)
 
-line6, = axarr[2].plot(dates, callvol_months_avg, color=pu.c7, linestyle=pu.l7, linewidth=2, label=u"看涨期权平均隐含波动率")
-line7, = axarr[2].plot(dates, putvol_months_avg, color=pu.c8, linestyle=pu.l8, linewidth=2, label=u"看涨期权平均隐含波动率")
+line6, = axarr[2].plot(dates, callvol_months_avg, color=pu.c7, linestyle=pu.l7, linewidth=2, label=u"认购期权平均隐含波动率")
+line7, = axarr[2].plot(dates, putvol_months_avg, color=pu.c8, linestyle=pu.l8, linewidth=2, label=u"认沽期权平均隐含波动率")
 
 box0 = axarr[0].get_position()
 axarr[0].set_position([box0.x0, box0.y0, box0.width * 0.8, box0.height])

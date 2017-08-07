@@ -26,6 +26,7 @@ def calulate_market_model_price_sse(
                                                    flat_vol_ts)
             option.setPricingEngine(ql.AnalyticEuropeanEngine(process))
             model_price = option.NPV()
+            if model_price == 0.0 : continue
             squared_error = (model_price - close)**2
             #print(" %15s %25s %25s " % (round(close,6),round(model_price,6), round(squared_error*10000,6)))
             sse += squared_error

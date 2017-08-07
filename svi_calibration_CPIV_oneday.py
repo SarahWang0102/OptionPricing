@@ -2,6 +2,7 @@ import operator
 import matplotlib.pyplot as plt
 import svi_prepare_vol_data as svi_data
 import svi_calibration_utility as svi_util
+import svi_read_data as raw_data
 import QuantLib as ql
 import plot_util as pu
 from WindPy import w
@@ -61,11 +62,11 @@ w.start()
 # Evaluation Settings
 calendar   = ql.China()
 daycounter = ql.ActualActual()
-evalDate = ql.Date(14,7,2017)
+evalDate = ql.Date(6,6,2017)
 begDate  = evalDate
 
 # Underlying close prices
-spotprice_dic = svi_util.get_underlying_ts()
+spotprice_dic = raw_data.get_underlying_ts()
 
 
 curve = svi_data.get_curve_treasury_bond(evalDate, daycounter)
@@ -81,6 +82,7 @@ strikes_op_m,call_volatilities_op_m,put_volatilities_op_m =get_iv_plot_data_PCPR
 
 strikes_op,call_volatilities_op,put_volatilities_op =get_iv_plot_data_PCPRate(cal_vols_data, put_vols_data)
 f, axarr = plt.subplots(nrows=2, ncols=2, figsize=(6, 6), sharey=True)
+print(strikes_op)
 index = 0
 line1, = axarr[0,0].plot(strikes_op.get(index), call_volatilities_op.get(index),color = pu.c1,marker = "*",linestyle = pu.l1,linewidth = 2,label="call iv")
 line2, = axarr[0,0].plot(strikes_op.get(index), put_volatilities_op.get(index),color = pu.c2,marker = "*",linestyle = pu.l2,linewidth = 2,label="put iv")

@@ -57,7 +57,7 @@ np.random.seed()
 #w.start()
 calendar = ql.China()
 daycounter = ql.ActualActual()
-evalDate = ql.Date(18, 6, 2017)
+evalDate = ql.Date(18, 7, 2017)
 evalDate = calendar.advance(evalDate, ql.Period(1, ql.Days))
 month_indexs = svi_data.get_contract_months(evalDate)
 ql.Settings.instance().evaluationDate = evalDate
@@ -70,7 +70,7 @@ data_months = svi_util.orgnize_data_for_optimization(
         evalDate,daycounter,cal_vols,put_vols,expiration_dates,spot)
 print(evalDate)
 # Calibrate SVI total variance curve
-i = 3
+i = 2
 nbr_month = month_indexs[i]
 data = data_months.get(i)
 logMoneynesses = data[0]

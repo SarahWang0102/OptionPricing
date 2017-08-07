@@ -342,7 +342,7 @@ def get_impliedvolmat_BS_put_cnvt(
 # Utility function for calculating BS implied vols
 def calculate_vol_BS(
         maturitydt,optiontype,strike,spot,dividend_ts,yield_ts,
-        eqvlt_close,evalDate,calendar,daycounter,precision,maxVol,step):
+        eqvlt_close,evalDate,calendar,daycounter,precision=0.001,maxVol=1.0,step=0.0001):
     exercise = ql.EuropeanExercise(maturitydt)
     payoff = ql.PlainVanillaPayoff(optiontype, strike)
     option = ql.EuropeanOption(payoff, exercise)
@@ -513,9 +513,12 @@ def calculate_PCParity_riskFreeRate_oneMaturity(evalDate,daycounter,calendar,i):
     return r_avg
 
 # Used for black volatiluty curve
-def get_impliedvolmat_call_wind_givenKs(evalDate):
+def get_impliedvolmat_call_givenKs(evalDate,daycounter,calendar,curve):
     # Get Wind Market Data
     vols, spot, mktData, mktFlds, optionData, optionFlds,optionids = get_wind_data(evalDate)
+    ql.Settings.instance().evaluationDate = evalDate
+    yield_ts = ql.YieldTermStructureHandle(curve)
+    dividend_ts = ql.YieldTermStructureHandle(ql.FlatForward(evalDate, 0.0, daycounter))
     vol1 = []
     vol2 = []
     vol3 = []
@@ -524,41 +527,45 @@ def get_impliedvolmat_call_wind_givenKs(evalDate):
     close2 = []
     close3 = []
     close4 = []
-    #strikes = [2.3, 2.35, 2.4, 2.45, 2.5, 2.55, 2.6]
-    strikes = [2.45, 2.5, 2.55, 2.6]
+    #strikes = [2.4, 2.45, 2.5, 2.55, 2.6, 2.65, 2.7, 2.75]
+    strikes = [2.3, 2.35, 2.4, 2.45, 2.5, 2.55, 2.6, 2.65]
     tempcontainer = [2.299, 2.3, 2.35, 2.4, 2.45, 2.5, 2.55, 2.6]
+    months = get_contract_months(evalDate)
     for idx,optionid in enumerate(optionids):
         optionDataIdx   = optionData[optionFlds.index('wind_code')].index(optionid)
-        if optionData[optionFlds.index('call_or_put')][optionDataIdx] == '认购':
-            optiontype  = ql.Option.Call
+        if optionData[optionFlds.index('call_or_put')][optionDataIdx] == '认沽':
+            optiontype  = ql.Option.Put
             strike      = optionData[optionFlds.index('exercise_price')][optionDataIdx]
             mdate       = pd.to_datetime(optionData[optionFlds.index('exercise_date')][optionDataIdx])
             maturitydt  = ql.Date(mdate.day,mdate.month,mdate.year)
             mktindex    = mktData[mktFlds.index('option_code')].index(optionid)
             close       = mktData[mktFlds.index('close')][mktindex]
-            voldata     = w.wss(optionid + '.SH', "us_impliedvol", "tradeDate=20170612")
+            voldata     = w.wss(optionid + '.SH', "us_impliedvol", "tradeDate=20170703")
             implied_vol = voldata.Data[0][0]
+            #implied_vol, error = calculate_vol_BS(maturitydt, optiontype, strike, spot, dividend_ts, yield_ts,                                     close, evalDate, calendar, daycounter)
             #implied_vol = vols[idx]
             if strike in strikes:
-                if mdate.month == evalDate.month():
+                if mdate.month == months[0]:
                     vol1.append(implied_vol)
                     close1.append(close)
                     dt1 = maturitydt
-                elif mdate.month == evalDate.month() + 1:
+                elif mdate.month == months[1]:
                     vol2.append(implied_vol)
                     close2.append(close)
                     dt2 = maturitydt
-                elif mdate.month == 9:
+                elif mdate.month == months[2]:
                     vol3.append(implied_vol)
                     close3.append(close)
                     dt3 = maturitydt
-                elif mdate.month == 12:
+                elif mdate.month == months[3]:
                     vol4.append(implied_vol)
                     close4.append(close)
                     dt4 = maturitydt
     # Matrix data to construct BlackVarianceSurface
-    data = [vol1,vol2,vol3,vol4]
-    expiration_dates = [dt1,dt2,dt3,dt4]
+    data = [vol1,vol3,vol4]
+    expiration_dates = [dt1,dt3,dt4]
+    #expiration_dates = [dt2, dt3, dt4]
+    #data = [vol2, vol3, vol4]
     matrix = ql.Matrix(len(strikes), len(expiration_dates))
     close_prices = [close1,close2,close3,close4]
     #print('vols:', data)
@@ -584,8 +591,8 @@ def get_impliedvolmat_call_BS_givenKs(evalDate,daycounter,calendar):
     close2 = []
     close3 = []
     close4 = []
-    #strikes = [2.3, 2.35, 2.4, 2.45, 2.5, 2.55, 2.6]
-    strikes = [2.45, 2.5, 2.55, 2.6]
+    strikes = [2.3, 2.35, 2.4, 2.45, 2.5, 2.55, 2.6]
+    #strikes = [2.45, 2.5, 2.55, 2.6]
     tempcontainer = [2.299, 2.3, 2.35, 2.4, 2.45, 2.5, 2.55, 2.6]
     for idx,optionid in enumerate(optionids):
         optionDataIdx   = optionData[optionFlds.index('wind_code')].index(optionid)
