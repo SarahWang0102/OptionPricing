@@ -81,56 +81,58 @@ strikes_op_m,call_volatilities_op_m,put_volatilities_op_m =get_iv_plot_data_PCPR
 
 
 strikes_op,call_volatilities_op,put_volatilities_op =get_iv_plot_data_PCPRate(cal_vols_data, put_vols_data)
-f, axarr = plt.subplots(nrows=2, ncols=2, figsize=(6, 6), sharey=True)
 print(strikes_op)
-index = 0
-line1, = axarr[0,0].plot(strikes_op.get(index), call_volatilities_op.get(index),color = pu.c1,marker = "*",linestyle = pu.l1,linewidth = 2,label="call iv")
-line2, = axarr[0,0].plot(strikes_op.get(index), put_volatilities_op.get(index),color = pu.c2,marker = "*",linestyle = pu.l2,linewidth = 2,label="put iv")
-index = 1
-line2_1, = axarr[0,1].plot(strikes_op.get(index), call_volatilities_op.get(index),color = pu.c1,marker = "*",linestyle = pu.l1,linewidth = 2,label="call iv")
-line2_2, = axarr[0,1].plot(strikes_op.get(index), put_volatilities_op.get(index),color = pu.c2,marker = "*",linestyle = pu.l2,linewidth = 2,label="put iv")
-index = 2
-line3_1, = axarr[1,0].plot(strikes_op.get(index), call_volatilities_op.get(index),color = pu.c1,marker = "*",linestyle = pu.l1,linewidth = 2,label="call iv")
-line3_2, = axarr[1,0].plot(strikes_op.get(index), put_volatilities_op.get(index),color = pu.c2,marker = "*",linestyle = pu.l2,linewidth = 2,label="put iv")
-index = 3
-line4_1, = axarr[1,1].plot(strikes_op.get(index), call_volatilities_op.get(index),color = pu.c1,marker = "*",linestyle = pu.l1,linewidth = 2,label="call iv")
-line4_2, = axarr[1,1].plot(strikes_op.get(index), put_volatilities_op.get(index),color = pu.c2,marker = "*",linestyle = pu.l2,linewidth = 2,label="put iv")
+print(strikes_op.get(1))
+print(call_volatilities_op_m.get(1))
+print(put_volatilities_op_m.get(1))
 
-axarr[0,0].set_title("IV this month contracts")
-axarr[0,1].set_title("IV next month contracts")
-axarr[1,0].set_title("IV this season contracts")
-axarr[1,1].set_title("IV next month contracts")
-axarr[0,0].legend()
-axarr[0,1].legend()
-axarr[1,0].legend()
-axarr[1,1].legend()
+strikes = strikes_op.get(1)
+callvols = call_volatilities_op_m.get(1)
+putvols = put_volatilities_op_m.get(1)
 
+print(putvols[-2:len(putvols)])
+plt.rcParams['font.sans-serif'] = ['STKaiti']
 
-f_m, axarr_m = plt.subplots(nrows=2, ncols=2, figsize=(6, 6), sharey=True)
-index = 0
-axarr_m[0,0].plot(strikes_op_m.get(index), call_volatilities_op_m.get(index),color = pu.c1,marker = "*",linestyle = pu.l1,linewidth = 2,label="call iv")
-axarr_m[0,0].plot(strikes_op_m.get(index), put_volatilities_op_m.get(index),color = pu.c2,marker = "*",linestyle = pu.l2,linewidth = 2,label="put iv")
-index = 1
-axarr_m[0,1].plot(strikes_op_m.get(index), call_volatilities_op_m.get(index),color = pu.c1,marker = "*",linestyle = pu.l1,linewidth = 2,label="call iv")
-axarr_m[0,1].plot(strikes_op_m.get(index), put_volatilities_op_m.get(index),color = pu.c2,marker = "*",linestyle = pu.l2,linewidth = 2,label="put iv")
-index = 2
-axarr_m[1,0].plot(strikes_op_m.get(index), call_volatilities_op_m.get(index),color = pu.c1,marker = "*",linestyle = pu.l1,linewidth = 2,label="call iv")
-axarr_m[1,0].plot(strikes_op_m.get(index), put_volatilities_op_m.get(index),color = pu.c2,marker = "*",linestyle = pu.l2,linewidth = 2,label="put iv")
-index = 3
-axarr_m[1,1].plot(strikes_op_m.get(index), call_volatilities_op_m.get(index),color = pu.c1,marker = "*",linestyle = pu.l1,linewidth = 2,label="call iv")
-axarr_m[1,1].plot(strikes_op_m.get(index), put_volatilities_op_m.get(index),color = pu.c2,marker = "*",linestyle = pu.l2,linewidth = 2,label="put iv")
+f, axarr = plt.subplots()
+line4_1, = axarr.plot(strikes, callvols,color = pu.c1,marker = "^",linestyle = pu.l1,linewidth = 2,label="认购期权隐含波动率")
+line4_2, = axarr.plot(strikes, putvols,color = pu.c2,marker = "^",linestyle = pu.l2,linewidth = 2,label="认沽期权隐含波动率")
+axarr.set_xlabel('行权价')
+axarr.legend()
 
-axarr_m[0,0].set_title("IV this month contracts")
-axarr_m[0,1].set_title("IV next month contracts")
-axarr_m[1,0].set_title("IV this season contracts")
-axarr_m[1,1].set_title("IV next season contracts")
-axarr_m[0,0].legend()
-axarr_m[0,1].legend()
-axarr_m[1,0].legend()
-axarr_m[1,1].legend()
+f_m, axarr_m = plt.subplots()
+axarr_m.plot(strikes, callvols,color = pu.c1,marker = "^",linestyle = pu.l1,linewidth = 2,label="认购期权隐含波动率")
+axarr_m.plot(strikes, putvols,color = pu.c2,marker = "^",linestyle = pu.l2,linewidth = 2,label="认沽期权隐含波动率")
+axarr_m.set_xlabel('行权价')
+axarr_m.legend()
 
+container =  putvols[0:len(putvols)-3]
+container.append(callvols[-3] )
+container.append(callvols[-2] )
+container.append(callvols[-1] )
+f1, axarr1 = plt.subplots()
+axarr1.scatter(strikes[-3:len(callvols)], callvols[-3:len(callvols)],color = pu.c1,marker = "^",label="认购期权隐含波动率")
+axarr1.scatter(strikes[0:len(putvols)-3], putvols[0:len(putvols)-3],color = pu.c2,marker = "^",label="认沽期权隐含波动率")
+axarr1.plot(strikes, container,color = pu.c3,linestyle = pu.l3,linewidth = 2)
+#axarr1.plot(strikes[0:5], putvols[0:5],color = pu.c2,marker = "^",linestyle = pu.l2,linewidth = 2,label="认沽期权隐含波动率")
+axarr1.set_xlabel('行权价')
+axarr1.set_ylim(0.168,0.2)
+axarr1.legend()
 
+axarr.spines['right'].set_visible(False)
+axarr.spines['top'].set_visible(False)
+axarr.yaxis.set_ticks_position('left')
+axarr.xaxis.set_ticks_position('bottom')
+axarr_m.spines['right'].set_visible(False)
+axarr_m.spines['top'].set_visible(False)
+axarr_m.yaxis.set_ticks_position('left')
+axarr_m.xaxis.set_ticks_position('bottom')
+axarr1.spines['right'].set_visible(False)
+axarr1.spines['top'].set_visible(False)
+axarr1.yaxis.set_ticks_position('left')
+axarr1.xaxis.set_ticks_position('bottom')
+f.savefig('IV1.png', dpi=300, format='png')
+f_m.savefig('IV3.png', dpi=300, format='png')
+f1.savefig('IV_pc.png', dpi=300, format='png')
 plt.draw()
 plt.show()
 
-#### ADD moneyness plot

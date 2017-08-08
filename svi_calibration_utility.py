@@ -29,6 +29,7 @@ def get_svi_optimal_params(data,ttm,sim_no = 100):
             sse += (tv - tv_1) ** 2
         if sse >= min_sse: continue
         min_sse = sse
+    '''
     if min_sse > 5*10**(-7):
         ms_rnd = np.random.random([sim_no, 2]) * 0.5
         adc_rnd = np.random.random([sim_no, 3]) * 0.5
@@ -47,7 +48,9 @@ def get_svi_optimal_params(data,ttm,sim_no = 100):
                 sse += (tv - tv_1) ** 2
             if sse >= min_sse: continue
             min_sse = sse
+    '''
     print(' minum SSE:', min_sse)
+    print(' RESE: ',np.sqrt(min_sse))
     _a_star, _d_star, _c_star, m_star, sigma_star = calibrated_params
     a_star = np.divide(_a_star, ttm)
     b_star = np.divide(_c_star, (sigma_star * ttm))

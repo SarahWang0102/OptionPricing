@@ -11,13 +11,20 @@ def get_params(nbr_month):
         #a_star, b_star, rho_star, m_star, sigma_star = 0.00392946245464, 0.932829724957, -0.674532827132, -0.0446916864921, 0.0326894289419
         #a_star, b_star, rho_star, m_star, sigma_star = 0.00333255956535, 0.936390822665, -0.677761064666, -0.0450928349118, 0.0337258851728
         a_star, b_star, rho_star, m_star, sigma_star = 0.0038415182727, 0.92391459895, -0.744434878181, -0.0490826326399, 0.0379394405895
+        print(nbr_month,' : ',round(a_star,4), round(b_star,4), round(rho_star,4), round(m_star,4), round(sigma_star,4))
     elif nbr_month == 1:
         a_star, b_star, rho_star, m_star, sigma_star = 0.0202858609804,0.907688022355,0.867498561699,0.0238060958095,0.0180937230185
+        print(nbr_month, ' : ', round(a_star, 4), round(b_star, 4), round(rho_star, 4), round(m_star, 4),
+              round(sigma_star, 4))
     elif nbr_month == 2:
         a_star, b_star, rho_star, m_star, sigma_star = 0.00815684394433, 3.34024630745, 0.950774727626, 0.0518029569264, 0.0212819968057
         #a_star, b_star, rho_star, m_star, sigma_star = 0.0105133312325, 0.274698338398, 0.292223667381, -0.000540665540219, 0.0776321826581
+        print(nbr_month, ' : ', round(a_star, 4), round(b_star, 4), round(rho_star, 4), round(m_star, 4),
+              round(sigma_star, 4))
     else:
         a_star, b_star, rho_star, m_star, sigma_star = 0.0252339030552, 3.67875932103, 0.982658824086, 0.0210387531491, 0.0050963364926
+        print(nbr_month, ' : ', round(a_star, 4), round(b_star, 4), round(rho_star, 4), round(m_star, 4),
+              round(sigma_star, 4))
     return a_star, b_star, rho_star, m_star, sigma_star
 
 w.start()
