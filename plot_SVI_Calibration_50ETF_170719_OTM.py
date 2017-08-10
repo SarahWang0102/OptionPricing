@@ -13,7 +13,8 @@ def get_params(nbr_month):
         a_star, b_star, rho_star, m_star, sigma_star = 0.0038415182727, 0.92391459895, -0.744434878181, -0.0490826326399, 0.0379394405895
         print(nbr_month,' : ',round(a_star,4), round(b_star,4), round(rho_star,4), round(m_star,4), round(sigma_star,4))
     elif nbr_month == 1:
-        a_star, b_star, rho_star, m_star, sigma_star = 0.0202858609804,0.907688022355,0.867498561699,0.0238060958095,0.0180937230185
+        #a_star, b_star, rho_star, m_star, sigma_star = 0.0202858609804,0.907688022355,0.867498561699,0.0238060958095,0.0180937230185
+        a_star, b_star, rho_star, m_star, sigma_star = 0.0197740832275 , 0.61378175795 , 0.797599721618 , 0.0210182067761 , 0.0237758129263
         print(nbr_month, ' : ', round(a_star, 4), round(b_star, 4), round(rho_star, 4), round(m_star, 4),
               round(sigma_star, 4))
     elif nbr_month == 2:
@@ -46,7 +47,8 @@ data_months = svi_util.orgnize_data_for_optimization(
 #print(risk_free_rates)
 mark = "o"
 line = pu.l3
-
+plt.rcParams['font.sans-serif'] = ['STKaiti']
+plt.rcParams.update({'font.size': 13})
 
 for i in range(4):
     a_star, b_star, rho_star, m_star, sigma_star = get_params(i)
@@ -58,7 +60,7 @@ for i in range(4):
     impliedvol = data[3]
 
     print('expiration date: ',expiration_date)
-    x_svi  = np.arange(min(logMoneynesses)-0.02, max(logMoneynesses)+0.01, 0.1 / 100)  # log_forward_moneyness
+    x_svi  = np.arange(min(logMoneynesses)-0.02, max(logMoneynesses)+0.001, 0.1 / 100)  # log_forward_moneyness
     ttm = daycounter.yearFraction(evalDate, expiration_date)
     tv_svi = np.multiply(a_star + b_star * (rho_star * (x_svi - m_star) + np.sqrt((x_svi - m_star) ** 2 + sigma_star ** 2)), ttm)
     print(iter,' : a_star,b_star,rho_star, m_star, sigma_star : ',a_star,b_star,rho_star, m_star, sigma_star)
@@ -94,7 +96,7 @@ for i in range(4):
     ax1.yaxis.set_ticks_position('left')
     ax1.xaxis.set_ticks_position('bottom')
 
-    f1.savefig(title1 + '.png', dpi=300, format='png')
+    f1.savefig(title1 + '.png', dpi=500, format='png')
     #f2.savefig('St'+title2 + '.png', dpi=300, format='png')
 
 f, axarr = plt.subplots()
@@ -107,27 +109,49 @@ for j in range(4):
     expiration_date = data[2]
     impliedvol = data[3]
 
-    print('expiration date: ',expiration_date)
-    x_svi  = np.arange(-0.2, 0.02, 0.1 / 100)  # log_forward_moneyness
-    ttm = daycounter.yearFraction(evalDate, expiration_date)
-    tv_svi = np.multiply(a_star + b_star * (rho_star * (x_svi - m_star) + np.sqrt((x_svi - m_star) ** 2 + sigma_star ** 2)), ttm)
-    print(iter,' : a_star,b_star,rho_star, m_star, sigma_star : ',a_star,b_star,rho_star, m_star, sigma_star)
-    v_svi = np.sqrt(a_star + b_star * (rho_star * (x_svi - m_star) + np.sqrt((x_svi - m_star) ** 2 + sigma_star ** 2)))
-    t = str(round(daycounter.yearFraction(evalDate, expiration_date), 4))
+
     if j == 3:
+        x_svi = np.arange(-0.2, 0.025, 0.1 / 100)  # log_forward_moneyness
+        ttm = daycounter.yearFraction(evalDate, expiration_date)
+        tv_svi = np.multiply(
+            a_star + b_star * (rho_star * (x_svi - m_star) + np.sqrt((x_svi - m_star) ** 2 + sigma_star ** 2)), ttm)
+        v_svi = np.sqrt(
+            a_star + b_star * (rho_star * (x_svi - m_star) + np.sqrt((x_svi - m_star) ** 2 + sigma_star ** 2)))
+        t = str(round(daycounter.yearFraction(evalDate, expiration_date), 4))
         l1, = axarr.plot(x_svi, tv_svi,color = pu.c1,linestyle = pu.l1,linewidth = 2)
-        label1 = 'T = ' + t
+        label1 = 'SVI方差，T = ' + t
     elif j == 2:
+        x_svi = np.arange(-0.2, 0.05, 0.1 / 100)  # log_forward_moneyness
+        ttm = daycounter.yearFraction(evalDate, expiration_date)
+        tv_svi = np.multiply(
+            a_star + b_star * (rho_star * (x_svi - m_star) + np.sqrt((x_svi - m_star) ** 2 + sigma_star ** 2)), ttm)
+        v_svi = np.sqrt(
+            a_star + b_star * (rho_star * (x_svi - m_star) + np.sqrt((x_svi - m_star) ** 2 + sigma_star ** 2)))
+        t = str(round(daycounter.yearFraction(evalDate, expiration_date), 4))
         l2, = axarr.plot(x_svi, tv_svi, color=pu.c2, linestyle=pu.l2, linewidth=2)
-        label2 = 'T = ' + t
+        label2 = 'SVI方差，T = ' + t
     elif j == 1:
+        x_svi = np.arange(-0.2, 0.06, 0.1 / 100)  # log_forward_moneyness
+        ttm = daycounter.yearFraction(evalDate, expiration_date)
+        tv_svi = np.multiply(
+            a_star + b_star * (rho_star * (x_svi - m_star) + np.sqrt((x_svi - m_star) ** 2 + sigma_star ** 2)), ttm)
+        v_svi = np.sqrt(
+            a_star + b_star * (rho_star * (x_svi - m_star) + np.sqrt((x_svi - m_star) ** 2 + sigma_star ** 2)))
+        t = str(round(daycounter.yearFraction(evalDate, expiration_date), 4))
         l3, = axarr.plot(x_svi, tv_svi, color=pu.c3, linestyle=pu.l3, linewidth=2)
-        label3 = 'T = ' + t
+        label3 = 'SVI方差，T = ' + t
+    '''
     else:
         l4, = axarr.plot(x_svi, tv_svi, color=pu.c4, linestyle=pu.l4, linewidth=2)
         l4.set_dashes(pu.dash)
-        label4 = 'T = ' + t
-axarr.legend([l1,l2,l3,l4],[label1,label2,label3,label4])
+        label4 = 'SVI方差，T = ' + t
+    '''
+axarr.legend([l1,l2,l3],[label1,label2,label3],bbox_to_anchor=(0., 1.02, 1.1, .102), loc=3,
+           ncol=2, borderaxespad=0.,columnspacing=1.5,frameon=False)
+axarr.spines['right'].set_visible(False)
+axarr.spines['top'].set_visible(False)
+axarr.yaxis.set_ticks_position('left')
+axarr.xaxis.set_ticks_position('bottom')
 f.savefig('total_variances '+ str(evalDate) +'.png', dpi=300, format='png')
 plt.show()
 

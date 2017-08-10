@@ -70,14 +70,14 @@ data_months = svi_util.orgnize_data_for_optimization(
         evalDate,daycounter,cal_vols,put_vols,expiration_dates,spot)
 print(evalDate)
 # Calibrate SVI total variance curve
-i = 2
+i = 1
 nbr_month = month_indexs[i]
 data = data_months.get(i)
 logMoneynesses = data[0]
 totalvariance = data[1]
 expiration_date = data[2]
 ttm = daycounter.yearFraction(evalDate, expiration_date)
-final_parames = run_optimization(data,ttm,10)
+final_parames = run_optimization(data,ttm,50)
 plt.show()
 
 '''

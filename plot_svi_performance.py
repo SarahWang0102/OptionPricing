@@ -50,6 +50,7 @@ avg_bs = sum(sse_bs_list1)/len(sse_bs_list1)
 print('avg_svi',avg_svi)
 print('avg_bs',avg_bs)
 plt.rcParams['font.sans-serif'] = ['STKaiti']
+plt.rcParams.update({'font.size': 13})
 f,axarr = plt.subplots()
 axarr.plot(dates, sse_svi_list1,color = pu.c1,linestyle = pu.l1,linewidth = 2,label="SVI-SSE")
 axarr.plot(dates, [avg_svi]*len(dates), color=pu.c3, linestyle=pu.l3, linewidth=1,label="SVI-平均SSE")
@@ -57,7 +58,8 @@ axarr.plot(dates, sse_bs_list1,color = pu.c2,linestyle = pu.l2,linewidth = 2,lab
 l, = axarr.plot(dates, [avg_bs]*len(dates), color=pu.c4, linestyle=pu.l4, linewidth=1,label="BS-平均SSE")
 l.set_dashes(pu.dash)
 axarr.set_ylabel('SSE')
-axarr.legend()
+axarr.legend(bbox_to_anchor=(0., 1, 1.1, .102), loc=3,
+           ncol=4, borderaxespad=0.,columnspacing=0.5,frameon=False)
 # Hide the right and top spines
 axarr.spines['right'].set_visible(False)
 axarr.spines['top'].set_visible(False)

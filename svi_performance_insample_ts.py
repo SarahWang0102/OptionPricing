@@ -7,7 +7,9 @@ import math
 import numpy as np
 from WindPy import w
 import datetime
+import timeit
 
+start = timeit.default_timer()
 np.random.seed()
 w.start()
 begDate = ql.Date(1, 12, 2016)
@@ -111,3 +113,5 @@ for date in sse_container.keys():
 print("-" * 80)
 
 print('sse_container = ',sse_container)
+stop = timeit.default_timer()
+print('time : ',stop-start)

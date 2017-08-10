@@ -36,6 +36,7 @@ underlying_close = [2.3130682631358352, 2.283714604974213, 2.34535728711362, 2.3
                     ]
 
 plt.rcParams['font.sans-serif'] = ['STKaiti']
+plt.rcParams.update({'font.size': 13})
 f, axarr = plt.subplots(3, sharex=True)
 #axarr[0].set_title(u"看涨看跌期权隐含波动率差(CPIV)")
 labels_0 = ['认购认沽隐含波动率之差-下月','认购认沽隐含波动率之差-当季','认购认沽隐含波动率之差-下季']

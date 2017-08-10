@@ -7,7 +7,9 @@ import math
 import numpy as np
 from WindPy import w
 import datetime
+import timeit
 
+start = timeit.default_timer()
 np.random.seed()
 w.start()
 begDate = ql.Date(1, 12, 2016)
@@ -42,7 +44,7 @@ for dt in dates:
         expiration_date = data[2]
         ttm = daycounter.yearFraction(evalDate, expiration_date)
         #svi_util.get_svi_optimal_params(data, ttm, 20)
-        params = svi_util.get_svi_optimal_params(data, ttm, 100)
+        params = svi_util.get_svi_optimal_params(data, ttm, 10)
         params_months.append(params)
     #print(evalDate,' : ',params_months)
 
@@ -51,6 +53,8 @@ for dt in dates:
     print("SVI In Sample Performance:")
     print("=" * 80)
     print(" %15s %25s %25s " % ("market price", "model price", "square error(* e-4)"))
+    stop = timeit.default_timer()
+    print('time : ', stop - start)
 
     sse = 0
     for idx, optionid in enumerate(optionids):
