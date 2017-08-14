@@ -40,7 +40,7 @@ ql.Settings.instance().evaluationDate = evalDate
 # Calibrate SVI total variance curve
 curve = svi_data.get_curve_treasury_bond(evalDate, daycounter)
 #data_months,risk_free_rates = svi_util.get_data_from_BS_OTM_PCPRate(evalDate,daycounter,calendar,curve,False)
-cal_vols,put_vols,expiration_dates,spot,risk_free_rates = svi_data.get_call_put_impliedVols_moneyness_PCPrate(
+cal_vols,put_vols,expiration_dates,spot,risk_free_rates = svi_data.get_call_put_impliedVols_moneyness_PCPrate_pcvt(
         evalDate,curve,daycounter,calendar,maxVol=1.0,step=0.0001,precision=0.001,show=False)
 data_months = svi_util.orgnize_data_for_optimization(
         evalDate,daycounter,cal_vols,put_vols,expiration_dates,spot)
