@@ -74,6 +74,7 @@ for idx_date,date in enumerate(dates[0:len(dates)-3]):
             rf = curve_on_hedge_date.zeroRate(expiration_date_h, daycounter, ql.Continuous).rate()
             hedge_errors = []
             hedge_errors_pct = []
+            moneyness = []
             for idx_k,k in enumerate(strikes_h):
                 if k in close_prices_l.keys():
                     close_l = close_prices_l.get(k)
@@ -94,8 +95,9 @@ for idx_date,date in enumerate(dates[0:len(dates)-3]):
                 hedge_error_pct = round(hedge_error_pct, 4)
                 hedge_errors.append(hedge_error)
                 hedge_errors_pct.append(hedge_error_pct)
-            hedge_error_Ms.update({nbr_month:hedge_errors})
-            hedge_error_pct_Ms.update({nbr_month:hedge_errors_pct})
+                moneyness.append(moneyness_h)
+            hedge_error_Ms.update({nbr_month:[moneyness,hedge_errors]})
+            hedge_error_pct_Ms.update({nbr_month:[moneyness,hedge_errors_pct]})
         if idx_date != 0:
             print('liquidition date : ',liquidition_date)
             print('hedge errors : ',hedge_error_Ms)

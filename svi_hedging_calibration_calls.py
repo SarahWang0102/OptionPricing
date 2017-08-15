@@ -66,7 +66,7 @@ while evalDate <= endDate:
         totalvariance = data[1]
         expiration_date = data[2]
         ttm = daycounter.yearFraction(evalDate, expiration_date)
-        params = svi_util.get_svi_optimal_params(data, ttm, 50)
+        params = svi_util.get_svi_optimal_params(data, ttm, 5)
 
         a_star, b_star, rho_star, m_star, sigma_star = params
         x_svi = np.arange(min(logMoneynesses) - 0.005, max(logMoneynesses) + 0.02, 0.1 / 100)  # log_forward_moneyness
@@ -85,7 +85,7 @@ while evalDate <= endDate:
     print(params_months[1])
     print(params_months[2])
     print(params_months[3])
-plt.show()
+
 
 #print(daily_params)
 timebreak1 = timeit.default_timer()
@@ -100,3 +100,5 @@ with open(os.getcwd()+'/intermediate_data/hedging_dates_calls.pickle','wb') as f
     pickle.dump([dates],f)
 with open(os.getcwd()+'/intermediate_data/hedging_daily_svi_dataset_calls.pickle','wb') as f:
     pickle.dump([daily_svi_dataset],f)
+
+plt.show()
