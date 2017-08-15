@@ -66,7 +66,7 @@ while evalDate <= endDate:
         totalvariance = data[1]
         expiration_date = data[2]
         ttm = daycounter.yearFraction(evalDate, expiration_date)
-        params = svi_util.get_svi_optimal_params(data, ttm, 5)
+        params = svi_util.get_svi_optimal_params(data, ttm, 50)
 
         a_star, b_star, rho_star, m_star, sigma_star = params
         x_svi = np.arange(min(logMoneynesses) - 0.005, max(logMoneynesses) + 0.02, 0.1 / 100)  # log_forward_moneyness
