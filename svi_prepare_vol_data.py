@@ -5,6 +5,318 @@ import math
 import pandas as pd
 from WindPy import w
 
+# Use call options for IV data; use put options for put IV data; both use treasury bond curve
+def get_call_put_impliedVols_tbcurve(
+        evalDate,daycounter,calendar,maxVol=1.0,step=0.0001,precision=0.05,show=True):
+
+    call_volatilities_0 = {}
+    call_volatilities_1 = {}
+    call_volatilities_2 = {}
+    call_volatilities_3 = {}
+    put_volatilites_0 = {}
+    put_volatilites_1 = {}
+    put_volatilites_2 = {}
+    put_volatilites_3 = {}
+    e_date0, e_date1, e_date2, e_date3 = 0,0,0,0
+    try:
+        curve = get_curve_treasury_bond(evalDate, daycounter)
+        vols, spot, mktData, mktFlds, optionData, optionFlds,optionids = get_wind_data(evalDate)
+        ql.Settings.instance().evaluationDate = evalDate
+        yield_ts = ql.YieldTermStructureHandle(curve)
+        dividend_ts = ql.YieldTermStructureHandle(ql.FlatForward(evalDate,0.0,daycounter))
+        month_indexs = get_contract_months(evalDate)
+        for idx, optionid in enumerate(optionids):
+            optionDataIdx   = optionData[optionFlds.index('wind_code')].index(optionid)
+            mdate           = pd.to_datetime(optionData[optionFlds.index('exercise_date')][optionDataIdx])
+            maturitydt      = ql.Date(mdate.day, mdate.month, mdate.year)
+            mktindex        = mktData[mktFlds.index('option_code')].index(optionid)
+            strike          = optionData[optionFlds.index('exercise_price')][optionDataIdx]
+            close           = mktData[mktFlds.index('close')][mktindex]
+            ttm             = daycounter.yearFraction(evalDate, maturitydt)
+            rf              = curve.zeroRate(maturitydt, daycounter, ql.Continuous).rate()
+            nbr_month       = maturitydt.month()
+
+            if nbr_month == month_indexs[0]:
+                e_date0     = maturitydt
+                Ft = spot * math.exp(rf * ttm)
+                moneyness   = math.log(strike / Ft, math.e)
+                if optionData[optionFlds.index('call_or_put')][optionDataIdx] == '认购':
+                    optiontype = ql.Option.Call
+                    implied_vol, error = calculate_vol_BS(maturitydt, optiontype, strike, spot, dividend_ts,yield_ts,
+                                                          close, evalDate, calendar, daycounter, precision, maxVol,step)
+                    call_volatilities_0.update({moneyness:[implied_vol,strike,close]})
+                else:
+                    optiontype = ql.Option.Put
+                    implied_vol, error = calculate_vol_BS(maturitydt, optiontype, strike, spot, dividend_ts, yield_ts,
+                                                          close, evalDate,
+                                                          calendar, daycounter, precision, maxVol, step)
+                    put_volatilites_0.update({moneyness: [implied_vol,strike,close]})
+            elif nbr_month == month_indexs[1]:
+                e_date1 = maturitydt
+                Ft = spot * math.exp(rf * ttm)
+                moneyness = math.log(strike / Ft, math.e)
+                if optionData[optionFlds.index('call_or_put')][optionDataIdx] == '认购':
+                    optiontype = ql.Option.Call
+                    implied_vol, error = calculate_vol_BS(maturitydt, optiontype, strike, spot, dividend_ts,yield_ts,
+                                                          close, evalDate, calendar, daycounter, precision, maxVol,step)
+                    call_volatilities_1.update({moneyness:[implied_vol,strike,close]})
+                else:
+                    optiontype = ql.Option.Put
+                    implied_vol, error = calculate_vol_BS(maturitydt, optiontype, strike, spot, dividend_ts, yield_ts,
+                                                          close, evalDate,
+                                                          calendar, daycounter, precision, maxVol, step)
+                    put_volatilites_1.update({moneyness: [implied_vol,strike,close]})
+            elif nbr_month == month_indexs[2]:
+                e_date2 = maturitydt
+                Ft = spot * math.exp(rf * ttm)
+                moneyness = math.log(strike / Ft, math.e)
+                if optionData[optionFlds.index('call_or_put')][optionDataIdx] == '认购':
+                    optiontype = ql.Option.Call
+                    implied_vol, error = calculate_vol_BS(maturitydt, optiontype, strike, spot, dividend_ts,yield_ts,
+                                                          close, evalDate, calendar, daycounter, precision, maxVol,step)
+                    call_volatilities_2.update({moneyness:[implied_vol,strike,close]})
+                else:
+                    optiontype = ql.Option.Put
+                    implied_vol, error = calculate_vol_BS(maturitydt, optiontype, strike, spot, dividend_ts, yield_ts,
+                                                          close, evalDate,
+                                                          calendar, daycounter, precision, maxVol, step)
+                    put_volatilites_2.update({moneyness: [implied_vol,strike,close]})
+            else:
+                e_date3 = maturitydt
+                Ft = spot * math.exp(rf * ttm)
+                moneyness = math.log(strike / Ft, math.e)
+                if optionData[optionFlds.index('call_or_put')][optionDataIdx] == '认购':
+                    optiontype = ql.Option.Call
+                    implied_vol, error = calculate_vol_BS(maturitydt, optiontype, strike, spot, dividend_ts,yield_ts,
+                                                          close, evalDate, calendar, daycounter, precision, maxVol,step)
+                    call_volatilities_3.update({moneyness:[implied_vol,strike,close]})
+                else:
+                    optiontype = ql.Option.Put
+                    implied_vol, error = calculate_vol_BS(maturitydt, optiontype, strike, spot, dividend_ts, yield_ts,
+                                                          close, evalDate,
+                                                          calendar, daycounter, precision, maxVol, step)
+                    put_volatilites_3.update({moneyness: [implied_vol,strike,close]})
+        expiration_dates = [e_date0,e_date1,e_date2,e_date3]
+        cal_vols = [call_volatilities_0,call_volatilities_1,call_volatilities_2,call_volatilities_3]
+        put_vols = [put_volatilites_0,put_volatilites_1,put_volatilites_2,put_volatilites_3]
+    except:
+        print('Error -- get_call_put_impliedVols failed')
+        return
+    return cal_vols,put_vols,expiration_dates,spot,curve
+
+# Currently used for combine OTM calls and OTM puts for IV data
+def get_call_put_impliedVols_moneyness_PCPrate_pcvt(
+        evalDate,daycounter,calendar,maxVol=1.0,step=0.0001,precision=0.05,show=True):
+    close_call = []
+    close_put = []
+    call_volatilities_0 = {}
+    call_volatilities_1 = {}
+    call_volatilities_2 = {}
+    call_volatilities_3 = {}
+    put_volatilites_0 = {}
+    put_volatilites_1 = {}
+    put_volatilites_2 = {}
+    put_volatilites_3 = {}
+    e_date0, e_date1, e_date2, e_date3 = 0,0,0,0
+    try:
+        # Get PC parity implied risk free rates
+        rf_Ks_months = calculate_PCParity_ATM_implied_rfs(evalDate, daycounter, calendar)
+        #rf_Ks_months = calculate_PCParity_riskFreeRate(evalDate, daycounter, calendar)
+        #print(rf_Ks_months)
+        # Get Wind Market Data
+        vols, spot, mktData, mktFlds, optionData, optionFlds,optionids = get_wind_data(evalDate)
+        ql.Settings.instance().evaluationDate = evalDate
+        dividend_ts = ql.YieldTermStructureHandle(ql.FlatForward(evalDate,0.0,daycounter))
+        month_indexs = get_contract_months(evalDate)
+        for idx, optionid in enumerate(optionids):
+            optionDataIdx   = optionData[optionFlds.index('wind_code')].index(optionid)
+            mdate           = pd.to_datetime(optionData[optionFlds.index('exercise_date')][optionDataIdx])
+            maturitydt      = ql.Date(mdate.day, mdate.month, mdate.year)
+            mktindex        = mktData[mktFlds.index('option_code')].index(optionid)
+            strike          = optionData[optionFlds.index('exercise_price')][optionDataIdx]
+            close           = mktData[mktFlds.index('close')][mktindex]
+            ttm             = daycounter.yearFraction(evalDate, maturitydt)
+            nbr_month       = maturitydt.month()
+            optiontype = ql.Option.Call
+            if nbr_month == month_indexs[0]:
+                e_date0     = maturitydt
+                #rf = rf_Ks_months.get(0).get(strike)
+                rf = rf_Ks_months.get(0)
+                Ft = spot * math.exp(rf * ttm)
+                moneyness   = math.log(strike / Ft, math.e)
+                yield_ts    = ql.YieldTermStructureHandle(ql.FlatForward(evalDate,rf,daycounter))
+
+                if optionData[optionFlds.index('call_or_put')][optionDataIdx] == '认购':
+                    implied_vol, error = calculate_vol_BS(maturitydt, optiontype, strike, spot, dividend_ts,yield_ts,
+                                                          close, evalDate, calendar, daycounter, precision, maxVol,step)
+                    call_volatilities_0.update({moneyness:[implied_vol,strike,close]})
+                else:
+                    eqvlt_close = close + spot - math.exp(-rf*ttm) * strike
+                    implied_vol, error = calculate_vol_BS(maturitydt, optiontype, strike, spot, dividend_ts, yield_ts,
+                                                          eqvlt_close, evalDate,
+                                                          calendar, daycounter, precision, maxVol, step)
+                    put_volatilites_0.update({moneyness: [implied_vol,strike,close]})
+            elif nbr_month == month_indexs[1]:
+                e_date1 = maturitydt
+                #rf = rf_Ks_months.get(1).get(strike)
+                rf = rf_Ks_months.get(1)
+                Ft = spot * math.exp(rf * ttm)
+                moneyness = math.log(strike / Ft, math.e)
+                yield_ts = ql.YieldTermStructureHandle(ql.FlatForward(evalDate, rf, daycounter))
+                if optionData[optionFlds.index('call_or_put')][optionDataIdx] == '认购':
+                    optiontype = ql.Option.Call
+                    implied_vol, error = calculate_vol_BS(maturitydt, optiontype, strike, spot, dividend_ts,yield_ts,
+                                                          close, evalDate, calendar, daycounter, precision, maxVol,step)
+                    call_volatilities_1.update({moneyness:[implied_vol,strike,close]})
+                else:
+                    eqvlt_close = close + spot - math.exp(-rf*ttm) * strike
+                    implied_vol, error = calculate_vol_BS(maturitydt, optiontype, strike, spot, dividend_ts, yield_ts,
+                                                          eqvlt_close, evalDate,
+                                                          calendar, daycounter, precision, maxVol, step)
+                    put_volatilites_1.update({moneyness: [implied_vol,strike,close]})
+            elif nbr_month == month_indexs[2]:
+                e_date2 = maturitydt
+                #rf = rf_Ks_months.get(2).get(strike)
+                rf = rf_Ks_months.get(2)
+                Ft = spot * math.exp(rf * ttm)
+                moneyness = math.log(strike / Ft, math.e)
+                yield_ts = ql.YieldTermStructureHandle(ql.FlatForward(evalDate, rf, daycounter))
+                if optionData[optionFlds.index('call_or_put')][optionDataIdx] == '认购':
+                    optiontype = ql.Option.Call
+                    implied_vol, error = calculate_vol_BS(maturitydt, optiontype, strike, spot, dividend_ts,yield_ts,
+                                                          close, evalDate, calendar, daycounter, precision, maxVol,step)
+                    call_volatilities_2.update({moneyness:[implied_vol,strike,close]})
+                else:
+                    eqvlt_close = close + spot - math.exp(-rf*ttm) * strike
+                    implied_vol, error = calculate_vol_BS(maturitydt, optiontype, strike, spot, dividend_ts, yield_ts,
+                                                          eqvlt_close, evalDate,
+                                                          calendar, daycounter, precision, maxVol, step)
+                    put_volatilites_2.update({moneyness: [implied_vol,strike,close]})
+            else:
+                e_date3 = maturitydt
+                #rf = rf_Ks_months.get(3).get(strike)
+                rf = rf_Ks_months.get(3)
+                Ft = spot * math.exp(rf * ttm)
+                moneyness = math.log(strike / Ft, math.e)
+                yield_ts = ql.YieldTermStructureHandle(ql.FlatForward(evalDate, rf, daycounter))
+                if optionData[optionFlds.index('call_or_put')][optionDataIdx] == '认购':
+                    optiontype = ql.Option.Call
+                    implied_vol, error = calculate_vol_BS(maturitydt, optiontype, strike, spot, dividend_ts,yield_ts,
+                                                          close, evalDate, calendar, daycounter, precision, maxVol,step)
+                    call_volatilities_3.update({moneyness:[implied_vol,strike,close]})
+                else:
+                    eqvlt_close = close + spot - math.exp(-rf*ttm) * strike
+                    implied_vol, error = calculate_vol_BS(maturitydt, optiontype, strike, spot, dividend_ts, yield_ts,
+                                                          eqvlt_close, evalDate,
+                                                          calendar, daycounter, precision, maxVol, step)
+                    put_volatilites_3.update({moneyness: [implied_vol,strike,close]})
+        expiration_dates = [e_date0,e_date1,e_date2,e_date3]
+        cal_vols = [call_volatilities_0,call_volatilities_1,call_volatilities_2,call_volatilities_3]
+        put_vols = [put_volatilites_0,put_volatilites_1,put_volatilites_2,put_volatilites_3]
+    except:
+        print('Error -- get_call_put_impliedVols failed')
+        return
+    return cal_vols,put_vols,expiration_dates,spot,rf_Ks_months
+
+# Use treasury bond curve and put option conversion for IV data
+def get_impliedvolmat_BS_put_cnvt(
+        evalDate,curve,daycounter,calendar,maxVol=1.0,step=0.0001,precision=0.001,show=False):
+    try:
+        # Get Wind Market Data
+        vols, spot, mktData, mktFlds, optionData, optionFlds,optionids = get_wind_data(evalDate)
+        ql.Settings.instance().evaluationDate = evalDate
+        yield_ts = ql.YieldTermStructureHandle(curve)
+        dividend_ts = ql.YieldTermStructureHandle(ql.FlatForward(evalDate,0.0,daycounter))
+        month_indexs = get_contract_months(evalDate)
+        call_volatilities_0 = {}
+        call_volatilities_1 = {}
+        call_volatilities_2 = {}
+        call_volatilities_3 = {}
+        put_volatilites_0 = {}
+        put_volatilites_1 = {}
+        put_volatilites_2 = {}
+        put_volatilites_3 = {}
+        e_date0, e_date1, e_date2, e_date3 = 0, 0, 0, 0
+        if show:
+            print("="*110)
+            print("%10s %10s %10s %10s %25s %25s %20s" % ("Type","Spot", "Strike", "close","moneyness", "impliedVol", "Error (%)"))
+            print("-"*110)
+        for idx,optionid in enumerate(optionids):
+            optionDataIdx   = optionData[optionFlds.index('wind_code')].index(optionid)
+            mdate           = pd.to_datetime(optionData[optionFlds.index('exercise_date')][optionDataIdx])
+            maturitydt      = ql.Date(mdate.day, mdate.month, mdate.year)
+            mktindex        = mktData[mktFlds.index('option_code')].index(optionid)
+            strike          = optionData[optionFlds.index('exercise_price')][optionDataIdx]
+            close           = mktData[mktFlds.index('close')][mktindex]
+            ttm             = daycounter.yearFraction(evalDate, maturitydt)
+            rf              = curve.zeroRate(maturitydt, daycounter, ql.Continuous).rate()
+            Ft              = spot * math.exp(rf * ttm)
+            nbr_month       = maturitydt.month()
+            moneyness       = math.log(strike / Ft, math.e)
+            optiontype      = ql.Option.Call
+            if nbr_month == month_indexs[0]:
+                e_date0     = maturitydt
+                if optionData[optionFlds.index('call_or_put')][optionDataIdx] == '认购':
+                    eqvlt_close = close
+                    implied_vol,error = calculate_vol_BS(maturitydt, optiontype, strike, spot, dividend_ts, yield_ts, eqvlt_close, evalDate,
+                                     calendar, daycounter, precision, maxVol, step)
+                    call_volatilities_0.update({moneyness: [implied_vol, strike]})
+                else:
+                    eqvlt_close = close + spot - math.exp(-rf*ttm) * strike
+                    implied_vol, error = calculate_vol_BS(maturitydt, optiontype, strike, spot, dividend_ts, yield_ts,
+                                                          eqvlt_close, evalDate,
+                                                          calendar, daycounter, precision, maxVol, step)
+                    put_volatilites_0.update({moneyness: [implied_vol, strike]})
+            elif nbr_month == month_indexs[1]:
+                e_date1 = maturitydt
+                if optionData[optionFlds.index('call_or_put')][optionDataIdx] == '认购':
+                    eqvlt_close = close
+                    implied_vol,error = calculate_vol_BS(maturitydt, optiontype, strike, spot, dividend_ts, yield_ts, eqvlt_close, evalDate,
+                                     calendar, daycounter, precision, maxVol, step)
+                    call_volatilities_1.update({moneyness: [implied_vol, strike]})
+                else:
+                    eqvlt_close = close + spot - math.exp(-rf*ttm) * strike
+                    implied_vol, error = calculate_vol_BS(maturitydt, optiontype, strike, spot, dividend_ts, yield_ts,
+                                                          eqvlt_close, evalDate,
+                                                          calendar, daycounter, precision, maxVol, step)
+                    put_volatilites_1.update({moneyness: [implied_vol, strike]})
+            elif nbr_month == month_indexs[2]:
+                e_date2 = maturitydt
+                if optionData[optionFlds.index('call_or_put')][optionDataIdx] == '认购':
+                    eqvlt_close = close
+                    implied_vol,error = calculate_vol_BS(maturitydt, optiontype, strike, spot, dividend_ts, yield_ts, eqvlt_close, evalDate,
+                                     calendar, daycounter, precision, maxVol, step)
+                    call_volatilities_2.update({moneyness: [implied_vol, strike]})
+                else:
+                    eqvlt_close = close + spot - math.exp(-rf*ttm) * strike
+                    implied_vol, error = calculate_vol_BS(maturitydt, optiontype, strike, spot, dividend_ts, yield_ts,
+                                                          eqvlt_close, evalDate,
+                                                          calendar, daycounter, precision, maxVol, step)
+                    put_volatilites_2.update({moneyness: [implied_vol, strike]})
+            else:
+                e_date3 = maturitydt
+                if optionData[optionFlds.index('call_or_put')][optionDataIdx] == '认购':
+                    eqvlt_close = close
+                    implied_vol,error = calculate_vol_BS(maturitydt, optiontype, strike, spot, dividend_ts, yield_ts, eqvlt_close, evalDate,
+                                     calendar, daycounter, precision, maxVol, step)
+                    call_volatilities_3.update({moneyness: [implied_vol, strike]})
+                else:
+                    eqvlt_close = close + spot - math.exp(-rf*ttm) * strike
+                    implied_vol, error = calculate_vol_BS(maturitydt, optiontype, strike, spot, dividend_ts, yield_ts,
+                                                          eqvlt_close, evalDate,
+                                                          calendar, daycounter, precision, maxVol, step)
+                    put_volatilites_3.update({moneyness: [implied_vol, strike]})
+        expiration_dates = [e_date0, e_date1, e_date2, e_date3]
+        cal_vols = [call_volatilities_0, call_volatilities_1, call_volatilities_2, call_volatilities_3]
+        put_vols = [put_volatilites_0, put_volatilites_1, put_volatilites_2, put_volatilites_3]
+        if show : print("-"*110)
+        #print('vols:', vol_data)
+        #print('close prices: ', close_prices)
+    except:
+        print('VolatilityData -- get_impliedvolmat_BS_put_cnvt failed')
+        return
+    return cal_vols,put_vols,expiration_dates,spot,curve
+
 
 def get_call_put_impliedVols_strikes(
         evalDate,curve,daycounter,calendar,maxVol=1.0,step=0.0001,precision=0.001,show=True):
@@ -131,7 +443,6 @@ def get_call_put_impliedVols_moneyness(
         return
     return cal_vols,put_vols
 
-
 def get_call_put_impliedVols_moneyness_PCPrate(
         evalDate,daycounter,calendar,maxVol=1.0,step=0.0001,precision=0.05,show=True):
     close_call = []
@@ -147,7 +458,7 @@ def get_call_put_impliedVols_moneyness_PCPrate(
     e_date0, e_date1, e_date2, e_date3 = 0,0,0,0
     try:
         # Get PC parity implied risk free rates
-        rf_Ks_months = calculate_PCParity_ATM_riskFreeRate(evalDate, daycounter, calendar)
+        rf_Ks_months = calculate_PCParity_ATM_implied_rfs(evalDate, daycounter, calendar)
         #rf_Ks_months = calculate_PCParity_riskFreeRate(evalDate, daycounter, calendar)
         print(rf_Ks_months)
         # Get Wind Market Data
@@ -240,220 +551,7 @@ def get_call_put_impliedVols_moneyness_PCPrate(
         return
     return cal_vols,put_vols,expiration_dates,spot,rf_Ks_months
 
-
-# Currently used for combine OTM calls and OTM puts into one SVI calibrated IV curve
-def get_call_put_impliedVols_moneyness_PCPrate_pcvt(
-        evalDate,daycounter,calendar,maxVol=1.0,step=0.0001,precision=0.05,show=True):
-    close_call = []
-    close_put = []
-    call_volatilities_0 = {}
-    call_volatilities_1 = {}
-    call_volatilities_2 = {}
-    call_volatilities_3 = {}
-    put_volatilites_0 = {}
-    put_volatilites_1 = {}
-    put_volatilites_2 = {}
-    put_volatilites_3 = {}
-    e_date0, e_date1, e_date2, e_date3 = 0,0,0,0
-    try:
-        # Get PC parity implied risk free rates
-        rf_Ks_months = calculate_PCParity_ATM_riskFreeRate(evalDate, daycounter, calendar)
-        #rf_Ks_months = calculate_PCParity_riskFreeRate(evalDate, daycounter, calendar)
-        #print(rf_Ks_months)
-        # Get Wind Market Data
-        vols, spot, mktData, mktFlds, optionData, optionFlds,optionids = get_wind_data(evalDate)
-        ql.Settings.instance().evaluationDate = evalDate
-        dividend_ts = ql.YieldTermStructureHandle(ql.FlatForward(evalDate,0.0,daycounter))
-        month_indexs = get_contract_months(evalDate)
-        for idx, optionid in enumerate(optionids):
-            optionDataIdx   = optionData[optionFlds.index('wind_code')].index(optionid)
-            mdate           = pd.to_datetime(optionData[optionFlds.index('exercise_date')][optionDataIdx])
-            maturitydt      = ql.Date(mdate.day, mdate.month, mdate.year)
-            mktindex        = mktData[mktFlds.index('option_code')].index(optionid)
-            strike          = optionData[optionFlds.index('exercise_price')][optionDataIdx]
-            close           = mktData[mktFlds.index('close')][mktindex]
-            ttm             = daycounter.yearFraction(evalDate, maturitydt)
-            nbr_month       = maturitydt.month()
-            optiontype = ql.Option.Call
-            if nbr_month == month_indexs[0]:
-                e_date0     = maturitydt
-                #rf = rf_Ks_months.get(0).get(strike)
-                rf = rf_Ks_months.get(0)
-                Ft = spot * math.exp(rf * ttm)
-                moneyness   = math.log(strike / Ft, math.e)
-                yield_ts    = ql.YieldTermStructureHandle(ql.FlatForward(evalDate,rf,daycounter))
-
-                if optionData[optionFlds.index('call_or_put')][optionDataIdx] == '认购':
-                    implied_vol, error = calculate_vol_BS(maturitydt, optiontype, strike, spot, dividend_ts,yield_ts,
-                                                          close, evalDate, calendar, daycounter, precision, maxVol,step)
-                    call_volatilities_0.update({moneyness:[implied_vol,strike,close]})
-                else:
-                    eqvlt_close = close + spot - math.exp(-rf*ttm) * strike
-                    implied_vol, error = calculate_vol_BS(maturitydt, optiontype, strike, spot, dividend_ts, yield_ts,
-                                                          eqvlt_close, evalDate,
-                                                          calendar, daycounter, precision, maxVol, step)
-                    put_volatilites_0.update({moneyness: [implied_vol,strike,close]})
-            elif nbr_month == month_indexs[1]:
-                e_date1 = maturitydt
-                #rf = rf_Ks_months.get(1).get(strike)
-                rf = rf_Ks_months.get(1)
-                Ft = spot * math.exp(rf * ttm)
-                moneyness = math.log(strike / Ft, math.e)
-                yield_ts = ql.YieldTermStructureHandle(ql.FlatForward(evalDate, rf, daycounter))
-                if optionData[optionFlds.index('call_or_put')][optionDataIdx] == '认购':
-                    optiontype = ql.Option.Call
-                    implied_vol, error = calculate_vol_BS(maturitydt, optiontype, strike, spot, dividend_ts,yield_ts,
-                                                          close, evalDate, calendar, daycounter, precision, maxVol,step)
-                    call_volatilities_1.update({moneyness:[implied_vol,strike,close]})
-                else:
-                    eqvlt_close = close + spot - math.exp(-rf*ttm) * strike
-                    implied_vol, error = calculate_vol_BS(maturitydt, optiontype, strike, spot, dividend_ts, yield_ts,
-                                                          eqvlt_close, evalDate,
-                                                          calendar, daycounter, precision, maxVol, step)
-                    put_volatilites_1.update({moneyness: [implied_vol,strike,close]})
-            elif nbr_month == month_indexs[2]:
-                e_date2 = maturitydt
-                #rf = rf_Ks_months.get(2).get(strike)
-                rf = rf_Ks_months.get(2)
-                Ft = spot * math.exp(rf * ttm)
-                moneyness = math.log(strike / Ft, math.e)
-                yield_ts = ql.YieldTermStructureHandle(ql.FlatForward(evalDate, rf, daycounter))
-                if optionData[optionFlds.index('call_or_put')][optionDataIdx] == '认购':
-                    optiontype = ql.Option.Call
-                    implied_vol, error = calculate_vol_BS(maturitydt, optiontype, strike, spot, dividend_ts,yield_ts,
-                                                          close, evalDate, calendar, daycounter, precision, maxVol,step)
-                    call_volatilities_2.update({moneyness:[implied_vol,strike,close]})
-                else:
-                    eqvlt_close = close + spot - math.exp(-rf*ttm) * strike
-                    implied_vol, error = calculate_vol_BS(maturitydt, optiontype, strike, spot, dividend_ts, yield_ts,
-                                                          eqvlt_close, evalDate,
-                                                          calendar, daycounter, precision, maxVol, step)
-                    put_volatilites_2.update({moneyness: [implied_vol,strike,close]})
-            else:
-                e_date3 = maturitydt
-                #rf = rf_Ks_months.get(3).get(strike)
-                rf = rf_Ks_months.get(3)
-                Ft = spot * math.exp(rf * ttm)
-                moneyness = math.log(strike / Ft, math.e)
-                yield_ts = ql.YieldTermStructureHandle(ql.FlatForward(evalDate, rf, daycounter))
-                if optionData[optionFlds.index('call_or_put')][optionDataIdx] == '认购':
-                    optiontype = ql.Option.Call
-                    implied_vol, error = calculate_vol_BS(maturitydt, optiontype, strike, spot, dividend_ts,yield_ts,
-                                                          close, evalDate, calendar, daycounter, precision, maxVol,step)
-                    call_volatilities_3.update({moneyness:[implied_vol,strike,close]})
-                else:
-                    eqvlt_close = close + spot - math.exp(-rf*ttm) * strike
-                    implied_vol, error = calculate_vol_BS(maturitydt, optiontype, strike, spot, dividend_ts, yield_ts,
-                                                          eqvlt_close, evalDate,
-                                                          calendar, daycounter, precision, maxVol, step)
-                    put_volatilites_3.update({moneyness: [implied_vol,strike,close]})
-        expiration_dates = [e_date0,e_date1,e_date2,e_date3]
-        cal_vols = [call_volatilities_0,call_volatilities_1,call_volatilities_2,call_volatilities_3]
-        put_vols = [put_volatilites_0,put_volatilites_1,put_volatilites_2,put_volatilites_3]
-    except:
-        print('Error -- get_call_put_impliedVols failed')
-        return
-    return cal_vols,put_vols,expiration_dates,spot,rf_Ks_months
-
-# Use only put option impied vols for SVI calibrated IV curve
-def get_impliedvolmat_BS_put_cnvt(
-        evalDate,curve,daycounter,calendar,maxVol=1.0,step=0.0001,precision=0.001,show=False):
-    try:
-        # Get Wind Market Data
-        vols, spot, mktData, mktFlds, optionData, optionFlds,optionids = get_wind_data(evalDate)
-        ql.Settings.instance().evaluationDate = evalDate
-        yield_ts = ql.YieldTermStructureHandle(curve)
-        dividend_ts = ql.YieldTermStructureHandle(ql.FlatForward(evalDate,0.0,daycounter))
-        month_indexs = get_contract_months(evalDate)
-        call_volatilities_0 = {}
-        call_volatilities_1 = {}
-        call_volatilities_2 = {}
-        call_volatilities_3 = {}
-        put_volatilites_0 = {}
-        put_volatilites_1 = {}
-        put_volatilites_2 = {}
-        put_volatilites_3 = {}
-        e_date0, e_date1, e_date2, e_date3 = 0, 0, 0, 0
-        if show:
-            print("="*110)
-            print("%10s %10s %10s %10s %25s %25s %20s" % ("Type","Spot", "Strike", "close","moneyness", "impliedVol", "Error (%)"))
-            print("-"*110)
-        for idx,optionid in enumerate(optionids):
-            optionDataIdx   = optionData[optionFlds.index('wind_code')].index(optionid)
-            mdate           = pd.to_datetime(optionData[optionFlds.index('exercise_date')][optionDataIdx])
-            maturitydt      = ql.Date(mdate.day, mdate.month, mdate.year)
-            mktindex        = mktData[mktFlds.index('option_code')].index(optionid)
-            strike          = optionData[optionFlds.index('exercise_price')][optionDataIdx]
-            close           = mktData[mktFlds.index('close')][mktindex]
-            ttm             = daycounter.yearFraction(evalDate, maturitydt)
-            rf              = curve.zeroRate(maturitydt, daycounter, ql.Continuous).rate()
-            Ft              = spot * math.exp(rf * ttm)
-            nbr_month       = maturitydt.month()
-            moneyness       = math.log(strike / Ft, math.e)
-            optiontype      = ql.Option.Call
-            if nbr_month == month_indexs[0]:
-                e_date0     = maturitydt
-                if optionData[optionFlds.index('call_or_put')][optionDataIdx] == '认购':
-                    eqvlt_close = close
-                    implied_vol,error = calculate_vol_BS(maturitydt, optiontype, strike, spot, dividend_ts, yield_ts, eqvlt_close, evalDate,
-                                     calendar, daycounter, precision, maxVol, step)
-                    call_volatilities_0.update({moneyness: [implied_vol, strike]})
-                else:
-                    eqvlt_close = close + spot - math.exp(-rf*ttm) * strike
-                    implied_vol, error = calculate_vol_BS(maturitydt, optiontype, strike, spot, dividend_ts, yield_ts,
-                                                          eqvlt_close, evalDate,
-                                                          calendar, daycounter, precision, maxVol, step)
-                    put_volatilites_0.update({moneyness: [implied_vol, strike]})
-            elif nbr_month == month_indexs[1]:
-                e_date1 = maturitydt
-                if optionData[optionFlds.index('call_or_put')][optionDataIdx] == '认购':
-                    eqvlt_close = close
-                    implied_vol,error = calculate_vol_BS(maturitydt, optiontype, strike, spot, dividend_ts, yield_ts, eqvlt_close, evalDate,
-                                     calendar, daycounter, precision, maxVol, step)
-                    call_volatilities_1.update({moneyness: [implied_vol, strike]})
-                else:
-                    eqvlt_close = close + spot - math.exp(-rf*ttm) * strike
-                    implied_vol, error = calculate_vol_BS(maturitydt, optiontype, strike, spot, dividend_ts, yield_ts,
-                                                          eqvlt_close, evalDate,
-                                                          calendar, daycounter, precision, maxVol, step)
-                    put_volatilites_1.update({moneyness: [implied_vol, strike]})
-            elif nbr_month == month_indexs[2]:
-                e_date2 = maturitydt
-                if optionData[optionFlds.index('call_or_put')][optionDataIdx] == '认购':
-                    eqvlt_close = close
-                    implied_vol,error = calculate_vol_BS(maturitydt, optiontype, strike, spot, dividend_ts, yield_ts, eqvlt_close, evalDate,
-                                     calendar, daycounter, precision, maxVol, step)
-                    call_volatilities_2.update({moneyness: [implied_vol, strike]})
-                else:
-                    eqvlt_close = close + spot - math.exp(-rf*ttm) * strike
-                    implied_vol, error = calculate_vol_BS(maturitydt, optiontype, strike, spot, dividend_ts, yield_ts,
-                                                          eqvlt_close, evalDate,
-                                                          calendar, daycounter, precision, maxVol, step)
-                    put_volatilites_2.update({moneyness: [implied_vol, strike]})
-            else:
-                e_date3 = maturitydt
-                if optionData[optionFlds.index('call_or_put')][optionDataIdx] == '认购':
-                    eqvlt_close = close
-                    implied_vol,error = calculate_vol_BS(maturitydt, optiontype, strike, spot, dividend_ts, yield_ts, eqvlt_close, evalDate,
-                                     calendar, daycounter, precision, maxVol, step)
-                    call_volatilities_3.update({moneyness: [implied_vol, strike]})
-                else:
-                    eqvlt_close = close + spot - math.exp(-rf*ttm) * strike
-                    implied_vol, error = calculate_vol_BS(maturitydt, optiontype, strike, spot, dividend_ts, yield_ts,
-                                                          eqvlt_close, evalDate,
-                                                          calendar, daycounter, precision, maxVol, step)
-                    put_volatilites_3.update({moneyness: [implied_vol, strike]})
-        expiration_dates = [e_date0, e_date1, e_date2, e_date3]
-        cal_vols = [call_volatilities_0, call_volatilities_1, call_volatilities_2, call_volatilities_3]
-        put_vols = [put_volatilites_0, put_volatilites_1, put_volatilites_2, put_volatilites_3]
-        if show : print("-"*110)
-        #print('vols:', vol_data)
-        #print('close prices: ', close_prices)
-    except:
-        print('VolatilityData -- get_impliedvolmat_BS_put_cnvt failed')
-        return
-    return cal_vols,put_vols,expiration_dates,spot,curve
-
+## Utilities
 # Utility function for calculating BS implied vols
 def calculate_vol_BS(
         maturitydt,optiontype,strike,spot,dividend_ts,yield_ts,
@@ -492,7 +590,7 @@ def calculate_vol_BS(
         implied_vol = sigma
     return implied_vol,error
 
-def calculate_PCParity_ATM_riskFreeRate(evalDate,daycounter,calendar):
+def calculate_PCParity_ATM_implied_rfs(evalDate,daycounter,calendar):
     vols, spot, mktData, mktFlds, optionData, optionFlds,optionids = get_wind_data(evalDate)
     rf_atm_months = {}
     call_month0 = {}
@@ -547,7 +645,7 @@ def calculate_PCParity_ATM_riskFreeRate(evalDate,daycounter,calendar):
         rf_atm_months.update({idx_month:r_f})
     return rf_atm_months
 
-def calculate_PCParity_riskFreeRate(evalDate,daycounter,calendar):
+def calculate_PCParity_implied_rfs(evalDate,daycounter,calendar):
     vols, spot, mktData, mktFlds, optionData, optionFlds,optionids = get_wind_data(evalDate)
     rf_Ks_months = {}
     call_month0 = {}
@@ -600,33 +698,7 @@ def calculate_PCParity_riskFreeRate(evalDate,daycounter,calendar):
         rf_Ks_months.update({idx_month:r_f})
     return rf_Ks_months
 
-def calculate_PCParity_riskFreeRate_oneMaturity(evalDate,daycounter,calendar,i):
-    vols, spot, mktData, mktFlds, optionData, optionFlds,optionids = get_wind_data(evalDate)
-    call = {}
-    put = {}
-    ttm = 0.0
-    for idx,optionid in enumerate(optionids):
-        optionDataIdx   = optionData[optionFlds.index('wind_code')].index(optionid)
-        mdate = pd.to_datetime(optionData[optionFlds.index('exercise_date')][optionDataIdx])
-        if mdate.month == evalDate.month() + i:
-            mktindex = mktData[mktFlds.index('option_code')].index(optionid)
-            close = mktData[mktFlds.index('close')][mktindex]
-            strike = optionData[optionFlds.index('exercise_price')][optionDataIdx]
-            if optionData[optionFlds.index('call_or_put')][optionDataIdx] == '认购':
-                call.update({strike:close})
-            else:
-                put.update({strike:close})
-            maturitydt = ql.Date(mdate.day, mdate.month, mdate.year)
-            ttm = daycounter.yearFraction(evalDate, maturitydt)
-    count = len(call.keys())
-    r_avg = 0.0
-    for k, strike in enumerate(call.keys()):
-        r = (1/ttm)*math.log((spot+put.get(strike)-call.get(strike))/strike,math.e)
-        #print('strike is : ',strike,'rate is : ',r)
-        r_avg +=r
-    r_avg = r_avg/count
-    return r_avg
-
+## IV Surface
 # Used for black volatiluty curve
 def get_impliedvolmat_call_givenKs(evalDate,daycounter,calendar,curve):
     # Get Wind Market Data
@@ -753,7 +825,7 @@ def get_impliedvolmat_call_BS_givenKs(evalDate,daycounter,calendar):
     #print('close prices: ', close_prices)
     return data,matrix,expiration_dates,strikes,spot
 
-
+## One Maturity
 # Use only put option impied vols for SVI calibrated IV curve (one maturity)
 def get_impliedvolmat_BS_put_cnvt_oneMaturity(
         evalDate,curve,daycounter,calendar,month,maxVol=1.0,step=0.0001,precision=0.001,show=True):
@@ -984,6 +1056,33 @@ def get_impliedvolmat_BS_OTM_oneMaturity(
         return
     return call_volatilities,put_converted_volatilites,strikes_call,strikes_put,\
            close_call,close_put,logMoneyness_call,logMoneyness_put,maturitydt,spot
+
+def calculate_PCParity_riskFreeRate_oneMaturity(evalDate,daycounter,calendar,i):
+    vols, spot, mktData, mktFlds, optionData, optionFlds,optionids = get_wind_data(evalDate)
+    call = {}
+    put = {}
+    ttm = 0.0
+    for idx,optionid in enumerate(optionids):
+        optionDataIdx   = optionData[optionFlds.index('wind_code')].index(optionid)
+        mdate = pd.to_datetime(optionData[optionFlds.index('exercise_date')][optionDataIdx])
+        if mdate.month == evalDate.month() + i:
+            mktindex = mktData[mktFlds.index('option_code')].index(optionid)
+            close = mktData[mktFlds.index('close')][mktindex]
+            strike = optionData[optionFlds.index('exercise_price')][optionDataIdx]
+            if optionData[optionFlds.index('call_or_put')][optionDataIdx] == '认购':
+                call.update({strike:close})
+            else:
+                put.update({strike:close})
+            maturitydt = ql.Date(mdate.day, mdate.month, mdate.year)
+            ttm = daycounter.yearFraction(evalDate, maturitydt)
+    count = len(call.keys())
+    r_avg = 0.0
+    for k, strike in enumerate(call.keys()):
+        r = (1/ttm)*math.log((spot+put.get(strike)-call.get(strike))/strike,math.e)
+        #print('strike is : ',strike,'rate is : ',r)
+        r_avg +=r
+    r_avg = r_avg/count
+    return r_avg
 
 '''
 

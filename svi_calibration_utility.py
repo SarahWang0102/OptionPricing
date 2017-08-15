@@ -16,7 +16,6 @@ def get_svi_optimal_params(data,ttm,sim_no = 100):
     min_sse = 10
     for iter in range(sim_no):
         ms_0 = ms_rnd[iter,:]
-        #adc_0 = adc_rnd[iter,:]*np.array([max(data[1]), 4*ms_0.item(1), 4*ms_0.item(1)])
         adc_0 = adc_rnd[iter, :]
         nm = SVI_NelderMeadOptimization(data,adc_0,ms_0,1e-7)
         calibrated_params, obj = nm.optimization()
@@ -66,25 +65,54 @@ def orgnize_data_for_optimization(
         data_for_optimiztion_months.update({idx_month:data})
     return data_for_optimiztion_months
 
-def orgnize_data_for_hedging(
-        evalDate,daycounter,call_vols_data_monetness,
-        put_vols_data_monetness,expiration_dates,spot):
-    data_months = {}
-    for idx_month, put_data in enumerate(call_vols_data_monetness):
+def orgnize_data_for_optimization_single_optiontype(
+        evalDate,daycounter,vols_data_moneyness,expiration_dates,spot,curve,optiontype):
+    data_for_optimiztion_months = {}
+    for idx_month, option_data in enumerate(vols_data_moneyness):
         expiration_date = expiration_dates[idx_month]
         ttm = daycounter.yearFraction(evalDate, expiration_date)
+        rf = curve.zeroRate(expiration_date, daycounter, ql.Continuous).rate()
+        vols = []
         logMoneynesses = []
+        total_variance = []
         impliedvols = []
         strikes = []
-        close_prices = []
-        for moneyness in put_data.keys():
-            vol = put_data.get(moneyness)[0]
-            strike = put_data.get(moneyness)[1]
-            close = put_data.get(moneyness)[2]
+        for moneyness in option_data.keys():
+            vol = option_data.get(moneyness)[0]
+            strike = option_data.get(moneyness)[1]
+            close = option_data.get(moneyness)[2]
+            if optiontype == ql.Option.Call:
+                if close < spot - strike * math.exp(-rf * ttm): continue
+            else:
+                if close < strike * math.exp(-rf * ttm) - spot: continue
+            tv = (vol ** 2) * ttm
+            total_variance.append(tv)
+            vols.append(vol)
             logMoneynesses.append(moneyness)
             impliedvols.append(vol)
             strikes.append(strike)
-            close_prices.append(close)
+        data = [logMoneynesses, total_variance,expiration_date,impliedvols,strikes]
+        data_for_optimiztion_months.update({idx_month:data})
+    return data_for_optimiztion_months
+
+
+def orgnize_data_for_hedging(
+        evalDate,daycounter,vols_data_monetness,expiration_dates,spot):
+    data_months = {}
+    for idx_month, option_data in enumerate(vols_data_monetness):
+        expiration_date = expiration_dates[idx_month]
+        logMoneynesses = []
+        impliedvols = []
+        strikes = []
+        close_prices = {}
+        for moneyness in option_data.keys():
+            vol = option_data.get(moneyness)[0]
+            strike = option_data.get(moneyness)[1]
+            close = option_data.get(moneyness)[2]
+            logMoneynesses.append(moneyness)
+            impliedvols.append(vol)
+            strikes.append(strike)
+            close_prices.update({strike:close})
         data = [logMoneynesses,strikes,close_prices,expiration_date]
         data_months.update({idx_month:data})
     return data_months
