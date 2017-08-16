@@ -99,7 +99,7 @@ for idx_date,date in enumerate(dates[0:len(dates)-8]):
                 ttm = daycounter.yearFraction(hedge_date,expiration_date_h)
                 if close_h < spot_on_hedge_date - k*math.exp(-rf_on_hedge_date*ttm):
                     continue
-                delta = calculate_delta_sviVolSurface(black_var_surface,hedge_date,daycounter,calendar,params_Mi,spot,rf,k,expiration_date_h,optiontype)
+                delta = calculate_delta_svi(hedge_date,daycounter,calendar,params_Mi,spot,rf,k,expiration_date_h,optiontype)
                 if math.isnan(delta): continue
                 print('delta : ',delta)
                 cash_on_hedge_date = calculate_cash_position(hedge_date, close_h, spot_on_hedge_date, delta)

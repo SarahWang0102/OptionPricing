@@ -24,19 +24,12 @@ daycounter = ql.ActualActual()
 
 def Date(d,m,y):
     return ql.Date(d,m,y)
-'''
+
 with open(os.getcwd()+'/intermediate_data/hedging_daily_params_pcprates.pickle','rb') as f:
     daily_params = pickle.load(f)[0]
 with open(os.getcwd()+'/intermediate_data/hedging_dates_pcprates.pickle','rb') as f:
     dates = pickle.load(f)[0]
 with open(os.getcwd()+'/intermediate_data/hedging_daily_svi_dataset_pcprates.pickle','rb') as f:
-    daily_svi_dataset = pickle.load(f)[0]
-'''
-with open(os.getcwd()+'/intermediate_data/hedging_daily_params_calls.pickle','rb') as f:
-    daily_params = pickle.load(f)[0]
-with open(os.getcwd()+'/intermediate_data/hedging_dates_calls.pickle','rb') as f:
-    dates = pickle.load(f)[0]
-with open(os.getcwd()+'/intermediate_data/hedging_daily_svi_dataset_calls.pickle','rb') as f:
     daily_svi_dataset = pickle.load(f)[0]
 
 # Hedge option using underlying 50ETF
@@ -131,7 +124,7 @@ print('calibration time : ',stop-start)
 
 print('daily_hedge_errors = ',daily_hedge_errors)
 print('daily_pct_hedge_errors = ',daily_pct_hedge_errors)
-with open(os.getcwd()+'/intermediate_data/hedging_daily_hedge_errors_svi_call.pickle','wb') as f:
+with open(os.getcwd()+'/intermediate_data/hedging_daily_hedge_errors_svi_pcprate_call.pickle','wb') as f:
     pickle.dump([daily_hedge_errors,daily_pct_hedge_errors],f)
 
 

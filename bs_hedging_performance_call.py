@@ -4,7 +4,7 @@ from utilities import convert_datelist_from_datetime_to_ql as to_ql_dates
 from utilities import convert_datelist_from_ql_to_datetime as to_dt_dates
 from utilities import convert_date_from_ql_to_datetime as to_dt_date
 from utilities import convert_date_from_datetime_to_ql as to_ql_date
-from bs_estimate_vol import estimiate_bs_constant_vol_single_optiontype
+from bs_estimate_vol import estimiate_bs_constant_vol
 import svi_prepare_vol_data as svi_data
 import svi_calibration_utility as svi_util
 import QuantLib as ql
@@ -64,7 +64,7 @@ for idx_date,date in enumerate(dates[0:len(dates)-3]):
 
         curve_on_hedge_date = svi_data.get_curve_treasury_bond(hedge_date,daycounter)
 
-        estimate_vol, min_sse = estimiate_bs_constant_vol_single_optiontype(calibrate_date, calendar, daycounter,ql.Option.Call)
+        estimate_vol, min_sse = estimiate_bs_constant_vol(calibrate_date, calendar, daycounter)
 
         hedge_error_Ms = {}
         hedge_error_pct_Ms = {}
@@ -75,6 +75,7 @@ for idx_date,date in enumerate(dates[0:len(dates)-3]):
             hedge_errors = []
             hedge_errors_pct = []
             moneyness = []
+            print('liquidition date : ', liquidition_date, ',', nbr_month)
             for idx_k,k in enumerate(strikes_h):
                 if k in close_prices_l.keys():
                     close_l = close_prices_l.get(k)
@@ -88,6 +89,7 @@ for idx_date,date in enumerate(dates[0:len(dates)-3]):
                     continue
                 delta = calculate_delta_bs(hedge_date, daycounter, calendar,
                                            estimate_vol, spot, rf, k, expiration_date_h, optiontype)
+                print('delta : ', delta)
                 cash_on_hedge_date = calculate_cash_position(hedge_date, close_h, spot_on_hedge_date, delta)
                 hedge_error = calculate_hedging_error(hedge_date,liquidition_date,daycounter,spot,close_l,delta,cash_on_hedge_date,rf)
                 hedge_error_pct = hedge_error/close_h
@@ -95,12 +97,13 @@ for idx_date,date in enumerate(dates[0:len(dates)-3]):
                 hedge_error_pct = round(hedge_error_pct, 4)
                 hedge_errors.append(hedge_error)
                 hedge_errors_pct.append(hedge_error_pct)
-                moneyness.append(moneyness_h)
+                moneyness.append(round(spot_on_hedge_date/k,4))
+            print('hedge errors pct : ', hedge_errors_pct)
             hedge_error_Ms.update({nbr_month:[moneyness,hedge_errors]})
             hedge_error_pct_Ms.update({nbr_month:[moneyness,hedge_errors_pct]})
         if idx_date != 0:
-            print('liquidition date : ',liquidition_date)
-            print('hedge errors : ',hedge_error_Ms)
+            #print('liquidition date : ',liquidition_date)
+            #print('hedge errors : ',hedge_error_Ms)
             key_date1 = datetime.date(liquidition_date.year(),liquidition_date.month(),liquidition_date.dayOfMonth())
             daily_hedge_errors.update({key_date1: hedge_error_Ms})
             daily_pct_hedge_errors.update({key_date1: hedge_error_pct_Ms})

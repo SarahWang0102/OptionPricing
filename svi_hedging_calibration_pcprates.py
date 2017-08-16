@@ -1,5 +1,5 @@
 import svi_read_data as wind_data
-from hedging_utility import get_spot_price,calculate_cash_position,calculate_delta,calculate_hedging_error
+from hedging_utility import get_spot_price,calculate_cash_position,calculate_hedging_error
 from utilities import convert_datelist_from_datetime_to_ql as to_ql_dates
 from utilities import convert_datelist_from_ql_to_datetime as to_dt_dates
 from utilities import convert_date_from_ql_to_datetime as to_dt_date
@@ -21,7 +21,7 @@ np.random.seed()
 w.start()
 
 #begDate = ql.Date(1, 12, 2016)
-begDate = ql.Date(1, 7, 2017)
+begDate = ql.Date(1, 6, 2017)
 endDate = ql.Date(20, 7, 2017)
 calendar = ql.China()
 daycounter = ql.ActualActual()
@@ -60,7 +60,7 @@ while evalDate <= endDate:
         totalvariance = data[1]
         expiration_date = data[2]
         ttm = daycounter.yearFraction(evalDate, expiration_date)
-        params = svi_util.get_svi_optimal_params(data, ttm, 50)
+        params = svi_util.get_svi_optimal_params(data, ttm, 30)
         params_months.append(params)
 
     daily_params.update({key_date:params_months})
