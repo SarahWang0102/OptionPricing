@@ -67,7 +67,8 @@ def get_local_volatility_surface(calibrated_params,maturity_dates_c,calibrate_da
         rf = rfs.get(idx_mdt)
         Ft = spot * math.exp(rf * ttm)
         x_svi =  np.log(strikes/Ft)
-        vol = np.sqrt(np.maximum(0,a_star + b_star * (rho_star * (x_svi - m_star) + np.sqrt((x_svi - m_star) ** 2 + sigma_star ** 2))))
+        #vol = np.sqrt(np.maximum(0,a_star + b_star * (rho_star * (x_svi - m_star) + np.sqrt((x_svi - m_star) ** 2 + sigma_star ** 2))))
+        vol = np.sqrt(np.sqrt(np.maximum(0, a_star + b_star * (rho_star * (x_svi - m_star) + np.sqrt((x_svi - m_star) ** 2 + sigma_star ** 2)))))
         data_BVS.append(vol)
     implied_vols = ql.Matrix(len(strikes), len(maturity_dates_c))
     for i in range(implied_vols.rows()):

@@ -4,3 +4,5 @@ retiredcodes
 results
 *.pyc
 *.png
+.csv
+.xlsx
