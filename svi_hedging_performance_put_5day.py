@@ -98,12 +98,12 @@ for idx_date,date in enumerate(dates[0:len(dates)-8]):
             hedge_errors = []
             hedge_errors_pct = []
             moneyness = []
-            print('liquidition date : ', liquidition_date, ',', nbr_month)
+            #print('liquidition date : ', liquidition_date, ',', nbr_month)
             for idx_k,k in enumerate(strikes_h):
                 if k in close_prices_l.keys():
                     close_l = close_prices_l.get(k)
                 else:
-                    print('strike not found in L date')
+                    #print('strike not found in L date')
                     continue
                 close_h = close_prices_h.get(k)
                 # No arbitrage condition
@@ -118,15 +118,15 @@ for idx_date,date in enumerate(dates[0:len(dates)-8]):
                 hedge_error = calculate_hedging_error(hedge_date,liquidition_date,daycounter,spot,close_l,delta,cash_on_hedge_date,rf)
                 hedge_error_pct = hedge_error/close_h
                 if abs(hedge_error_pct) > 3 :
-                    print(date,',',nbr_month,',',k,'too large error', hedge_error_pct)
+                    #print(date,',',nbr_month,',',k,'too large error', hedge_error_pct)
                     continue
                 hedge_error = round(hedge_error,4)
                 hedge_error_pct = round(hedge_error_pct, 4)
                 hedge_errors.append(hedge_error)
                 hedge_errors_pct.append(hedge_error_pct)
                 moneyness.append(round(spot_on_hedge_date/k,4))
-            print('moneyness : ',moneyness)
-            print('hedge errors pct : ', hedge_errors_pct)
+            #print('moneyness : ',moneyness)
+            #print('hedge errors pct : ', hedge_errors_pct)
             hedge_error_Ms.update({nbr_month:[moneyness,hedge_errors]})
             hedge_error_pct_Ms.update({nbr_month:[moneyness,hedge_errors_pct]})
         if idx_date != 0:
@@ -169,20 +169,24 @@ for idx_c,r in enumerate(container):
         print("-" * 100)
     print('total date : ', len(r.keys()))
 
-'''
-mny_0,mny_1,mny_2,mny_3 = hedging_performance(daily_hedge_errors,daily_pct_hedge_errors.keys())
-print("="*100)
-print("SVI Model Average Hedging Percent Error,PUT (SVI VOL SURFACE 5-Day SMOOTHING) : ")
-print("="*100)
-print("%20s %20s %30s" % ("contract month","moneyness", "avg hedging error"))
-print("-"*100)
-for i in range(4):
-    if len(mny_0.get(i)) > 0: print("%20s %20s %25s" % (i,' < 0.97',round(sum(mny_0.get(i))*100/len(mny_0.get(i)),4)))
-    if len(mny_1.get(i))>0: print("%20s %20s %25s" % (i,' 0.97 - 1.00', round(sum(mny_1.get(i))*100 / len(mny_1.get(i)),4)))
-    if len(mny_2.get(i)) > 0: print("%20s %20s %25s" % (i,' 1.00 - 1.03', round(sum(mny_2.get(i))*100 / len(mny_2.get(i)),4)))
-    if len(mny_3.get(i)) > 0: print("%20s %20s %25s" % (i,' > 1.03', round(sum(mny_3.get(i))*100 / len(mny_3.get(i)),4)))
-    print("-" * 100)
-print('total date : ', len(daily_pct_hedge_errors.keys()))
+results = {}
+index = ["sample dates","contract month","moneyness", "avg hedging error(%)"]
+count = 0
+for idx_c,r in enumerate(container):
+    mny_0,mny_1,mny_2,mny_3 = hedging_performance(r,r.keys())
+    print("-"*100)
+    for i in range(4):
+        results.update({count:[samples[idx_c],i,' \'< 0.97',round(sum(np.abs(mny_0.get(i)))*100/len(mny_0.get(i)),4)]})
 
-#print(daily_pct_hedge_errors)
-'''
+        results.update({count+1: [samples[idx_c], i, ' \'0.97 - 1.00',
+                                              round(sum(np.abs(mny_1.get(i))) * 100 / len(mny_1.get(i)), 4)]})
+        results.update({count+2: [samples[idx_c], i, ' \'1.00 - 1.03',
+                                              round(sum(np.abs(mny_2.get(i))) * 100 / len(mny_2.get(i)), 4)]})
+        results.update({count+3: [samples[idx_c], i, ' \'> 1.03',
+                                              round(sum(np.abs(mny_3.get(i))) * 100 / len(mny_3.get(i)), 4)]})
+        count += 4
+    results.update({'total sample'+str(idx_c): ['Total Sample',len(r.keys()),0,0]})
+
+df = pd.DataFrame(data = results,index = index)
+print(df)
+df.to_csv('svi hedge put 5-Day smoothing.csv')

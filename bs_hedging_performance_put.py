@@ -158,3 +158,25 @@ for idx_c,r in enumerate(container):
         if len(mny_3.get(i)) > 0: print("%20s %20s %20s %25s" % (samples[idx_c],i,' > 1.03', round(sum(np.abs(mny_3.get(i)))*100 / len(mny_3.get(i)),4)))
         print("-" * 100)
     print('total date : ', len(r.keys()))
+
+results = {}
+index = ["sample dates","contract month","moneyness", "avg hedging error(%)"]
+count = 0
+for idx_c,r in enumerate(container):
+    mny_0,mny_1,mny_2,mny_3 = hedging_performance(r,r.keys())
+    print("-"*100)
+    for i in range(4):
+        results.update({count:[samples[idx_c],i,' \'< 0.97',round(sum(np.abs(mny_0.get(i)))*100/len(mny_0.get(i)),4)]})
+
+        results.update({count+1: [samples[idx_c], i, ' \'0.97 - 1.00',
+                                              round(sum(np.abs(mny_1.get(i))) * 100 / len(mny_1.get(i)), 4)]})
+        results.update({count+2: [samples[idx_c], i, ' \'1.00 - 1.03',
+                                              round(sum(np.abs(mny_2.get(i))) * 100 / len(mny_2.get(i)), 4)]})
+        results.update({count+3: [samples[idx_c], i, ' \'> 1.03',
+                                              round(sum(np.abs(mny_3.get(i))) * 100 / len(mny_3.get(i)), 4)]})
+        count += 4
+    results.update({'total sample'+str(idx_c): ['Total Sample',len(r.keys()),0,0]})
+
+df = pd.DataFrame(data = results,index = index)
+print(df)
+df.to_csv('bs hedge put 5-Day smoothing.csv')
