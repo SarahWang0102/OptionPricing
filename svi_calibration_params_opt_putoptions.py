@@ -61,20 +61,57 @@ evalDate = calendar.advance(evalDate, ql.Period(1, ql.Days))
 month_indexs = svi_data.get_contract_months(evalDate)
 ql.Settings.instance().evaluationDate = evalDate
 curve = svi_data.get_curve_treasury_bond(evalDate, daycounter)
-cal_vols,put_vols,expiration_dates,spot,curve = svi_data.get_call_put_impliedVols_moneyness_PCPrate_pcvt(
-        evalDate,curve,daycounter,calendar,maxVol=1.0,step=0.0001,precision=0.001,show=False)
+#cal_vols,put_vols,expiration_dates,spot,curve = svi_data.get_call_put_impliedVols_moneyness_PCPrate_pcvt(
+#        evalDate,curve,daycounter,calendar,maxVol=1.0,step=0.0001,precision=0.001,show=False)
+cal_vols,put_vols,expiration_dates,spot,r = svi_data.get_call_put_impliedVols_tbcurve(
+        evalDate,daycounter,calendar,maxVol=1.0,step=0.0001,precision=0.05,show=True)
 # USE ONY PUT OPTION IMPLIED VOLATILITIES!!
 data_months = svi_util.orgnize_data_for_optimization_put(
         evalDate,daycounter,cal_vols,put_vols,expiration_dates,spot)
 
 # Calibrate SVI total variance curve
-i = 1
+i = 3
+
 nbr_month = month_indexs[i]
 data = data_months.get(i)
 logMoneynesses = data[0]
 totalvariance = data[1]
 expiration_date = data[2]
 ttm = daycounter.yearFraction(evalDate, expiration_date)
-final_parames = run_optimization(data,ttm,10)
-plt.show()
+final_parames = run_optimization(data,ttm,30)
+'''
+i = 1
+plt.figure(i)
+nbr_month = month_indexs[i]
+data = data_months.get(i)
+logMoneynesses = data[0]
+totalvariance = data[1]
+expiration_date = data[2]
+ttm = daycounter.yearFraction(evalDate, expiration_date)
+final_parames = run_optimization(data,ttm,1)
 
+i = 2
+plt.figure(i)
+nbr_month = month_indexs[i]
+data = data_months.get(i)
+logMoneynesses = data[0]
+totalvariance = data[1]
+expiration_date = data[2]
+ttm = daycounter.yearFraction(evalDate, expiration_date)
+final_parames = run_optimization(data,ttm,1)
+
+
+i = 3
+plt.figure(i)
+nbr_month = month_indexs[i]
+data = data_months.get(i)
+logMoneynesses = data[0]
+totalvariance = data[1]
+expiration_date = data[2]
+ttm = daycounter.yearFraction(evalDate, expiration_date)
+final_parames = run_optimization(data,ttm,1)
+
+
+
+'''
+plt.show()

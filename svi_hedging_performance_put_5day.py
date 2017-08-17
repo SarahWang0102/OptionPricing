@@ -169,20 +169,23 @@ for idx_c,r in enumerate(container):
         print("-" * 100)
     print('total date : ', len(r.keys()))
 
-'''
-mny_0,mny_1,mny_2,mny_3 = hedging_performance(daily_hedge_errors,daily_pct_hedge_errors.keys())
+p1 = get_1st_percentile_dates(daily_pct_hedge_errors)
+p2 = get_2nd_percentile_dates(daily_pct_hedge_errors)
+p3 = get_3rd_percentile_dates(daily_pct_hedge_errors)
+p4 = get_4th_percentile_dates(daily_pct_hedge_errors)
+container = [p1,p2,p3,p4]
+samples = ['2015.9-2016.1','2016.2-2016.7','2016.8-2017.1','2017.2-2017.7']
 print("="*100)
 print("SVI Model Average Hedging Percent Error,PUT (SVI VOL SURFACE 5-Day SMOOTHING) : ")
 print("="*100)
-print("%20s %20s %30s" % ("contract month","moneyness", "avg hedging error"))
-print("-"*100)
-for i in range(4):
-    if len(mny_0.get(i)) > 0: print("%20s %20s %25s" % (i,' < 0.97',round(sum(mny_0.get(i))*100/len(mny_0.get(i)),4)))
-    if len(mny_1.get(i))>0: print("%20s %20s %25s" % (i,' 0.97 - 1.00', round(sum(mny_1.get(i))*100 / len(mny_1.get(i)),4)))
-    if len(mny_2.get(i)) > 0: print("%20s %20s %25s" % (i,' 1.00 - 1.03', round(sum(mny_2.get(i))*100 / len(mny_2.get(i)),4)))
-    if len(mny_3.get(i)) > 0: print("%20s %20s %25s" % (i,' > 1.03', round(sum(mny_3.get(i))*100 / len(mny_3.get(i)),4)))
-    print("-" * 100)
-print('total date : ', len(daily_pct_hedge_errors.keys()))
-
-#print(daily_pct_hedge_errors)
-'''
+print("%20s %20s %20s %30s" % ("sample dates","contract month","moneyness", "avg hedging error(%)"))
+for idx_c,r in enumerate(container):
+    mny_0,mny_1,mny_2,mny_3 = hedging_performance(r,r.keys())
+    print("-"*100)
+    for i in range(4):
+        if len(mny_0.get(i)) > 0: print("%20s %20s %20s %25s" % (samples[idx_c],i,' < 0.97',round(sum(np.abs(mny_0.get(i)))*100/len(mny_0.get(i)),4)))
+        if len(mny_1.get(i))>0: print("%20s %20s %20s %25s" % (samples[idx_c],i,' 0.97 - 1.00', round(sum(np.abs(mny_1.get(i)))*100 / len(mny_1.get(i)),4)))
+        if len(mny_2.get(i)) > 0: print("%20s %20s %20s %25s" % (samples[idx_c],i,' 1.00 - 1.03', round(sum(np.abs(mny_2.get(i)))*100 / len(mny_2.get(i)),4)))
+        if len(mny_3.get(i)) > 0: print("%20s %20s %20s %25s" % (samples[idx_c],i,' > 1.03', round(sum(np.abs(mny_3.get(i)))*100 / len(mny_3.get(i)),4)))
+        print("-" * 100)
+    print('total date : ', len(r.keys()))
