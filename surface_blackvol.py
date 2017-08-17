@@ -28,8 +28,10 @@ black_var_surface = ql.BlackVarianceSurface(
 
 # Plot
 plt.rcParams['font.sans-serif'] = ['STKaiti']
-plot_years = np.arange(0.0, 0.44, 0.005)
-plot_strikes = np.arange(2.3, 2.65, 0.001)
+#plot_years = np.arange(0.0, 0.44, 0.005)
+#plot_strikes = np.arange(2.3, 2.65, 0.001)
+plot_years = np.arange(0.0, 0.44, 0.05)
+plot_strikes = np.arange(2.3, 2.6, 0.03)
 fig = plt.figure()
 ax = fig.gca(projection='3d')
 X, Y = np.meshgrid(plot_strikes, plot_years)
@@ -42,7 +44,6 @@ surf = ax.plot_surface(X,Y,Z, rstride=1, cstride=1, cmap=cm.coolwarm,
                 linewidth=0.2)
 ax.set_xlabel('行权价')
 ax.set_ylabel('距到期时间')
-ax.set_zlabel('隐含波动率')
 fig.colorbar(surf, shrink=0.5, aspect=5)
 
 fig.savefig('implied_vol_surface '+ str(evalDate) +'.png', dpi=300, format='png')

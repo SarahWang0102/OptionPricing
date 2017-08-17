@@ -67,8 +67,8 @@ def get_local_volatility_surface(calibrated_params,maturity_dates_c,calibrate_da
         rf = rfs.get(idx_mdt)
         Ft = spot * math.exp(rf * ttm)
         x_svi =  np.log(strikes/Ft)
-        #vol = np.sqrt(np.maximum(0,a_star + b_star * (rho_star * (x_svi - m_star) + np.sqrt((x_svi - m_star) ** 2 + sigma_star ** 2))))
-        vol = np.sqrt(np.sqrt(np.maximum(0, a_star + b_star * (rho_star * (x_svi - m_star) + np.sqrt((x_svi - m_star) ** 2 + sigma_star ** 2)))))
+        vol = np.sqrt(np.maximum(0,a_star + b_star * (rho_star * (x_svi - m_star) + np.sqrt((x_svi - m_star) ** 2 + sigma_star ** 2))))
+        #vol = np.sqrt(np.sqrt(np.maximum(0, a_star + b_star * (rho_star * (x_svi - m_star) + np.sqrt((x_svi - m_star) ** 2 + sigma_star ** 2)))))
         data_BVS.append(vol)
     implied_vols = ql.Matrix(len(strikes), len(maturity_dates_c))
     for i in range(implied_vols.rows()):
@@ -92,9 +92,8 @@ def get_local_volatility_surface_smoothed(calibrated_params_list,maturity_dates_
             rf = rfs.get(idx_mdt)
             Ft = spot * math.exp(rf * ttm)
             x_svi =  np.log(strikes/Ft)
-            #vol = np.sqrt(np.maximum(0,a_star + b_star * (rho_star * (x_svi - m_star) + np.sqrt((x_svi - m_star) ** 2 + sigma_star ** 2))))
-            vol = np.sqrt(np.sqrt(np.maximum(0, a_star + b_star * (
-            rho_star * (x_svi - m_star) + np.sqrt((x_svi - m_star) ** 2 + sigma_star ** 2)))))
+            vol = np.sqrt(np.maximum(0,a_star + b_star * (rho_star * (x_svi - m_star) + np.sqrt((x_svi - m_star) ** 2 + sigma_star ** 2))))
+            #vol = np.sqrt(np.sqrt(np.maximum(0, a_star + b_star * (rho_star * (x_svi - m_star) + np.sqrt((x_svi - m_star) ** 2 + sigma_star ** 2)))))
             vol_list.append(vol)
         for idx_v,v in enumerate(vol_list[0]):
             avg_vol = 0.0
@@ -214,7 +213,7 @@ def hedging_performance(svi_pct,dates):
             for idx_m,mny in enumerate(moneyness):
                 e = errors[idx_m]
                 if math.isnan(e) :
-                    print(e)
+                    #print(e)
                     e = 0.0
                 if mny <= 0.97:
                     mny_0.get(nbr_m).append(e)
