@@ -5,25 +5,22 @@ import QuantLib as ql
 import numpy as np
 from WindPy import w
 import plot_util as pu
+import operator
 
 def get_params(nbr_month):
     if nbr_month == 0:
-        #a_star, b_star, rho_star, m_star, sigma_star = 0.00392946245464, 0.932829724957, -0.674532827132, -0.0446916864921, 0.0326894289419
-        #a_star, b_star, rho_star, m_star, sigma_star = 0.00333255956535, 0.936390822665, -0.677761064666, -0.0450928349118, 0.0337258851728
-        a_star, b_star, rho_star, m_star, sigma_star = 0.0038415182727, 0.92391459895, -0.744434878181, -0.0490826326399, 0.0379394405895
+        a_star, b_star, rho_star, m_star, sigma_star = 5.21428571606e-09, 0.975142793726, -0.715028457626, -0.051413796808, 0.0428595816562
         print(nbr_month,' : ',round(a_star,4), round(b_star,4), round(rho_star,4), round(m_star,4), round(sigma_star,4))
     elif nbr_month == 1:
-        #a_star, b_star, rho_star, m_star, sigma_star = 0.0202858609804,0.907688022355,0.867498561699,0.0238060958095,0.0180937230185
-        a_star, b_star, rho_star, m_star, sigma_star = 0.0197740832275 , 0.61378175795 , 0.797599721618 , 0.0210182067761 , 0.0237758129263
+        a_star, b_star, rho_star, m_star, sigma_star = 0.0119830022033, 0.209345779712, -0.239545892797, -0.0556912261369, 0.100862655414
         print(nbr_month, ' : ', round(a_star, 4), round(b_star, 4), round(rho_star, 4), round(m_star, 4),
               round(sigma_star, 4))
     elif nbr_month == 2:
-        a_star, b_star, rho_star, m_star, sigma_star = 0.00815684394433, 3.34024630745, 0.950774727626, 0.0518029569264, 0.0212819968057
-        #a_star, b_star, rho_star, m_star, sigma_star = 0.0105133312325, 0.274698338398, 0.292223667381, -0.000540665540219, 0.0776321826581
+        a_star, b_star, rho_star, m_star, sigma_star = 0.0223722222376, 0.244873156344, -0.81660991058, -0.165172508096, 0.103769251863
         print(nbr_month, ' : ', round(a_star, 4), round(b_star, 4), round(rho_star, 4), round(m_star, 4),
               round(sigma_star, 4))
     else:
-        a_star, b_star, rho_star, m_star, sigma_star = 0.0252339030552, 3.67875932103, 0.982658824086, 0.0210387531491, 0.0050963364926
+        a_star, b_star, rho_star, m_star, sigma_star = 2.26708074534e-10, 0.171441311541, -0.577775453729, -0.234550672991, 0.2710537735
         print(nbr_month, ' : ', round(a_star, 4), round(b_star, 4), round(rho_star, 4), round(m_star, 4),
               round(sigma_star, 4))
     return a_star, b_star, rho_star, m_star, sigma_star
@@ -40,9 +37,9 @@ ql.Settings.instance().evaluationDate = evalDate
 # Calibrate SVI total variance curve
 curve = svi_data.get_curve_treasury_bond(evalDate, daycounter)
 #data_months,risk_free_rates = svi_util.get_data_from_BS_OTM_PCPRate(evalDate,daycounter,calendar,curve,False)
-cal_vols,put_vols,expiration_dates,spot,risk_free_rates = svi_data.get_call_put_impliedVols_moneyness_PCPrate_pcvt(
-        evalDate,daycounter,calendar,maxVol=1.0,step=0.0001,precision=0.001,show=False)
-data_months = svi_util.orgnize_data_for_optimization(
+cal_vols,put_vols,expiration_dates,spot,r = svi_data.get_call_put_impliedVols_tbcurve(
+        evalDate,daycounter,calendar,maxVol=1.0,step=0.0001,precision=0.05,show=True)
+data_months = svi_util.orgnize_data_for_optimization_put(
         evalDate,daycounter,cal_vols,put_vols,expiration_dates,spot)
 #print(risk_free_rates)
 mark = "o"
@@ -60,7 +57,7 @@ for i in range(4):
     impliedvol = data[3]
 
     print('expiration date: ',expiration_date)
-    x_svi  = np.arange(min(logMoneynesses)-0.02, max(logMoneynesses)+0.001, 0.1 / 100)  # log_forward_moneyness
+    x_svi  = np.arange(min(logMoneynesses)-0.025, max(logMoneynesses)+0.005, 0.1 / 100)  # log_forward_moneyness
     ttm = daycounter.yearFraction(evalDate, expiration_date)
     tv_svi = np.multiply(a_star + b_star * (rho_star * (x_svi - m_star) + np.sqrt((x_svi - m_star) ** 2 + sigma_star ** 2)), ttm)
     print(iter,' : a_star,b_star,rho_star, m_star, sigma_star : ',a_star,b_star,rho_star, m_star, sigma_star)
@@ -69,10 +66,10 @@ for i in range(4):
     # plot input data -- moneyness-totalvariance
     #f1 = plt.figure()
     f1, ax1 = plt.subplots()
-    plt.scatter(logMoneynesses, totalvariance, marker = mark,color = pu.c2)
-    plt.plot(x_svi, tv_svi,color = pu.c1,linestyle = line,linewidth = 2,label="SVI Implied Total Variance")
+    plt.scatter(logMoneynesses, impliedvol, marker = mark,color = pu.c2)
+    plt.plot(x_svi, v_svi,color = pu.c1,linestyle = line,linewidth = 2,label="SVI Implied Total Variance")
     scale1 = (max(totalvariance) - min(totalvariance))/13
-    plt.ylim(min(totalvariance)-scale1,max(totalvariance)+scale1)
+    #plt.ylim(min(totalvariance)-scale1,max(totalvariance)+scale1)
     t = str( round( daycounter.yearFraction(evalDate,expiration_date),4))
     title1 = 'SVI Total Variance, T = ' + t + ' ,' + str(evalDate)
     #plt.title(title1)
@@ -100,6 +97,7 @@ for i in range(4):
     #f2.savefig('St'+title2 + '.png', dpi=300, format='png')
 
 f, axarr = plt.subplots()
+
 for j in range(4):
     a_star, b_star, rho_star, m_star, sigma_star = get_params(j)
     data = data_months.get(j)
@@ -108,7 +106,7 @@ for j in range(4):
     totalvariance   = data[1]
     expiration_date = data[2]
     impliedvol = data[3]
-
+    print(expiration_date)
 
     if j == 3:
         x_svi = np.arange(-0.2, 0.025, 0.1 / 100)  # log_forward_moneyness
@@ -140,19 +138,56 @@ for j in range(4):
         t = str(round(daycounter.yearFraction(evalDate, expiration_date), 4))
         l3, = axarr.plot(x_svi, tv_svi, color=pu.c3, linestyle=pu.l3, linewidth=2)
         label3 = 'SVI方差，T = ' + t
-    '''
+
     else:
+        x_svi = np.arange(-0.2, 0.06, 0.1 / 100)  # log_forward_moneyness
+        ttm = daycounter.yearFraction(evalDate, expiration_date)
+        tv_svi = np.multiply(
+            a_star + b_star * (rho_star * (x_svi - m_star) + np.sqrt((x_svi - m_star) ** 2 + sigma_star ** 2)), ttm)
+        v_svi = np.sqrt(
+            a_star + b_star * (rho_star * (x_svi - m_star) + np.sqrt((x_svi - m_star) ** 2 + sigma_star ** 2)))
         l4, = axarr.plot(x_svi, tv_svi, color=pu.c4, linestyle=pu.l4, linewidth=2)
+        t = str(round(daycounter.yearFraction(evalDate, expiration_date), 4))
         l4.set_dashes(pu.dash)
         label4 = 'SVI方差，T = ' + t
-    '''
-axarr.legend([l1,l2,l3],[label1,label2,label3],bbox_to_anchor=(0., 1.02, 1.1, .102), loc=3,
+
+axarr.legend([l1,l2,l3,l4],[label1,label2,label3,label4],bbox_to_anchor=(0., 1.02, 1.1, .102), loc=3,
            ncol=2, borderaxespad=0.,columnspacing=1.5,frameon=False)
 axarr.spines['right'].set_visible(False)
 axarr.spines['top'].set_visible(False)
 axarr.yaxis.set_ticks_position('left')
 axarr.xaxis.set_ticks_position('bottom')
-f.savefig('total_variances '+ str(evalDate) +'.png', dpi=300, format='png')
+f.savefig('SVI total variances no arbitrage, '+ str(evalDate) +'.png', dpi=300, format='png')
+
+
+idx_month = 2
+data = data_months.get(idx_month)
+print('evaluation date: ', evalDate)
+logMoneynesses = data[0]
+totalvariance = data[1]
+tv_dic = {}
+for idx, m in enumerate(logMoneynesses):
+    tv = totalvariance[idx]
+    tv_dic.update({m:tv})
+tv_sorted = sorted(tv_dic.items(), key=operator.itemgetter(0))
+tv_sorted_dic = dict(tv_sorted)
+
+totalvariance_sorted = []
+logMoneynesses_sorted = []
+
+for key_m in tv_sorted_dic.keys():
+    logMoneynesses_sorted.append(key_m)
+    totalvariance_sorted.append(tv_sorted_dic.get(key_m))
+ff, ax = plt.subplots()
+ax.plot(logMoneynesses_sorted, totalvariance_sorted, color = pu.c1,marker = "^",linestyle = pu.l1,linewidth = 2,label="认沽期权隐含方差")
+ax.spines['right'].set_visible(False)
+ax.spines['top'].set_visible(False)
+ax.yaxis.set_ticks_position('left')
+ax.xaxis.set_ticks_position('bottom')
+ax.set_xlabel('Forward log-moneyness')
+ax.legend()
+
+ff.savefig('total variance put ,'+ str(evalDate) +'.png', dpi=300, format='png')
 plt.show()
 
 

@@ -92,7 +92,9 @@ def get_local_volatility_surface_smoothed(calibrated_params_list,maturity_dates_
             rf = rfs.get(idx_mdt)
             Ft = spot * math.exp(rf * ttm)
             x_svi =  np.log(strikes/Ft)
-            vol = np.sqrt(np.maximum(0,a_star + b_star * (rho_star * (x_svi - m_star) + np.sqrt((x_svi - m_star) ** 2 + sigma_star ** 2))))
+            #vol = np.sqrt(np.maximum(0,a_star + b_star * (rho_star * (x_svi - m_star) + np.sqrt((x_svi - m_star) ** 2 + sigma_star ** 2))))
+            vol = np.sqrt(np.sqrt(np.maximum(0, a_star + b_star * (
+            rho_star * (x_svi - m_star) + np.sqrt((x_svi - m_star) ** 2 + sigma_star ** 2)))))
             vol_list.append(vol)
         for idx_v,v in enumerate(vol_list[0]):
             avg_vol = 0.0

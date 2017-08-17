@@ -79,7 +79,6 @@ strikes_op_m,call_volatilities_op_m,put_volatilities_op_m =get_iv_plot_data_PCPR
 #cal_vols_data_moneyness, put_vols_data_monetness = get_call_put_impliedVols_moneyness(evalDate,curve,daycounter,calendar,maxVol=1.0,step=0.0001,precision=0.001,show=False)
 #strikes_op_m,call_volatilities_op_m,put_volatilities_op_m =get_iv_plot_data(cal_vols_data_moneyness, put_vols_data_monetness)
 
-
 strikes_op,call_volatilities_op,put_volatilities_op =get_iv_plot_data_PCPRate(cal_vols_data, put_vols_data)
 print(strikes_op)
 print(strikes_op.get(1))
