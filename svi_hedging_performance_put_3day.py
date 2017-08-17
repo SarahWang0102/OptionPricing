@@ -32,11 +32,11 @@ with open(os.getcwd()+'/intermediate_data/hedging_dates_pcprates.pickle','rb') a
 with open(os.getcwd()+'/intermediate_data/hedging_daily_svi_dataset_pcprates.pickle','rb') as f:
     daily_svi_dataset = pickle.load(f)[0]
 '''
-with open(os.getcwd()+'/intermediate_data/hedging_daily_params_puts.pickle','rb') as f:
+with open(os.getcwd()+'/intermediate_data/total_hedging_daily_params_puts.pickle','rb') as f:
     daily_params = pickle.load(f)[0]
-with open(os.getcwd()+'/intermediate_data/hedging_dates_puts.pickle','rb') as f:
+with open(os.getcwd()+'/intermediate_data/total_hedging_dates_puts.pickle','rb') as f:
     dates = pickle.load(f)[0]
-with open(os.getcwd()+'/intermediate_data/hedging_daily_svi_dataset_puts.pickle','rb') as f:
+with open(os.getcwd()+'/intermediate_data/total_hedging_daily_svi_dataset_puts.pickle','rb') as f:
     daily_svi_dataset = pickle.load(f)[0]
 
 # Hedge option using underlying 50ETF
@@ -44,15 +44,16 @@ daily_hedge_errors = {}
 daily_pct_hedge_errors = {}
 option_last_close_Ms = {}
 
+#print(dates)
+
 for idx_date,date in enumerate(dates[0:len(dates)-10]):
     try:
-        print(idx_date)
+
         calibrate_date2 = to_ql_date(dates[idx_date])
         calibrate_date1 = to_ql_date(dates[idx_date+1])
         calibrate_date = to_ql_date(dates[idx_date+2])
         hedge_date = to_ql_date(dates[idx_date+3])
         liquidition_date = to_ql_date(dates[idx_date+6])
-
         # Liquidition Date Dataset
         dataset_on_liquidition_date = daily_svi_dataset.get(to_dt_date(liquidition_date))
         cal_vols, put_vols, maturity_dates, spot, rf_pcprs = dataset_on_liquidition_date
@@ -88,38 +89,53 @@ for idx_date,date in enumerate(dates[0:len(dates)-10]):
             rf_on_hedge_date = pcprs_on_hedge_date.get(nbr_month)
             moneyness_l, strikes_l, close_prices_l, expiration_date_l = orgnized_data_liquidition_date.get(nbr_month)
             moneyness_h, strikes_h, close_prices_h, expiration_date_h = orgnized_data_hedge_date.get(nbr_month)
+            evalDate = calendar.advance(liquidition_date, ql.Period(5, ql.Days))
+            if expiration_date_l <= evalDate: continue
             rf = curve_on_hedge_date.zeroRate(liquidition_date, daycounter, ql.Continuous).rate()
             hedge_errors = []
             hedge_errors_pct = []
             moneyness = []
-            print('liquidition date : ', liquidition_date, ',', nbr_month)
-            print('closes: ', close_prices_h)
+            #print('liquidition date : ', liquidition_date, ',', nbr_month)
+            #print('closes: ', close_prices_h)
             for idx_k,k in enumerate(strikes_h):
                 if k in close_prices_l.keys():
                     close_l = close_prices_l.get(k)
                 else:
-                    print('strike not found in L date')
+                    #print('strike not found in L date')
                     continue
                 close_h = close_prices_h.get(k)
                 # No arbitrage condition
                 ttm = daycounter.yearFraction(hedge_date,expiration_date_h)
                 if close_h < k*math.exp(-rf_on_hedge_date*ttm) - spot_on_hedge_date:
+                    #print('#1')
                     continue
-                if close_h < 0.005: continue
+                if close_h < 0.0001:
+                    #print('#2')
+                   continue
                 delta = calculate_delta_sviVolSurface(black_var_surface, hedge_date, daycounter, calendar, params_Mi,
-                                                      spot, rf, k, expiration_date_h, optiontype)
-                print('delta : ', delta)
+                                                      spot_c, rf, k, expiration_date_h, optiontype)
+                #print('delta : ', delta)
                 cash_on_hedge_date = calculate_cash_position(hedge_date, close_h, spot_on_hedge_date, delta)
-                print('cash position : ', cash_on_hedge_date)
+                #print('cash position : ', cash_on_hedge_date)
                 hedge_error = calculate_hedging_error(hedge_date,liquidition_date,daycounter,spot,close_l,delta,cash_on_hedge_date,rf)
+                #if math.isnan(hedge_error): continue
                 hedge_error_pct = hedge_error/close_h
+                if abs(hedge_error_pct) > 3 :
+                    print(date,',',nbr_month,',',k,'too large error', hedge_error_pct)
+                #    continue
                 hedge_error = round(hedge_error,4)
                 hedge_error_pct = round(hedge_error_pct, 4)
                 hedge_errors.append(hedge_error)
                 hedge_errors_pct.append(hedge_error_pct)
                 moneyness.append(round(spot_on_hedge_date/k,4))
-            print('moneyness : ',moneyness)
-            print('hedge errors pct : ', hedge_errors_pct)
+            #print('moneyness : ',moneyness)
+
+            avg = sum(hedge_errors_pct)/len(hedge_errors_pct)
+            #print('hedge errors pct : ', avg)
+            #if abs(avg) > 1 :
+            #    print('too large error',avg)
+            #    continue
+
             hedge_error_Ms.update({nbr_month:[moneyness,hedge_errors]})
             hedge_error_pct_Ms.update({nbr_month:[moneyness,hedge_errors_pct]})
         if idx_date != 0:
@@ -140,6 +156,8 @@ print('calibration time : ',stop-start)
 with open(os.getcwd()+'/intermediate_data/hedging_daily_hedge_errors_svi_put.pickle','wb') as f:
     pickle.dump([daily_hedge_errors,daily_pct_hedge_errors],f)
 
+print(daily_pct_hedge_errors.keys())
+
 mny_0,mny_1,mny_2,mny_3 = hedging_performance(daily_pct_hedge_errors,daily_pct_hedge_errors.keys())
 print("="*100)
 print("SVI Model Average Hedging Percent Error,PUT (SVI VOL SURFACE 3-Day SMOOTHING) : ")
@@ -147,13 +165,13 @@ print("="*100)
 print("%20s %20s %30s" % ("contract month","moneyness", "avg hedging error(%)"))
 print("-"*100)
 for i in range(4):
-    if len(mny_0.get(i)) > 0: print("%20s %20s %25s" % (i,' < 0.97',round(sum(mny_0.get(i))*100/len(mny_0.get(i)),4)))
-    if len(mny_1.get(i))>0: print("%20s %20s %25s" % (i,' 0.97 - 1.00', round(sum(mny_1.get(i))*100 / len(mny_1.get(i)),4)))
-    if len(mny_2.get(i)) > 0: print("%20s %20s %25s" % (i,' 1.00 - 1.03', round(sum(mny_2.get(i))*100 / len(mny_2.get(i)),4)))
-    if len(mny_3.get(i)) > 0: print("%20s %20s %25s" % (i,' > 1.03', round(sum(mny_3.get(i))*100 / len(mny_3.get(i)),4)))
+    if len(mny_0.get(i)) > 0: print("%20s %20s %25s" % (i,' < 0.97',round(sum(np.abs(mny_0.get(i)))*100/len(mny_0.get(i)),4)))
+    if len(mny_1.get(i))>0: print("%20s %20s %25s" % (i,' 0.97 - 1.00', round(sum(np.abs(mny_1.get(i)))*100 / len(mny_1.get(i)),4)))
+    if len(mny_2.get(i)) > 0: print("%20s %20s %25s" % (i,' 1.00 - 1.03', round(sum(np.abs(mny_2.get(i)))*100 / len(mny_2.get(i)),4)))
+    if len(mny_3.get(i)) > 0: print("%20s %20s %25s" % (i,' > 1.03', round(sum(np.abs(mny_3.get(i)))*100 / len(mny_3.get(i)),4)))
     print("-" * 100)
 print('total date : ', len(daily_pct_hedge_errors.keys()))
-print(daily_pct_hedge_errors.keys())
+
 
 mny_0,mny_1,mny_2,mny_3 = hedging_performance(daily_hedge_errors,daily_pct_hedge_errors.keys())
 print("="*100)
@@ -168,4 +186,3 @@ for i in range(4):
     if len(mny_3.get(i)) > 0: print("%20s %20s %25s" % (i,' > 1.03', round(sum(mny_3.get(i))*100 / len(mny_3.get(i)),4)))
     print("-" * 100)
 print('total date : ', len(daily_pct_hedge_errors.keys()))
-print(daily_pct_hedge_errors.keys())

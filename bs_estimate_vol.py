@@ -42,8 +42,8 @@ def estimiate_bs_constant_vol(evalDate, calendar, daycounter):
         curve       = wind_data.get_curve_treasury_bond(evalDate, daycounter)
         yield_ts    = ql.YieldTermStructureHandle(curve)
         dividend_ts = ql.YieldTermStructureHandle(ql.FlatForward(evalDate, 0.0, daycounter))
-        vol = 1.0
-        step = 0.0005
+        vol = 1
+        step = 0.005
         min_sse = 10000
         estimate_vol = 0.0
         while vol > step:

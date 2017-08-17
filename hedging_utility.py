@@ -58,7 +58,7 @@ def calculate_delta_svi(hedge_date,daycounter,calendar,params_Mi,spot,rf_h_d,str
     return delta
 
 def get_local_volatility_surface(calibrated_params,maturity_dates_c,calibrate_date,daycounter,calendar,spot,rfs):
-    strikes = np.arange(2.1, 2.8, 0.1 / 100)
+    strikes = np.arange(1.0, 5.0, 0.1 / 100)
     data_BVS = []
     for idx_mdt,mdt in enumerate(maturity_dates_c):
         params = calibrated_params[idx_mdt]
@@ -77,7 +77,7 @@ def get_local_volatility_surface(calibrated_params,maturity_dates_c,calibrate_da
     return black_var_surface
 
 def get_local_volatility_surface_smoothed(calibrated_params_list,maturity_dates_c,calibrate_dates,daycounter,calendar,spot,rfs):
-    strikes = np.arange(2.1, 2.8, 0.1 / 100)
+    strikes = np.arange(1.0, 5.0, 0.1 / 100)
     data_BVS = []
 
     for idx_mdt,mdt in enumerate(maturity_dates_c):
@@ -115,8 +115,8 @@ def calculate_delta_sviVolSurface(black_var_surface,hedge_date,daycounter,calend
     payoff = ql.PlainVanillaPayoff(optiontype, strike)
     option = ql.EuropeanOption(payoff, exercise)
 
-    local_vol_surface = ql.LocalVolSurface(ql.BlackVolTermStructureHandle(black_var_surface), yield_ts, dividend_ts,spot)
-    process = ql.BlackScholesMertonProcess(ql.QuoteHandle(ql.SimpleQuote(spot)), dividend_ts, yield_ts,ql.BlackVolTermStructureHandle(black_var_surface))
+    process = ql.BlackScholesMertonProcess(ql.QuoteHandle(ql.SimpleQuote(spot)), dividend_ts,
+                                           yield_ts,ql.BlackVolTermStructureHandle(black_var_surface))
 
     option.setPricingEngine(ql.AnalyticEuropeanEngine(process))
     delta = option.delta()
@@ -180,9 +180,9 @@ def calculate_cash_position(hedge_date,option_price,spot,delta):
 
 def calculate_hedging_error(hedge_date,liquidition_date,daycounter,spot,option_price,delta,cash_position,rf_from_curve):
     t = daycounter.yearFraction(hedge_date, liquidition_date)
-    hedging_error = delta*spot + cash_position*math.exp(rf_from_curve * t) - option_price
+    hedging_error = abs(delta*spot + cash_position*math.exp(rf_from_curve * t) - option_price)
     if math.isnan(hedging_error):
-        print('warning!')
+        print('warning! hedging error is nan')
     return hedging_error
 
 def hedging_performance(svi_pct,dates):
@@ -222,3 +222,35 @@ def hedging_performance(svi_pct,dates):
                 else:
                     mny_3.get(nbr_m).append(e)
     return mny_0,mny_1,mny_2,mny_3
+
+def get_1st_percentile_dates(daily_pct_hedge_errors):
+    # 1st_percentile from 2015.9 to 2016.1
+    results = {}
+    for dt in daily_pct_hedge_errors:
+        if dt > datetime.date(2015, 9, 1) and dt <= datetime.date(2016, 1, 29):
+            results.update({dt:daily_pct_hedge_errors.get(dt)})
+    return results
+
+def get_2nd_percentile_dates(daily_pct_hedge_errors):
+    # 1st_percentile from 2016.2 to 2016.7
+    results = {}
+    for dt in daily_pct_hedge_errors:
+        if dt > datetime.date(2016, 1, 29) and dt <= datetime.date(2016, 7, 31):
+            results.update({dt:daily_pct_hedge_errors.get(dt)})
+    return results
+
+def get_3rd_percentile_dates(daily_pct_hedge_errors):
+    # 1st_percentile from 2016.8 to 2017.1
+    results = {}
+    for dt in daily_pct_hedge_errors:
+        if dt > datetime.date(2016, 7, 31) and dt <= datetime.date(2017, 1, 28):
+            results.update({dt:daily_pct_hedge_errors.get(dt)})
+    return results
+
+def get_4th_percentile_dates(daily_pct_hedge_errors):
+    # 1st_percentile from 2017.2 to 2017.7
+    results = {}
+    for dt in daily_pct_hedge_errors:
+        if dt > datetime.date(2017, 1, 28) and dt <= datetime.date(2017, 7, 30):
+            results.update({dt:daily_pct_hedge_errors.get(dt)})
+    return results

@@ -2,16 +2,12 @@ from xlrd import open_workbook
 import pickle
 import datetime
 import os
-date = datetime.date(2017,2,17)
-daily_params  = {}
-daily_params.update({date:1})
-flag = 1
-if flag != 0: print('y')
-a = [1,2]
-with open(os.getcwd()+'/intermediate_data/test.pickle','wb') as f:
-    pickle.dump([daily_params],f)
+with open(os.getcwd()+'/intermediate_data/total_hedging_bs_estimated_vols.pickle','rb') as f:
+    daily_params = pickle.load(f)[0]
+with open(os.getcwd()+'/intermediate_data/total_hedging_dates_puts.pickle','rb') as f:
+    dates = pickle.load(f)[0]
+with open(os.getcwd()+'/intermediate_data/total_hedging_daily_svi_dataset_puts.pickle','rb') as f:
+    daily_svi_dataset = pickle.load(f)[0]
 
-with open(os.getcwd()+'/intermediate_data/test.pickle','rb') as f:
-    results = pickle.load(f)
-
-print(results)
+print(len(daily_params))
+print(len(dates))

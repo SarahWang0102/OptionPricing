@@ -1,5 +1,5 @@
 import svi_read_data as wind_data
-from hedging_utility import get_spot_price,get_1st_percentile_dates,get_2nd_percentile_dates,get_3rd_percentile_dates,get_4th_percentile_dates,hedging_performance,calculate_cash_position,calculate_delta_sviVolSurface,get_local_volatility_surface_smoothed,get_local_volatility_surface,calculate_delta_svi,calculate_hedging_error
+from hedging_utility import get_spot_price,hedging_performance,calculate_cash_position,calculate_delta_svi,calculate_delta_formula_svi,get_local_volatility_surface_smoothed,calculate_delta_sviVolSurface,calculate_hedging_error,get_local_volatility_surface
 from utilities import convert_datelist_from_datetime_to_ql as to_ql_dates
 from utilities import convert_datelist_from_ql_to_datetime as to_dt_dates
 from utilities import convert_date_from_ql_to_datetime as to_dt_date
@@ -24,14 +24,8 @@ daycounter = ql.ActualActual()
 
 def Date(d,m,y):
     return ql.Date(d,m,y)
-'''
-with open(os.getcwd()+'/intermediate_data/hedging_daily_params_pcprates.pickle','rb') as f:
-    daily_params = pickle.load(f)[0]
-with open(os.getcwd()+'/intermediate_data/hedging_dates_pcprates.pickle','rb') as f:
-    dates = pickle.load(f)[0]
-with open(os.getcwd()+'/intermediate_data/hedging_daily_svi_dataset_pcprates.pickle','rb') as f:
-    daily_svi_dataset = pickle.load(f)[0]
-'''
+
+
 with open(os.getcwd()+'/intermediate_data/total_hedging_daily_params_puts.pickle','rb') as f:
     daily_params = pickle.load(f)[0]
 with open(os.getcwd()+'/intermediate_data/total_hedging_dates_puts.pickle','rb') as f:
@@ -44,33 +38,39 @@ daily_hedge_errors = {}
 daily_pct_hedge_errors = {}
 option_last_close_Ms = {}
 
-for idx_date,date in enumerate(dates[0:len(dates)-8]):
+for idx_date,date in enumerate(dates[0:len(dates)-15]):
     try:
         print(idx_date)
-        calibrate_date4 = to_ql_date(dates[idx_date])
-        calibrate_date3 = to_ql_date(dates[idx_date+1])
-        calibrate_date2 = to_ql_date(dates[idx_date+2])
-        calibrate_date1 = to_ql_date(dates[idx_date+3])
-        calibrate_date = to_ql_date(dates[idx_date+4])
-        hedge_date = to_ql_date(dates[idx_date+5])
-        liquidition_date = to_ql_date(dates[idx_date+6])
+        calibrate_date9 = to_ql_date(dates[idx_date])
+        calibrate_date8 = to_ql_date(dates[idx_date+1])
+        calibrate_date7 = to_ql_date(dates[idx_date+2])
+        calibrate_date6 = to_ql_date(dates[idx_date+3])
+        calibrate_date5 = to_ql_date(dates[idx_date+4])
+        calibrate_date4 = to_ql_date(dates[idx_date+5])
+        calibrate_date3 = to_ql_date(dates[idx_date+6])
+        calibrate_date2 = to_ql_date(dates[idx_date+7])
+        calibrate_date1 = to_ql_date(dates[idx_date+8])
+
+        calibrate_date = to_ql_date(dates[idx_date+9])
+        hedge_date = to_ql_date(dates[idx_date+10])
+        liquidition_date = to_ql_date(dates[idx_date+11])
 
         # Liquidition Date Dataset
         dataset_on_liquidition_date = daily_svi_dataset.get(to_dt_date(liquidition_date))
         cal_vols, put_vols, maturity_dates, spot, rf_pcprs = dataset_on_liquidition_date
 
-        # SELECT PUT OPTION DATA!!
+        # SELECT CALL OPTION DATA!!
         expiration_dates = to_ql_dates(maturity_dates)
         orgnized_data_liquidition_date = svi_util.orgnize_data_for_hedging(
-            liquidition_date , daycounter, put_vols, expiration_dates, spot)
-        optiontype = ql.Option.Put
+            liquidition_date , daycounter, cal_vols, expiration_dates, spot)
+        optiontype = ql.Option.Call
 
-        # Hedge Date Dataset
+        # Hedge Date Data Set
         dataset_on_hedge_date = daily_svi_dataset.get(to_dt_date(hedge_date))
         cal_vols_h, put_vols_h, maturity_dates_h, spot_on_hedge_date, pcprs_on_hedge_date = dataset_on_hedge_date
         expiration_dates_h = to_ql_dates(maturity_dates_h)
         orgnized_data_hedge_date = svi_util.orgnize_data_for_hedging(
-            hedge_date, daycounter, put_vols_h, expiration_dates_h, spot_on_hedge_date)
+            hedge_date, daycounter, cal_vols_h, expiration_dates_h, spot_on_hedge_date)
 
         calibrated_params = daily_params.get(to_dt_date(calibrate_date)) # on calibrate_date
         calibrated_params1 = daily_params.get(to_dt_date(calibrate_date1))  # on calibrate_date
@@ -78,13 +78,16 @@ for idx_date,date in enumerate(dates[0:len(dates)-8]):
         calibrated_params3 = daily_params.get(to_dt_date(calibrate_date3))  # on calibrate_date
         calibrated_params4 = daily_params.get(to_dt_date(calibrate_date4))  # on calibrate_date
         curve_on_hedge_date = svi_data.get_curve_treasury_bond(hedge_date,daycounter)
+
         # Local Vol Surface
         cal_vols_c, put_vols_c, maturity_dates_c, spot_c, rf_c  = daily_svi_dataset.get(to_dt_date(calibrate_date))
-        #black_var_surface = get_local_volatility_surface(calibrated_params,to_ql_dates(maturity_dates_c),calibrate_date,daycounter,calendar,spot_c,rf_c)
+
         calibrated_params_list=[calibrated_params,calibrated_params1,calibrated_params2,calibrated_params3,calibrated_params4]
         calibrate_dates = [calibrate_date,calibrate_date1,calibrate_date2,calibrate_date3,calibrate_date4]
         black_var_surface = get_local_volatility_surface_smoothed(calibrated_params_list,to_ql_dates(maturity_dates_c),
                                                                   calibrate_dates,daycounter,calendar,spot_c,rf_c)
+        #black_var_surface = get_local_volatility_surface(calibrated_params,to_ql_dates(maturity_dates_c),calibrate_date,daycounter,calendar,spot_c,rf_c)
+
         hedge_error_Ms = {}
         hedge_error_pct_Ms = {}
         for nbr_month in range(4):
@@ -108,16 +111,20 @@ for idx_date,date in enumerate(dates[0:len(dates)-8]):
                 close_h = close_prices_h.get(k)
                 # No arbitrage condition
                 ttm = daycounter.yearFraction(hedge_date,expiration_date_h)
-                if close_h < k*math.exp(-rf_on_hedge_date*ttm) - spot_on_hedge_date:
+                if close_h < spot_on_hedge_date - k*math.exp(-rf_on_hedge_date*ttm):
                     continue
                 if close_h < 0.0001:
                    continue
-                delta = calculate_delta_sviVolSurface(black_var_surface, hedge_date, daycounter, calendar, params_Mi,
-                                                      spot_c, rf, k, expiration_date_h, optiontype)
+                delta = calculate_delta_sviVolSurface(black_var_surface,hedge_date,daycounter,calendar,
+                                                      params_Mi,spot_c,rf,k,expiration_date_h,optiontype)
+
+                print('delta : ',delta)
                 cash_on_hedge_date = calculate_cash_position(hedge_date, close_h, spot_on_hedge_date, delta)
-                hedge_error = calculate_hedging_error(hedge_date,liquidition_date,daycounter,spot,close_l,delta,cash_on_hedge_date,rf)
+                hedge_error = calculate_hedging_error(hedge_date,liquidition_date,
+                                                      daycounter,spot,close_l,delta,cash_on_hedge_date,rf)
+
                 hedge_error_pct = hedge_error/close_h
-                if abs(hedge_error_pct) > 3 :
+                if abs(hedge_error_pct) > 2 :
                     print(date,',',nbr_month,',',k,'too large error', hedge_error_pct)
                     continue
                 hedge_error = round(hedge_error,4)
@@ -131,7 +138,7 @@ for idx_date,date in enumerate(dates[0:len(dates)-8]):
             hedge_error_pct_Ms.update({nbr_month:[moneyness,hedge_errors_pct]})
         if idx_date != 0:
             #print('liquidition date : ',liquidition_date)
-            #print('hedge errors : ',hedge_error_Ms)
+            #print('hedge errors pct : ',hedge_error_pct_Ms)
             key_date1 = datetime.date(liquidition_date.year(),liquidition_date.month(),liquidition_date.dayOfMonth())
             daily_hedge_errors.update({key_date1: hedge_error_Ms})
             daily_pct_hedge_errors.update({key_date1: hedge_error_pct_Ms})
@@ -142,39 +149,16 @@ for idx_date,date in enumerate(dates[0:len(dates)-8]):
 stop = timeit.default_timer()
 print('calibration time : ',stop-start)
 
-print('daily_hedge_errors = ',daily_hedge_errors)
-print('daily_pct_hedge_errors = ',daily_pct_hedge_errors)
-with open(os.getcwd()+'/intermediate_data/hedging_daily_hedge_errors_svi_put.pickle','wb') as f:
+#print('daily_hedge_errors = ',daily_hedge_errors)
+#print('daily_pct_hedge_errors = ',daily_pct_hedge_errors)
+with open(os.getcwd()+'/intermediate_data/hedging_daily_hedge_errors_svi_call.pickle','wb') as f:
     pickle.dump([daily_hedge_errors,daily_pct_hedge_errors],f)
-
 print(daily_pct_hedge_errors.keys())
-p1 = get_1st_percentile_dates(daily_pct_hedge_errors)
-p2 = get_2nd_percentile_dates(daily_pct_hedge_errors)
-p3 = get_3rd_percentile_dates(daily_pct_hedge_errors)
-p4 = get_4th_percentile_dates(daily_pct_hedge_errors)
-container = [p1,p2,p3,p4]
-samples = ['2015.9-2016.1','2016.2-2016.7','2016.8-2017.1','2017.2-2017.7']
+mny_0,mny_1,mny_2,mny_3 = hedging_performance(daily_pct_hedge_errors,daily_pct_hedge_errors.keys())
 print("="*100)
-print("SVI Model Average Hedging Percent Error,PUT (SVI VOL SURFACE 5-Day SMOOTHING) : ")
+print("SVI Model Average Hedging Percent Error,CALL (SVI VOL SURFACE 10-Day SMOOTHING) : ")
 print("="*100)
-print("%20s %20s %20s %30s" % ("sample dates","contract month","moneyness", "avg hedging error(%)"))
-for idx_c,r in enumerate(container):
-    mny_0,mny_1,mny_2,mny_3 = hedging_performance(r,r.keys())
-    print("-"*100)
-    for i in range(4):
-        if len(mny_0.get(i)) > 0: print("%20s %20s %20s %25s" % (samples[idx_c],i,' < 0.97',round(sum(np.abs(mny_0.get(i)))*100/len(mny_0.get(i)),4)))
-        if len(mny_1.get(i))>0: print("%20s %20s %20s %25s" % (samples[idx_c],i,' 0.97 - 1.00', round(sum(np.abs(mny_1.get(i)))*100 / len(mny_1.get(i)),4)))
-        if len(mny_2.get(i)) > 0: print("%20s %20s %20s %25s" % (samples[idx_c],i,' 1.00 - 1.03', round(sum(np.abs(mny_2.get(i)))*100 / len(mny_2.get(i)),4)))
-        if len(mny_3.get(i)) > 0: print("%20s %20s %20s %25s" % (samples[idx_c],i,' > 1.03', round(sum(np.abs(mny_3.get(i)))*100 / len(mny_3.get(i)),4)))
-        print("-" * 100)
-    print('total date : ', len(r.keys()))
-
-'''
-mny_0,mny_1,mny_2,mny_3 = hedging_performance(daily_hedge_errors,daily_pct_hedge_errors.keys())
-print("="*100)
-print("SVI Model Average Hedging Percent Error,PUT (SVI VOL SURFACE 5-Day SMOOTHING) : ")
-print("="*100)
-print("%20s %20s %30s" % ("contract month","moneyness", "avg hedging error"))
+print("%20s %20s %30s" % ("contract month","moneyness", "avg hedging error(%)"))
 print("-"*100)
 for i in range(4):
     if len(mny_0.get(i)) > 0: print("%20s %20s %25s" % (i,' < 0.97',round(sum(mny_0.get(i))*100/len(mny_0.get(i)),4)))
@@ -184,5 +168,3 @@ for i in range(4):
     print("-" * 100)
 print('total date : ', len(daily_pct_hedge_errors.keys()))
 
-#print(daily_pct_hedge_errors)
-'''
