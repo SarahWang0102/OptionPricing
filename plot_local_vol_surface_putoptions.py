@@ -98,7 +98,7 @@ daily_pct_hedge_errors = {}
 option_last_close_Ms = {}
 
 #date = datetime.date(2017,6,12)
-date = datetime.date(2017,7,19)
+date = datetime.date(2017,7,20)
 idx_date = dates.index(date)
 calibrate_date4 = to_ql_date(dates[idx_date-4])
 calibrate_date3 = to_ql_date(dates[idx_date -3])
@@ -143,6 +143,7 @@ Z = np.array([local_vol_surface.localVol(y, x)
               for xr, yr in zip(X, Y)
                   for x, y in zip(xr,yr) ]
              ).reshape(len(X), len(X[0]))
+print(Z)
 print(Z[np.argmin(Z[:,1]),0])
 surf = ax.plot_surface(X,Y,Z, rstride=1, cstride=1, cmap=cm.coolwarm,
                 linewidth=0.1)
@@ -164,6 +165,6 @@ ax1.set_xlabel('行权价')
 ax1.set_ylabel('距到期时间')
 fig1.colorbar(surf, shrink=0.5, aspect=5)
 
-
+fig.savefig('svi_implied_vol_surface ，'+ str(date) +'.png', dpi=300, format='png')
 fig1.savefig('svi_implied_vol_surface_smoothed ，'+ str(date) +'.png', dpi=300, format='png')
 plt.show()

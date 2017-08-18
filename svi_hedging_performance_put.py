@@ -126,6 +126,8 @@ for idx_date,date in enumerate(dates[0:len(dates)-2]):
 
 stop = timeit.default_timer()
 print('calibration time : ',stop-start)
+with open(os.getcwd() + '/intermediate_data/hedging_daily_hedge_errors_svi_put_no_smoothing.pickle', 'wb') as f:
+    pickle.dump([daily_hedge_errors, daily_pct_hedge_errors], f)
 
 p1 = get_1st_percentile_dates(daily_pct_hedge_errors)
 p2 = get_2nd_percentile_dates(daily_pct_hedge_errors)
@@ -173,4 +175,4 @@ for idx_c, r in enumerate(container):
 
 df = pd.DataFrame(data=results, index=index)
 print(df)
-df.to_csv('svi hedge put 3-Day smoothing.csv')
+df.to_csv('svi hedge put no smoothing.csv')

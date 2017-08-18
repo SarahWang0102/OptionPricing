@@ -66,10 +66,10 @@ for i in range(4):
     # plot input data -- moneyness-totalvariance
     #f1 = plt.figure()
     f1, ax1 = plt.subplots()
-    plt.scatter(logMoneynesses, impliedvol, marker = mark,color = pu.c2)
-    plt.plot(x_svi, v_svi,color = pu.c1,linestyle = line,linewidth = 2,label="SVI Implied Total Variance")
+    plt.scatter(logMoneynesses, totalvariance, marker = mark,color = pu.c2)
+    plt.plot(x_svi, tv_svi,color = pu.c1,linestyle = line,linewidth = 2,label="SVI Implied Total Variance")
     scale1 = (max(totalvariance) - min(totalvariance))/13
-    #plt.ylim(min(totalvariance)-scale1,max(totalvariance)+scale1)
+    plt.ylim(min(totalvariance)-scale1,max(totalvariance)+scale1)
     t = str( round( daycounter.yearFraction(evalDate,expiration_date),4))
     title1 = 'SVI Total Variance, T = ' + t + ' ,' + str(evalDate)
     #plt.title(title1)

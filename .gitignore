@@ -4,5 +4,6 @@ retiredcodes
 results
 *.pyc
 *.png
-.csv
-.xlsx
+*.csv
+*.xlsx
+*.xls

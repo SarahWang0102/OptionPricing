@@ -151,7 +151,7 @@ print('calibration time : ', stop - start)
 
 print('daily_hedge_errors = ', daily_hedge_errors)
 print('daily_pct_hedge_errors = ', daily_pct_hedge_errors)
-with open(os.getcwd() + '/intermediate_data/hedging_daily_hedge_errors_svi_put.pickle', 'wb') as f:
+with open(os.getcwd() + '/intermediate_data/hedging_daily_hedge_errors_svi_put_5day.pickle', 'wb') as f:
     pickle.dump([daily_hedge_errors, daily_pct_hedge_errors], f)
 
 print(daily_pct_hedge_errors.keys())
