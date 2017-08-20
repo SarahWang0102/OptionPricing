@@ -41,8 +41,8 @@ def get_black_variance_surface(calibrated_params,maturity_dates_c,calibrate_date
         rf = rfs.get(idx_mdt)
         Ft = spot * math.exp(rf * ttm)
         x_svi =  np.log(strikes/Ft)
-        #vol = np.sqrt(np.maximum(0,a_star + b_star * (rho_star * (x_svi - m_star) + np.sqrt((x_svi - m_star) ** 2 + sigma_star ** 2))))
-        vol = np.sqrt(np.sqrt(np.maximum(0, a_star + b_star * (rho_star * (x_svi - m_star) + np.sqrt((x_svi - m_star) ** 2 + sigma_star ** 2)))))
+        vol = np.sqrt(np.maximum(0,a_star + b_star * (rho_star * (x_svi - m_star) + np.sqrt((x_svi - m_star) ** 2 + sigma_star ** 2))))
+        #vol = np.sqrt(np.sqrt(np.maximum(0, a_star + b_star * (rho_star * (x_svi - m_star) + np.sqrt((x_svi - m_star) ** 2 + sigma_star ** 2)))))
         data_BVS.append(vol)
     implied_vols = ql.Matrix(len(strikes), len(maturity_dates_c))
     for i in range(implied_vols.rows()):
@@ -66,9 +66,9 @@ def get_black_variance_surface_smoothed(calibrated_params_list,maturity_dates_c,
             rf = rfs.get(idx_mdt)
             Ft = spot * math.exp(rf * ttm)
             x_svi =  np.log(strikes/Ft)
-            #vol = np.sqrt(np.maximum(0,a_star + b_star * (rho_star * (x_svi - m_star) + np.sqrt((x_svi - m_star) ** 2 + sigma_star ** 2))))
-            vol = np.sqrt(np.sqrt(np.maximum(0, a_star + b_star * (
-            rho_star * (x_svi - m_star) + np.sqrt((x_svi - m_star) ** 2 + sigma_star ** 2)))))
+            vol = np.sqrt(np.maximum(0,a_star + b_star * (rho_star * (x_svi - m_star) + np.sqrt((x_svi - m_star) ** 2 + sigma_star ** 2))))
+            #vol = np.sqrt(np.sqrt(np.maximum(0, a_star + b_star * (
+            #rho_star * (x_svi - m_star) + np.sqrt((x_svi - m_star) ** 2 + sigma_star ** 2)))))
             vol_list.append(vol)
         for idx_v,v in enumerate(vol_list[0]):
             avg_vol = 0.0
@@ -98,7 +98,7 @@ daily_pct_hedge_errors = {}
 option_last_close_Ms = {}
 
 #date = datetime.date(2017,6,12)
-date = datetime.date(2017,7,20)
+date = datetime.date(2017,7,19)
 idx_date = dates.index(date)
 calibrate_date4 = to_ql_date(dates[idx_date-4])
 calibrate_date3 = to_ql_date(dates[idx_date -3])
@@ -139,7 +139,13 @@ plot_strikes = np.arange(2.1, 2.6, 0.03)
 fig = plt.figure()
 ax = fig.gca(projection='3d')
 X, Y = np.meshgrid(plot_strikes, plot_years)
+'''
 Z = np.array([local_vol_surface.localVol(y, x)
+              for xr, yr in zip(X, Y)
+                  for x, y in zip(xr,yr) ]
+             ).reshape(len(X), len(X[0]))
+'''
+Z = np.array([black_var_surface.blackVol(y, x)
               for xr, yr in zip(X, Y)
                   for x, y in zip(xr,yr) ]
              ).reshape(len(X), len(X[0]))
@@ -147,22 +153,22 @@ print(Z)
 print(Z[np.argmin(Z[:,1]),0])
 surf = ax.plot_surface(X,Y,Z, rstride=1, cstride=1, cmap=cm.coolwarm,
                 linewidth=0.1)
-ax.set_xlabel('行权价')
-ax.set_ylabel('距到期时间')
+ax.set_xlabel('K')
+ax.set_ylabel('T')
 fig.colorbar(surf, shrink=0.5, aspect=5)
 
 fig1= plt.figure()
 ax1 = fig1.gca(projection='3d')
 X, Y = np.meshgrid(plot_strikes, plot_years)
-Z = np.array([local_vol_surface_smoothed.localVol(y, x)
+Z = np.array([black_var_surface_smoothed.blackVol(y, x)
               for xr, yr in zip(X, Y)
                   for x, y in zip(xr,yr) ]
              ).reshape(len(X), len(X[0]))
 print(Z[np.argmin(Z[:,1]),0])
 surf = ax1.plot_surface(X,Y,Z, rstride=1, cstride=1, cmap=cm.coolwarm,
-                linewidth=0.1)
-ax1.set_xlabel('行权价')
-ax1.set_ylabel('距到期时间')
+                linewidth=0.1,vmin=0.18,vmax = 0.35)
+ax1.set_xlabel('K')
+ax1.set_ylabel('T')
 fig1.colorbar(surf, shrink=0.5, aspect=5)
 
 fig.savefig('svi_implied_vol_surface ，'+ str(date) +'.png', dpi=300, format='png')

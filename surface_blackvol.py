@@ -12,12 +12,12 @@ w.start()
 # Evaluation Settings
 calendar = ql.China()
 daycounter = ql.ActualActual()
-evalDate = ql.Date(19, 7, 2017)
-#evalDate = calendar.advance(evalDate,ql.Period(1,ql.Days))
+evalDate = ql.Date(19, 7, 2016)
+evalDate = calendar.advance(evalDate,ql.Period(1,ql.Days))
 # Construct Black Variance Surface
 #data_BVS,mdts_BVS,strike_BVS,implied_vols,spot = get_impliedvolmat_call_BS(evalDate, daycounter,calendar)
 curve = svi_data.get_curve_treasury_bond(evalDate,daycounter)
-data_BVS,iv_matrix,mdts_BVS,strike_BVS,spot = svi_data.get_impliedvolmat_call_givenKs(evalDate,daycounter,calendar,curve)
+data_BVS,iv_matrix,mdts_BVS,strike_BVS,spot = svi_data.get_impliedvolmat_call_BS_givenKs(evalDate,daycounter,calendar)
 for i in range(iv_matrix.rows()):
     for j in range(iv_matrix.columns()):
         iv_matrix[i][j] = data_BVS[j][i]
@@ -31,7 +31,7 @@ plt.rcParams['font.sans-serif'] = ['STKaiti']
 #plot_years = np.arange(0.0, 0.44, 0.005)
 #plot_strikes = np.arange(2.3, 2.65, 0.001)
 plot_years = np.arange(0.0, 0.44, 0.05)
-plot_strikes = np.arange(2.3, 2.6, 0.03)
+plot_strikes = np.arange(2.3, 2.65, 0.03)
 fig = plt.figure()
 ax = fig.gca(projection='3d')
 X, Y = np.meshgrid(plot_strikes, plot_years)

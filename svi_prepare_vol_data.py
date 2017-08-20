@@ -749,8 +749,8 @@ def get_impliedvolmat_call_givenKs(evalDate,daycounter,calendar,curve):
                     close4.append(close)
                     dt4 = maturitydt
     # Matrix data to construct BlackVarianceSurface
-    data = [vol1,vol3,vol4]
-    expiration_dates = [dt1,dt3,dt4]
+    data = [vol1,vol2,vol3,vol4]
+    expiration_dates = [dt1,dt2,dt3,dt4]
     #expiration_dates = [dt2, dt3, dt4]
     #data = [vol2, vol3, vol4]
     matrix = ql.Matrix(len(strikes), len(expiration_dates))
@@ -778,12 +778,13 @@ def get_impliedvolmat_call_BS_givenKs(evalDate,daycounter,calendar):
     close2 = []
     close3 = []
     close4 = []
+    month_indexs = get_contract_months(evalDate)
     strikes = [2.3, 2.35, 2.4, 2.45, 2.5, 2.55, 2.6]
     #strikes = [2.45, 2.5, 2.55, 2.6]
     tempcontainer = [2.299, 2.3, 2.35, 2.4, 2.45, 2.5, 2.55, 2.6]
     for idx,optionid in enumerate(optionids):
         optionDataIdx   = optionData[optionFlds.index('wind_code')].index(optionid)
-        if optionData[optionFlds.index('call_or_put')][optionDataIdx] == '认购':
+        if optionData[optionFlds.index('call_or_put')][optionDataIdx] == '认沽':
             optiontype  = ql.Option.Call
             strike      = optionData[optionFlds.index('exercise_price')][optionDataIdx]
             mdate       = pd.to_datetime(optionData[optionFlds.index('exercise_date')][optionDataIdx])
@@ -800,19 +801,19 @@ def get_impliedvolmat_call_BS_givenKs(evalDate,daycounter,calendar):
             except RuntimeError:
                 implied_vol = 0.00
             if strike in strikes:
-                if mdate.month == evalDate.month():
+                if mdate.month == month_indexs[0]:
                     vol1.append(implied_vol)
                     close1.append(close)
                     dt1 = maturitydt
-                elif mdate.month == evalDate.month() + 1:
+                elif mdate.month == month_indexs[1]:
                     vol2.append(implied_vol)
                     close2.append(close)
                     dt2 = maturitydt
-                elif mdate.month == 9:
+                elif mdate.month == month_indexs[2]:
                     vol3.append(implied_vol)
                     close3.append(close)
                     dt3 = maturitydt
-                elif mdate.month == 12:
+                elif mdate.month == month_indexs[3]:
                     vol4.append(implied_vol)
                     close4.append(close)
                     dt4 = maturitydt

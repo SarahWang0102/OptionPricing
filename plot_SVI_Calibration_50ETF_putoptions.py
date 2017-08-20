@@ -116,7 +116,7 @@ for j in range(4):
         v_svi = np.sqrt(
             a_star + b_star * (rho_star * (x_svi - m_star) + np.sqrt((x_svi - m_star) ** 2 + sigma_star ** 2)))
         t = str(round(daycounter.yearFraction(evalDate, expiration_date), 4))
-        l1, = axarr.plot(x_svi, tv_svi,color = pu.c1,linestyle = pu.l1,linewidth = 2)
+        l1, = axarr.plot(x_svi, v_svi,color = pu.c1,linestyle = pu.l1,linewidth = 2)
         label1 = 'SVI方差，T = ' + t
     elif j == 2:
         x_svi = np.arange(-0.2, 0.05, 0.1 / 100)  # log_forward_moneyness
@@ -126,7 +126,7 @@ for j in range(4):
         v_svi = np.sqrt(
             a_star + b_star * (rho_star * (x_svi - m_star) + np.sqrt((x_svi - m_star) ** 2 + sigma_star ** 2)))
         t = str(round(daycounter.yearFraction(evalDate, expiration_date), 4))
-        l2, = axarr.plot(x_svi, tv_svi, color=pu.c2, linestyle=pu.l2, linewidth=2)
+        l2, = axarr.plot(x_svi, v_svi, color=pu.c2, linestyle=pu.l2, linewidth=2)
         label2 = 'SVI方差，T = ' + t
     elif j == 1:
         x_svi = np.arange(-0.2, 0.06, 0.1 / 100)  # log_forward_moneyness
@@ -136,7 +136,7 @@ for j in range(4):
         v_svi = np.sqrt(
             a_star + b_star * (rho_star * (x_svi - m_star) + np.sqrt((x_svi - m_star) ** 2 + sigma_star ** 2)))
         t = str(round(daycounter.yearFraction(evalDate, expiration_date), 4))
-        l3, = axarr.plot(x_svi, tv_svi, color=pu.c3, linestyle=pu.l3, linewidth=2)
+        l3, = axarr.plot(x_svi, v_svi, color=pu.c3, linestyle=pu.l3, linewidth=2)
         label3 = 'SVI方差，T = ' + t
 
     else:
@@ -146,7 +146,7 @@ for j in range(4):
             a_star + b_star * (rho_star * (x_svi - m_star) + np.sqrt((x_svi - m_star) ** 2 + sigma_star ** 2)), ttm)
         v_svi = np.sqrt(
             a_star + b_star * (rho_star * (x_svi - m_star) + np.sqrt((x_svi - m_star) ** 2 + sigma_star ** 2)))
-        l4, = axarr.plot(x_svi, tv_svi, color=pu.c4, linestyle=pu.l4, linewidth=2)
+        l4, = axarr.plot(x_svi, v_svi, color=pu.c4, linestyle=pu.l4, linewidth=2)
         t = str(round(daycounter.yearFraction(evalDate, expiration_date), 4))
         l4.set_dashes(pu.dash)
         label4 = 'SVI方差，T = ' + t
@@ -157,7 +157,7 @@ axarr.spines['right'].set_visible(False)
 axarr.spines['top'].set_visible(False)
 axarr.yaxis.set_ticks_position('left')
 axarr.xaxis.set_ticks_position('bottom')
-f.savefig('SVI total variances no arbitrage, '+ str(evalDate) +'.png', dpi=300, format='png')
+#f.savefig('SVI total variances no arbitrage, '+ str(evalDate) +'.png', dpi=300, format='png')
 
 
 idx_month = 2

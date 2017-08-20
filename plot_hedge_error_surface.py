@@ -48,12 +48,13 @@ for i,hedge_error in enumerate(error_container):
     print('Z : ',Z)
     # Plot the surface.
     surf = ax.plot_surface(X, Y, Z, rstride=1, cstride=1, cmap=cm.coolwarm,
-                    linewidth=0.1)
+                    linewidth=0.1,vmin=0.0,vmax = 0.7)
 
     fig.colorbar(surf, shrink=0.5, aspect=5)
     contracts = ['当月','下月','当季','下季']
     ax.set_xlabel('S/k')
     #ax.set_ylabel('合约月份')
+    ax.set_zlim([0,1])
     ax.set_yticks(y)
     ax.set_yticklabels(contracts)
     fig.savefig('hedge errors svi no smoothing, sample '+str(i)+'.png', dpi=300, format='png')

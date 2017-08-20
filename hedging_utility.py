@@ -124,6 +124,21 @@ def calculate_delta_sviVolSurface(black_var_surface,hedge_date,daycounter,calend
     delta = option.delta()
     return delta
 
+def calculate_NPV_sviVolSurface(black_var_surface,hedge_date,daycounter,calendar,params_Mi,spot,rf,strike,maturitydt,optiontype):
+    ql.Settings.instance().evaluationDate = hedge_date
+    yield_ts = ql.YieldTermStructureHandle(ql.FlatForward(hedge_date, rf, daycounter))
+    dividend_ts = ql.YieldTermStructureHandle(ql.FlatForward(hedge_date, 0.0, daycounter))
+    exercise = ql.EuropeanExercise(maturitydt)
+    payoff = ql.PlainVanillaPayoff(optiontype, strike)
+    option = ql.EuropeanOption(payoff, exercise)
+
+    process = ql.BlackScholesMertonProcess(ql.QuoteHandle(ql.SimpleQuote(spot)), dividend_ts,
+                                           yield_ts,ql.BlackVolTermStructureHandle(black_var_surface))
+
+    option.setPricingEngine(ql.AnalyticEuropeanEngine(process))
+    npv = option.NPV()
+    return npv
+
 
 def calculate_delta_formula_svi(hedge_date,daycounter,calendar,params_Mi,spot,rf,strike,maturitydt,optiontype):
     ql.Settings.instance().evaluationDate = hedge_date
@@ -146,7 +161,7 @@ def calculate_delta_formula_svi(hedge_date,daycounter,calendar,params_Mi,spot,rf
     delta = option.delta()
     return delta
 
-def calculate_delta_bs(hedge_date,daycounter,calendar,estimate_vol,spot,rf_h_d,strike,maturitydt,optiontype):
+def calculate_effective_delta_bs(hedge_date,daycounter,calendar,estimate_vol,spot,rf_h_d,strike,maturitydt,optiontype):
     ql.Settings.instance().evaluationDate = hedge_date
     step = 0.01
     rf = rf_h_d
@@ -175,6 +190,39 @@ def calculate_delta_bs(hedge_date,daycounter,calendar,estimate_vol,spot,rf_h_d,s
     npv_minus = option.NPV()
     delta = (npv_plus-npv_minus)/(s_plus-s_minus)
     return delta
+
+def calculate_delta_bs(hedge_date,daycounter,calendar,estimate_vol,spot,rf,strike,maturitydt,optiontype):
+    ql.Settings.instance().evaluationDate = hedge_date
+    yield_ts = ql.YieldTermStructureHandle(ql.FlatForward(hedge_date, rf, daycounter))
+    dividend_ts = ql.YieldTermStructureHandle(ql.FlatForward(hedge_date, 0.0, daycounter))
+    exercise = ql.EuropeanExercise(maturitydt)
+    payoff = ql.PlainVanillaPayoff(optiontype, strike)
+    option = ql.EuropeanOption(payoff, exercise)
+    ttm = daycounter.yearFraction(hedge_date, maturitydt)
+
+    flat_vol = ql.BlackVolTermStructureHandle(ql.BlackConstantVol(hedge_date, calendar, estimate_vol, daycounter))
+
+    process = ql.BlackScholesMertonProcess(ql.QuoteHandle(ql.SimpleQuote(spot)), dividend_ts, yield_ts, flat_vol)
+    option.setPricingEngine(ql.AnalyticEuropeanEngine(process))
+    delta = option.delta()
+    return delta
+
+def calculate_NPV_bs(hedge_date,daycounter,calendar,estimate_vol,spot,rf,strike,maturitydt,optiontype):
+    ql.Settings.instance().evaluationDate = hedge_date
+    yield_ts = ql.YieldTermStructureHandle(ql.FlatForward(hedge_date, rf, daycounter))
+    dividend_ts = ql.YieldTermStructureHandle(ql.FlatForward(hedge_date, 0.0, daycounter))
+    exercise = ql.EuropeanExercise(maturitydt)
+    payoff = ql.PlainVanillaPayoff(optiontype, strike)
+    option = ql.EuropeanOption(payoff, exercise)
+    ttm = daycounter.yearFraction(hedge_date, maturitydt)
+
+    flat_vol = ql.BlackVolTermStructureHandle(ql.BlackConstantVol(hedge_date, calendar, estimate_vol, daycounter))
+
+    process = ql.BlackScholesMertonProcess(ql.QuoteHandle(ql.SimpleQuote(spot)), dividend_ts, yield_ts, flat_vol)
+    option.setPricingEngine(ql.AnalyticEuropeanEngine(process))
+    npv = option.NPV()
+    return npv
+
 
 def calculate_cash_position(hedge_date,option_price,spot,delta):
     cash_position = option_price - delta*spot
