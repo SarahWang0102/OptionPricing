@@ -3,3 +3,7 @@ __pycache__
 retiredcodes
 results
 *.pyc
+*.png
+*.csv
+*.xlsx
+*.xls

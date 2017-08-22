@@ -8,15 +8,14 @@ import math
 
 
 def get_svi_optimal_params(data,ttm,sim_no = 100):
-    logMoneynesses = data[0]
-    totalvariance = data[1]
-    min_sse = 10
-    calibrated_params = []
     ms_rnd = np.random.random([sim_no, 2])*5
     adc_rnd = np.random.random([sim_no, 3])*5
+    logMoneynesses = data[0]
+    totalvariance = data[1]
+    calibrated_params = []
+    min_sse = 10
     for iter in range(sim_no):
         ms_0 = ms_rnd[iter,:]
-        #adc_0 = adc_rnd[iter,:]*np.array([max(data[1]), 4*ms_0.item(1), 4*ms_0.item(1)])
         adc_0 = adc_rnd[iter, :]
         nm = SVI_NelderMeadOptimization(data,adc_0,ms_0,1e-7)
         calibrated_params, obj = nm.optimization()
@@ -29,25 +28,6 @@ def get_svi_optimal_params(data,ttm,sim_no = 100):
             sse += (tv - tv_1) ** 2
         if sse >= min_sse: continue
         min_sse = sse
-    if min_sse > 5*10**(-7):
-        ms_rnd = np.random.random([sim_no, 2]) * 0.5
-        adc_rnd = np.random.random([sim_no, 3]) * 0.5
-        for iter in range(sim_no):
-            ms_0 = ms_rnd[iter, :]
-            # adc_0 = adc_rnd[iter,:]*np.array([max(data[1]), 4*ms_0.item(1), 4*ms_0.item(1)])
-            adc_0 = adc_rnd[iter, :]
-            nm = SVI_NelderMeadOptimization(data, adc_0, ms_0, 1e-7)
-            calibrated_params, obj = nm.optimization()
-            _a_star, _d_star, _c_star, m_star, sigma_star = calibrated_params
-            sse = 0.0
-            for i, m in enumerate(logMoneynesses):
-                tv = totalvariance[i]
-                y_1 = np.divide((m - m_star), sigma_star)
-                tv_1 = _a_star + _d_star * y_1 + _c_star * np.sqrt(y_1 ** 2 + 1)
-                sse += (tv - tv_1) ** 2
-            if sse >= min_sse: continue
-            min_sse = sse
-    print(' minum SSE:', min_sse)
     _a_star, _d_star, _c_star, m_star, sigma_star = calibrated_params
     a_star = np.divide(_a_star, ttm)
     b_star = np.divide(_c_star, (sigma_star * ttm))
@@ -66,8 +46,10 @@ def orgnize_data_for_optimization(
         vols = []
         logMoneynesses = []
         total_variance = []
+        impliedvols = []
+        strikes = []
         for moneyness in call_data.keys():
-            strike = call_data.get(moneyness)[0]
+            strike = call_data.get(moneyness)[1]
             #if strike >=spot: # K>Ft,OTM Call
             if moneyness >= 0:
                 vol = call_data.get(moneyness)[0]
@@ -77,15 +59,116 @@ def orgnize_data_for_optimization(
             total_variance.append(tv)
             vols.append(vol)
             logMoneynesses.append(moneyness)
-        data = [logMoneynesses, total_variance,expiration_date]
+            impliedvols.append(vol)
+            strikes.append(strike)
+        data = [logMoneynesses, total_variance,expiration_date,impliedvols,strikes]
+        data_for_optimiztion_months.update({idx_month:data})
+    return data_for_optimiztion_months
+
+def orgnize_data_for_optimization_single_optiontype(
+        evalDate,daycounter,vols_data_moneyness,expiration_dates,spot,curve,optiontype):
+    data_for_optimiztion_months = {}
+    for idx_month, option_data in enumerate(vols_data_moneyness):
+        expiration_date = expiration_dates[idx_month]
+        ttm = daycounter.yearFraction(evalDate, expiration_date)
+        rf = curve.zeroRate(expiration_date, daycounter, ql.Continuous).rate()
+        vols = []
+        logMoneynesses = []
+        total_variance = []
+        impliedvols = []
+        strikes = []
+        for moneyness in option_data.keys():
+            vol = option_data.get(moneyness)[0]
+            strike = option_data.get(moneyness)[1]
+            close = option_data.get(moneyness)[2]
+            if optiontype == ql.Option.Call:
+                if close < spot - strike * math.exp(-rf * ttm): continue
+            else:
+                if close < strike * math.exp(-rf * ttm) - spot: continue
+            tv = (vol ** 2) * ttm
+            total_variance.append(tv)
+            vols.append(vol)
+            logMoneynesses.append(moneyness)
+            impliedvols.append(vol)
+            strikes.append(strike)
+        data = [logMoneynesses, total_variance,expiration_date,impliedvols,strikes]
         data_for_optimiztion_months.update({idx_month:data})
     return data_for_optimiztion_months
 
 
-def get_data_from_BS_OTM_PCPRate(evalDate,daycounter,calendar,curve,show=True):
+def orgnize_data_for_hedging(
+        evalDate,daycounter,vols_data_monetness,expiration_dates,spot):
+    data_months = {}
+    for idx_month, option_data in enumerate(vols_data_monetness):
+        expiration_date = expiration_dates[idx_month]
+        logMoneynesses = []
+        impliedvols = []
+        strikes = []
+        close_prices = {}
+        for moneyness in option_data.keys():
+            vol = option_data.get(moneyness)[0]
+            strike = option_data.get(moneyness)[1]
+            close = option_data.get(moneyness)[2]
+            logMoneynesses.append(moneyness)
+            impliedvols.append(vol)
+            strikes.append(strike)
+            close_prices.update({strike:close})
+        data = [logMoneynesses,strikes,close_prices,expiration_date]
+        data_months.update({idx_month:data})
+    return data_months
+
+
+def orgnize_data_for_optimization_put(
+        evalDate,daycounter,cal_vols_data_moneyness,
+        put_vols_data_moneyness,expiration_dates,spot):
+    data_for_optimiztion_months = {}
+    for idx_month, put_data in enumerate(put_vols_data_moneyness):
+        expiration_date = expiration_dates[idx_month]
+        ttm = daycounter.yearFraction(evalDate, expiration_date)
+        vols = []
+        logMoneynesses = []
+        total_variance = []
+        impliedvols = []
+        for moneyness in put_data.keys():
+            strike = put_data.get(moneyness)[0]
+            vol = put_data.get(moneyness)[0]
+            tv = (vol ** 2) * ttm
+            total_variance.append(tv)
+            impliedvols.append(vol)
+            vols.append(vol)
+            logMoneynesses.append(moneyness)
+        data = [logMoneynesses, total_variance,expiration_date,impliedvols]
+        data_for_optimiztion_months.update({idx_month:data})
+    return data_for_optimiztion_months
+def orgnize_data_for_optimization_call(
+        evalDate,daycounter,call_vols_data_moneyness,
+        put_vols_data_moneyness,expiration_dates,spot):
+    data_for_optimiztion_months = {}
+    for idx_month, put_data in enumerate(call_vols_data_moneyness):
+        expiration_date = expiration_dates[idx_month]
+        ttm = daycounter.yearFraction(evalDate, expiration_date)
+        vols = []
+        logMoneynesses = []
+        total_variance = []
+        impliedvols = []
+        for moneyness in put_data.keys():
+            strike = put_data.get(moneyness)[0]
+            vol = put_data.get(moneyness)[0]
+            tv = (vol ** 2) * ttm
+            total_variance.append(tv)
+            impliedvols.append(vol)
+            vols.append(vol)
+            logMoneynesses.append(moneyness)
+        data = [logMoneynesses, total_variance,expiration_date,impliedvols]
+        data_for_optimiztion_months.update({idx_month:data})
+    return data_for_optimiztion_months
+
+
+
+def orgnize_data_for_optimization_rfs(evalDate,daycounter,calendar,curve,show=True):
 
     cal_vols_data_moneyness, put_vols_data_monetness,expiration_dates,spot,rf_Ks_months \
-        = svi_data.get_call_put_impliedVols_moneyness_PCPrate(evalDate, curve,daycounter, calendar,
+        = svi_data.get_call_put_impliedVols_moneyness_PCPrate_pcvt(evalDate, daycounter, calendar,
                                                      maxVol=1.0,step=0.0001,precision=0.001,show=False)
     data_for_optimiztion_months = {}
     for idx_month, call_data in enumerate(cal_vols_data_moneyness):
@@ -95,8 +178,10 @@ def get_data_from_BS_OTM_PCPRate(evalDate,daycounter,calendar,curve,show=True):
         vols = []
         logMoneynesses = []
         total_variance = []
+        implied_vols = []
+        strikes = []
         for moneyness in call_data.keys():
-            strike = call_data.get(moneyness)[0]
+            strike = call_data.get(moneyness)[1]
             #if strike >=spot: # K>Ft,OTM Call
             if moneyness >= 0:
                 vol = call_data.get(moneyness)[0]
@@ -104,9 +189,11 @@ def get_data_from_BS_OTM_PCPRate(evalDate,daycounter,calendar,curve,show=True):
                 vol = put_data.get(moneyness)[0]
             tv = (vol ** 2) * ttm
             total_variance.append(tv)
+            implied_vols.append(vol)
             vols.append(vol)
             logMoneynesses.append(moneyness)
-        data = [logMoneynesses, total_variance,expiration_date]
+            strikes.append(strike)
+        data = [logMoneynesses, total_variance,expiration_date,implied_vols,strikes]
         data_for_optimiztion_months.update({idx_month:data})
     return data_for_optimiztion_months,rf_Ks_months
 

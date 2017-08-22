@@ -83,7 +83,7 @@ black_var_surface = ql.BlackVarianceSurface(
     mdts_BVS, strike_BVS,
     implied_vols, daycounter)
 
-black_var_surface.setInterpolation("monotoneconvexity")
+#black_var_surface.setInterpolation("linear")
 rate_yts = ql.YieldTermStructureHandle(ql.FlatForward(evalDate,0.03,daycounter))
 dividend_yts = ql.YieldTermStructureHandle(ql.FlatForward(evalDate,0.0,daycounter))
 local_vol_surface = ql.LocalVolSurface(ql.BlackVolTermStructureHandle(black_var_surface),rate_yts,dividend_yts,spot_preclose)

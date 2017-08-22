@@ -1,3 +1,7 @@
+from utilities import convert_datelist_from_datetime_to_ql as to_ql_dates
+from utilities import convert_datelist_from_ql_to_datetime as to_dt_dates
+from utilities import convert_date_from_ql_to_datetime as to_dt_date
+from utilities import convert_date_from_datetime_to_ql as to_ql_date
 import svi_read_data as wind_data
 import svi_prepare_vol_data as svi_data
 import svi_calibration_utility as svi_util
@@ -7,7 +11,19 @@ import math
 import numpy as np
 from WindPy import w
 import datetime
+import timeit
+import os
+import pickle
 
+
+with open(os.getcwd()+'/intermediate_data/total_hedging_daily_params_puts.pickle','rb') as f:
+    daily_params = pickle.load(f)[0]
+with open(os.getcwd()+'/intermediate_data/total_hedging_dates_puts.pickle','rb') as f:
+    dates = pickle.load(f)[0]
+with open(os.getcwd()+'/intermediate_data/total_hedging_daily_svi_dataset_puts.pickle','rb') as f:
+    daily_svi_dataset = pickle.load(f)[0]
+
+start = timeit.default_timer()
 np.random.seed()
 w.start()
 begDate = ql.Date(1, 12, 2016)
@@ -25,13 +41,14 @@ while evalDate <= endDate:
     try:
         vols, spot, mktData, mktFlds, optionData, optionFlds, optionids = wind_data.get_wind_data(evalDate)
         curve = svi_data.get_curve_treasury_bond(evalDate, daycounter)
-        data_months, rf_container = svi_util.get_data_from_BS_OTM_PCPRate(evalDate, daycounter, calendar, curve, False)
+        #data_months, rf_container = svi_util.orgnize_data_for_optimization_rfs(evalDate, daycounter, calendar, curve, False)
     except:
         continue
     #print(rf_container)
     # rf_container = svi_data.calculate_PCParity_riskFreeRate(evalDate, daycounter, calendar)
     dividend_ts = ql.YieldTermStructureHandle(ql.FlatForward(evalDate, 0.0, daycounter))
     month_indexs = wind_data.get_contract_months(evalDate)
+    '''
     params_months = []
     for i in range(4):
         nbr_month = month_indexs[i]
@@ -44,13 +61,15 @@ while evalDate <= endDate:
         params = svi_util.get_svi_optimal_params(data, ttm, 50)
         params_months.append(params)
     #print(evalDate,' : ',params_months)
-
+    '''
+    params_months = daily_params.get(to_dt_date(evalDate))
+    '''
     print('final_params : ', params_months)
     print("-" * 80)
     print("SVI In Sample Performance:")
     print("=" * 80)
     print(" %15s %25s %25s " % ("market price", "model price", "square error(* e-4)"))
-
+    '''
     sse = 0
     for idx, optionid in enumerate(optionids):
         try:
@@ -63,18 +82,15 @@ while evalDate <= endDate:
 
             ttm = daycounter.yearFraction(evalDate, maturitydt)
             nbr_month = maturitydt.month()
+            rf = curve.zeroRate(maturitydt, daycounter, ql.Continuous).rate()
             if nbr_month == month_indexs[0]:
                 a, b, rho, m, sigma = params_months[0]
-                rf =  rf_container.get(0)
             if nbr_month == month_indexs[1]:
                 a, b, rho, m, sigma = params_months[1]
-                rf = rf_container.get(1)
             elif nbr_month == month_indexs[2]:
                 a, b, rho, m, sigma = params_months[2]
-                rf =  rf_container.get(2)
             else:
                 a, b, rho, m, sigma = params_months[3]
-                rf =  rf_container.get(3)
             Ft = spot * math.exp(rf * ttm)
             if optionData[optionFlds.index('call_or_put')][optionDataIdx] == '认购':
                 optiontype = ql.Option.Call
@@ -96,7 +112,7 @@ while evalDate <= endDate:
             if model_price == 0.0:continue
             squared_error = (model_price - close) ** 2
             sse += squared_error
-            print(" %15s %25s %25s " % (round(close, 6), round(model_price, 6), round(squared_error * 10000, 6)))
+            #print(" %15s %25s %25s " % (round(close, 6), round(model_price, 6), round(squared_error * 10000, 6)))
         except:
             sse = 'NAN'
     sse_container.update({evalDate:sse})
@@ -111,3 +127,5 @@ for date in sse_container.keys():
 print("-" * 80)
 
 print('sse_container = ',sse_container)
+stop = timeit.default_timer()
+print('time : ',stop-start)
