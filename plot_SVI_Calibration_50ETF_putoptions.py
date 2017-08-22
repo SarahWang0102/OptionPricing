@@ -72,29 +72,13 @@ for i in range(4):
     plt.ylim(min(totalvariance)-scale1,max(totalvariance)+scale1)
     t = str( round( daycounter.yearFraction(evalDate,expiration_date),4))
     title1 = 'SVI Total Variance, T = ' + t + ' ,' + str(evalDate)
-    #plt.title(title1)
-    '''
-    f2, ax2 = plt.subplots()
-    plt.scatter(logMoneynesses, impliedvol, marker=mark, color=pu.c2)
-    plt.plot(x_svi, v_svi,color = pu.c1,linestyle = line,linewidth = 2,label="SVI Implied Volatility")
-    scale2 = (max(impliedvol) - min(impliedvol))/13
-    plt.ylim(min(impliedvol)-scale2,max(impliedvol)+scale2)
-    title2 = 'SVI Implied Volatility, T = ' + t +' ,'+ str(evalDate)
-    #plt.title(title2)
-    '''
-    # Hide the right and top spines
-    #ax2.spines['right'].set_visible(False)
-    #ax2.spines['top'].set_visible(False)
+
     ax1.spines['right'].set_visible(False)
     ax1.spines['top'].set_visible(False)
-    # Only show ticks on the left and bottom spines
-    #ax2.yaxis.set_ticks_position('left')
-    #ax2.xaxis.set_ticks_position('bottom')
     ax1.yaxis.set_ticks_position('left')
     ax1.xaxis.set_ticks_position('bottom')
 
     f1.savefig(title1 + '.png', dpi=500, format='png')
-    #f2.savefig('St'+title2 + '.png', dpi=300, format='png')
 
 f, axarr = plt.subplots()
 
@@ -157,7 +141,6 @@ axarr.spines['right'].set_visible(False)
 axarr.spines['top'].set_visible(False)
 axarr.yaxis.set_ticks_position('left')
 axarr.xaxis.set_ticks_position('bottom')
-#f.savefig('SVI total variances no arbitrage, '+ str(evalDate) +'.png', dpi=300, format='png')
 
 
 idx_month = 2

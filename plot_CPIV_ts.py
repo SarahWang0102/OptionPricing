@@ -83,9 +83,5 @@ for i in range(3):
         label.set_horizontalalignment("right")
 
 f.savefig('CPIV.png', dpi=300, format='png', bbox_extra_artists=(lgd0,lgd1,lgd2,), bbox_inches='tight')
-#axarr[3].legend()
-#axarr[1].grid()
-#axarr[0].grid()
-#axarr[3].grid()
 plt.draw()
 plt.show()

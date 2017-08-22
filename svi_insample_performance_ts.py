@@ -1,6 +1,6 @@
+from utilities import convert_date_from_ql_to_datetime as to_dt_date
 import svi_read_data as wind_data
 import svi_prepare_vol_data as svi_data
-import svi_calibration_utility as svi_util
 import QuantLib as ql
 import pandas as pd
 import math
@@ -8,6 +8,16 @@ import numpy as np
 from WindPy import w
 import datetime
 import timeit
+import os
+import pickle
+
+
+with open(os.getcwd()+'/intermediate_data/total_hedging_daily_params_puts.pickle','rb') as f:
+    daily_params = pickle.load(f)[0]
+with open(os.getcwd()+'/intermediate_data/total_hedging_dates_puts.pickle','rb') as f:
+    dates = pickle.load(f)[0]
+with open(os.getcwd()+'/intermediate_data/total_hedging_daily_svi_dataset_puts.pickle','rb') as f:
+    daily_svi_dataset = pickle.load(f)[0]
 
 start = timeit.default_timer()
 np.random.seed()
@@ -20,22 +30,18 @@ daycounter = ql.ActualActual()
 sse_container = {}
 evalDate = begDate
 
-dates = [datetime.date(2017, 7, 19)]
-for dt in dates:
-    evalDate = ql.Date(dt.day,dt.month,dt.year)
+while evalDate <= endDate:
+    evalDate = calendar.advance(evalDate, ql.Period(1, ql.Days))
     print(evalDate)
     ql.Settings.instance().evaluationDate = evalDate
     try:
         vols, spot, mktData, mktFlds, optionData, optionFlds, optionids = wind_data.get_wind_data(evalDate)
         curve = svi_data.get_curve_treasury_bond(evalDate, daycounter)
-        #####
-        data_months, rf_container = svi_util.get_data_from_BS_OTM_PCPRate(evalDate, daycounter, calendar, curve, False)
     except:
         continue
-    #print(rf_container)
-    # rf_container = svi_data.calculate_PCParity_riskFreeRate(evalDate, daycounter, calendar)
     dividend_ts = ql.YieldTermStructureHandle(ql.FlatForward(evalDate, 0.0, daycounter))
     month_indexs = wind_data.get_contract_months(evalDate)
+    '''
     params_months = []
     for i in range(4):
         nbr_month = month_indexs[i]
@@ -45,18 +51,18 @@ for dt in dates:
         expiration_date = data[2]
         ttm = daycounter.yearFraction(evalDate, expiration_date)
         #svi_util.get_svi_optimal_params(data, ttm, 20)
-        params = svi_util.get_svi_optimal_params(data, ttm, 10)
+        params = svi_util.get_svi_optimal_params(data, ttm, 50)
         params_months.append(params)
     #print(evalDate,' : ',params_months)
-
+    '''
+    params_months = daily_params.get(to_dt_date(evalDate))
+    '''
     print('final_params : ', params_months)
     print("-" * 80)
     print("SVI In Sample Performance:")
     print("=" * 80)
     print(" %15s %25s %25s " % ("market price", "model price", "square error(* e-4)"))
-    stop = timeit.default_timer()
-    print('time : ', stop - start)
-
+    '''
     sse = 0
     for idx, optionid in enumerate(optionids):
         try:
@@ -69,18 +75,15 @@ for dt in dates:
 
             ttm = daycounter.yearFraction(evalDate, maturitydt)
             nbr_month = maturitydt.month()
+            rf = curve.zeroRate(maturitydt, daycounter, ql.Continuous).rate()
             if nbr_month == month_indexs[0]:
                 a, b, rho, m, sigma = params_months[0]
-                rf =  rf_container.get(0)
             if nbr_month == month_indexs[1]:
                 a, b, rho, m, sigma = params_months[1]
-                rf = rf_container.get(1)
             elif nbr_month == month_indexs[2]:
                 a, b, rho, m, sigma = params_months[2]
-                rf =  rf_container.get(2)
             else:
                 a, b, rho, m, sigma = params_months[3]
-                rf =  rf_container.get(3)
             Ft = spot * math.exp(rf * ttm)
             if optionData[optionFlds.index('call_or_put')][optionDataIdx] == '认购':
                 optiontype = ql.Option.Call
@@ -99,10 +102,10 @@ for dt in dates:
             process = ql.BlackScholesMertonProcess(ql.QuoteHandle(ql.SimpleQuote(spot)), dividend_ts, yield_ts, flat_vol_ts)
             option.setPricingEngine(ql.AnalyticEuropeanEngine(process))
             model_price = option.NPV()
-            if model_price == 0.0 or model_price == -0.0:continue
+            if model_price == 0.0:continue
             squared_error = (model_price - close) ** 2
             sse += squared_error
-            print(" %15s %25s %25s " % (round(close, 6), round(model_price, 6), round(squared_error * 10000, 6)))
+            #print(" %15s %25s %25s " % (round(close, 6), round(model_price, 6), round(squared_error * 10000, 6)))
         except:
             sse = 'NAN'
     sse_container.update({evalDate:sse})
@@ -117,3 +120,5 @@ for date in sse_container.keys():
 print("-" * 80)
 
 print('sse_container = ',sse_container)
+stop = timeit.default_timer()
+print('time : ',stop-start)

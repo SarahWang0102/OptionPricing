@@ -1,21 +1,24 @@
-import svi_read_data as wind_data
-from hedging_utility import get_spot_price,hedging_performance,calculate_cash_position,calculate_delta_svi,calculate_delta_formula_svi,get_local_volatility_surface_smoothed,calculate_delta_sviVolSurface,calculate_hedging_error,get_local_volatility_surface
+import hedging_utility as hedge_util
 from utilities import convert_datelist_from_datetime_to_ql as to_ql_dates
-from utilities import convert_datelist_from_ql_to_datetime as to_dt_dates
 from utilities import convert_date_from_ql_to_datetime as to_dt_date
 from utilities import convert_date_from_datetime_to_ql as to_ql_date
 import svi_prepare_vol_data as svi_data
 import svi_calibration_utility as svi_util
 import QuantLib as ql
-import pandas as pd
 import math
 import numpy as np
-from WindPy import w
 import datetime
 import timeit
 import os
 import pickle
+'''
+======================================
+ SVI Insample Performance (call options)
+=======================================
 
+Calculate SVI insample percentage pricing errors for only call options. 
+
+'''
 
 start = timeit.default_timer()
 
@@ -24,14 +27,7 @@ daycounter = ql.ActualActual()
 
 def Date(d,m,y):
     return ql.Date(d,m,y)
-'''
-with open(os.getcwd()+'/intermediate_data/hedging_daily_params_pcprates.pickle','rb') as f:
-    daily_params = pickle.load(f)[0]
-with open(os.getcwd()+'/intermediate_data/hedging_dates_pcprates.pickle','rb') as f:
-    dates = pickle.load(f)[0]
-with open(os.getcwd()+'/intermediate_data/hedging_daily_svi_dataset_pcprates.pickle','rb') as f:
-    daily_svi_dataset = pickle.load(f)[0]
-'''
+
 with open(os.getcwd()+'/intermediate_data/total_hedging_daily_params_puts.pickle','rb') as f:
     daily_params = pickle.load(f)[0]
 with open(os.getcwd()+'/intermediate_data/total_hedging_dates_puts.pickle','rb') as f:
@@ -74,7 +70,7 @@ for idx_date,date in enumerate(dates[0:len(dates)-8]):
         # Local Vol Surface
         cal_vols_c, put_vols_c, maturity_dates_c, spot_c, rf_c  = daily_svi_dataset.get(to_dt_date(calibrate_date))
 
-        black_var_surface = get_local_volatility_surface(calibrated_params,to_ql_dates(maturity_dates_c),
+        black_var_surface = hedge_util.get_local_volatility_surface(calibrated_params,to_ql_dates(maturity_dates_c),
                                                          calibrate_date,daycounter,calendar,spot_c,rf_c)
 
         hedge_error_Ms = {}
@@ -104,12 +100,12 @@ for idx_date,date in enumerate(dates[0:len(dates)-8]):
                     continue
                 if close_h < 0.0001:
                    continue
-                delta = calculate_delta_sviVolSurface(black_var_surface,hedge_date,daycounter,
+                delta = hedge_util.calculate_delta_sviVolSurface(black_var_surface,hedge_date,daycounter,
                                                       calendar,params_Mi,spot_c,rf,k,expiration_date_h,optiontype)
                 if math.isnan(delta): continue
                 print('delta : ',delta)
-                cash_on_hedge_date = calculate_cash_position(hedge_date, close_h, spot_on_hedge_date, delta)
-                hedge_error = calculate_hedging_error(hedge_date,liquidition_date,
+                cash_on_hedge_date = hedge_util.calculate_cash_position(hedge_date, close_h, spot_on_hedge_date, delta)
+                hedge_error = hedge_util.calculate_hedging_error(hedge_date,liquidition_date,
                                                       daycounter,spot,close_l,delta,cash_on_hedge_date,rf)
                 if close_h == 0 : continue
                 hedge_error_pct = hedge_error/close_h
@@ -142,7 +138,7 @@ with open(os.getcwd()+'/intermediate_data/hedging_daily_hedge_errors_svi_call.pi
 
 
 print(daily_pct_hedge_errors.keys())
-mny_0,mny_1,mny_2,mny_3 = hedging_performance(daily_pct_hedge_errors,daily_pct_hedge_errors.keys())
+mny_0,mny_1,mny_2,mny_3 = hedge_util.hedging_performance(daily_pct_hedge_errors,daily_pct_hedge_errors.keys())
 print("="*100)
 print("SVI Model Average Hedging Percent Error,CALL (SVI VOL SURFACE NO SMOOTHING) : ")
 print("="*100)

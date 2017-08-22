@@ -88,14 +88,6 @@ for i in range(4):
 print('total date : ', len(dates))
 
 
-
-
-
-
-
-
-
-
 '''
 avg_svi_errors_M0 = 0.0
 avg_svi_errors_M1 = 0.0

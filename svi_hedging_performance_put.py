@@ -1,10 +1,5 @@
-import svi_read_data as wind_data
-from hedging_utility import get_spot_price, get_1st_percentile_dates, get_2nd_percentile_dates, \
-    get_3rd_percentile_dates, get_4th_percentile_dates, hedging_performance, calculate_cash_position, \
-    calculate_delta_sviVolSurface, get_local_volatility_surface_smoothed, get_local_volatility_surface, \
-    calculate_delta_svi, calculate_hedging_error
+import hedging_utility as hedge_util
 from utilities import convert_datelist_from_datetime_to_ql as to_ql_dates
-from utilities import convert_datelist_from_ql_to_datetime as to_dt_dates
 from utilities import convert_date_from_ql_to_datetime as to_dt_date
 from utilities import convert_date_from_datetime_to_ql as to_ql_date
 import svi_prepare_vol_data as svi_data
@@ -13,12 +8,20 @@ import QuantLib as ql
 import pandas as pd
 import math
 import numpy as np
-from WindPy import w
 import datetime
 import timeit
 import os
 import pickle
 
+'''
+======================================
+ SVI Hedge Performance (put options)
+=======================================
+
+Calculate SVI hedge errors for only put options. 
+Currently persent in report.
+
+'''
 
 start = timeit.default_timer()
 
@@ -69,7 +72,7 @@ for idx_date,date in enumerate(dates[0:len(dates)-2]):
         curve_on_hedge_date = svi_data.get_curve_treasury_bond(hedge_date,daycounter)
         # Local Vol Surface
         cal_vols_c, put_vols_c, maturity_dates_c, spot_c, rf_c  = daily_svi_dataset.get(to_dt_date(calibrate_date))
-        black_var_surface = get_local_volatility_surface(calibrated_params,to_ql_dates(maturity_dates_c),calibrate_date,daycounter,calendar,spot_c,rf_c)
+        black_var_surface = hedge_util.get_local_volatility_surface(calibrated_params,to_ql_dates(maturity_dates_c),calibrate_date,daycounter,calendar,spot_c,rf_c)
         hedge_error_Ms = {}
         hedge_error_pct_Ms = {}
         for nbr_month in range(4):
@@ -97,10 +100,10 @@ for idx_date,date in enumerate(dates[0:len(dates)-2]):
                     continue
                 if close_h < 0.0001:
                    continue
-                delta = calculate_delta_sviVolSurface(black_var_surface, hedge_date, daycounter, calendar, params_Mi,
+                delta = hedge_util.calculate_delta_sviVolSurface(black_var_surface, hedge_date, daycounter, calendar, params_Mi,
                                                       spot_c, rf, k, expiration_date_h, optiontype)
-                cash_on_hedge_date = calculate_cash_position(hedge_date, close_h, spot_on_hedge_date, delta)
-                hedge_error = calculate_hedging_error(hedge_date,liquidition_date,daycounter,spot,close_l,delta,cash_on_hedge_date,rf)
+                cash_on_hedge_date = hedge_util.calculate_cash_position(hedge_date, close_h, spot_on_hedge_date, delta)
+                hedge_error = hedge_util.calculate_hedging_error(hedge_date,liquidition_date,daycounter,spot,close_l,delta,cash_on_hedge_date,rf)
                 hedge_error_pct = hedge_error/close_h
                 if abs(hedge_error_pct) > 3 :
                     print(date,',',nbr_month,',',k,'too large error', hedge_error_pct)
@@ -129,10 +132,10 @@ print('calibration time : ',stop-start)
 with open(os.getcwd() + '/intermediate_data/hedging_daily_hedge_errors_svi_put_no_smoothing.pickle', 'wb') as f:
     pickle.dump([daily_hedge_errors, daily_pct_hedge_errors], f)
 
-p1 = get_1st_percentile_dates(daily_pct_hedge_errors)
-p2 = get_2nd_percentile_dates(daily_pct_hedge_errors)
-p3 = get_3rd_percentile_dates(daily_pct_hedge_errors)
-p4 = get_4th_percentile_dates(daily_pct_hedge_errors)
+p1 = hedge_util.get_1st_percentile_dates(daily_pct_hedge_errors)
+p2 = hedge_util.get_2nd_percentile_dates(daily_pct_hedge_errors)
+p3 = hedge_util.get_3rd_percentile_dates(daily_pct_hedge_errors)
+p4 = hedge_util.get_4th_percentile_dates(daily_pct_hedge_errors)
 container = [p1, p2, p3, p4]
 samples = ['2015.9-2016.1', '2016.2-2016.7', '2016.8-2017.1', '2017.2-2017.7']
 print("=" * 100)
@@ -140,7 +143,7 @@ print("SVI Model Average Hedging Percent Error,PUT (SVI VOL SURFACE 5-Day SMOOTH
 print("=" * 100)
 print("%20s %20s %20s %30s" % ("sample dates", "contract month", "moneyness", "avg hedging error(%)"))
 for idx_c, r in enumerate(container):
-    mny_0, mny_1, mny_2, mny_3 = hedging_performance(r, r.keys())
+    mny_0, mny_1, mny_2, mny_3 = hedge_util.hedging_performance(r, r.keys())
     print("-" * 100)
     for i in range(4):
         if len(mny_0.get(i)) > 0: print("%20s %20s %20s %25s" % (
@@ -158,7 +161,7 @@ results = {}
 index = ["sample dates", "contract month", "moneyness", "avg hedging error(%)"]
 count = 0
 for idx_c, r in enumerate(container):
-    mny_0, mny_1, mny_2, mny_3 = hedging_performance(r, r.keys())
+    mny_0, mny_1, mny_2, mny_3 = hedge_util.hedging_performance(r, r.keys())
     print("-" * 100)
     for i in range(4):
         results.update(
