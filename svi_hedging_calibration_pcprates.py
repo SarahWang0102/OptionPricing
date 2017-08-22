@@ -15,6 +15,15 @@ import datetime
 import timeit
 import os
 import pickle
+'''
+===========
+Calibrate SVI Params (using put call parity)
+==========
+
+Use put and call option data to calibrate SVI model,
+based on put call parity adjusted 
+
+'''
 
 start = timeit.default_timer()
 np.random.seed()

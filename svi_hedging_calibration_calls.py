@@ -17,6 +17,16 @@ import timeit
 import os
 import pickle
 
+'''
+===========
+Calibrate SVI Params (call option)
+==========
+
+Only use daily call option data to calibrate SVI model,
+and could only be used for heging call options.
+
+'''
+
 start = timeit.default_timer()
 np.random.seed()
 w.start()
