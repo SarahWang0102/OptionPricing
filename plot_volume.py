@@ -20,8 +20,8 @@ ratio_equity = equity/etf
 ratio_index = index/etf
 print('ratio_index = ',ratio_index)
 print('ratio_equity = ',ratio_equity)
-print('avg ratio_index = ',sum(ratio_index)/len(ratio_index))
-print('avg ratio_equity = ',sum(ratio_equity)/len(ratio_equity))
+#print('avg ratio_index = ',sum(ratio_index)/len(ratio_index))
+#print('avg ratio_equity = ',sum(ratio_equity)/len(ratio_equity))
 print(dates)
 print(etf)
 plt.rcParams['font.sans-serif'] = ['STKaiti']
