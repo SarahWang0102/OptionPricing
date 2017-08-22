@@ -11,6 +11,13 @@ import timeit
 import os
 import pickle
 
+'''
+=================================================
+Analyze Volatility of Implied Volatility smiles.
+=================================================
+Hedge error cause by changes in implied volatility surface. 
+
+'''
 
 start = timeit.default_timer()
 
@@ -19,14 +26,7 @@ daycounter = ql.ActualActual()
 
 def Date(d,m,y):
     return ql.Date(d,m,y)
-'''
-with open(os.getcwd()+'/intermediate_data/hedging_daily_params_pcprates.pickle','rb') as f:
-    daily_params = pickle.load(f)[0]
-with open(os.getcwd()+'/intermediate_data/hedging_dates_pcprates.pickle','rb') as f:
-    dates = pickle.load(f)[0]
-with open(os.getcwd()+'/intermediate_data/hedging_daily_svi_dataset_pcprates.pickle','rb') as f:
-    daily_svi_dataset = pickle.load(f)[0]
-'''
+
 with open(os.getcwd()+'/intermediate_data/hedging_daily_params_calls.pickle','rb') as f:
     daily_params = pickle.load(f)[0]
 with open(os.getcwd()+'/intermediate_data/hedging_dates_calls.pickle','rb') as f:
