@@ -64,7 +64,7 @@ plt.rcParams['font.sans-serif'] = ['STKaiti']
 plt.rcParams.update({'font.size': 13})
 
 f, axarr = plt.subplots()
-axarr.plot(strikes, callvols,color = pu.c1,marker = "^",linestyle = pu.l1,linewidth = 2,label="认购期权隐含波动率")
+axarr.plot(strikes[5:len(callvols)], callvols[5:len(callvols)],color = pu.c1,marker = "^",linestyle = pu.l1,linewidth = 2,label="认购期权隐含波动率")
 axarr.set_xlabel('行权价')
 axarr.legend()
 
@@ -73,19 +73,20 @@ axarr1.plot(strikes, putvols,color = pu.c1,marker = "^",linestyle = pu.l1,linewi
 axarr1.set_xlabel('行权价')
 axarr1.legend()
 
+f2, axarr2 = plt.subplots()
+axarr2.plot(strikes, putvols,color = pu.c1,marker = "^",linestyle = pu.l1,linewidth = 2,label="认沽期权隐含波动率")
+axarr2.plot(strikes[5:len(callvols)], callvols[5:len(callvols)],color = pu.c2,marker = "^",linestyle = pu.l2,linewidth = 2,label="认购期权隐含波动率")
 
-axarr.spines['right'].set_visible(False)
-axarr.spines['top'].set_visible(False)
-axarr.yaxis.set_ticks_position('left')
-axarr.xaxis.set_ticks_position('bottom')
-axarr1.spines['right'].set_visible(False)
-axarr1.spines['top'].set_visible(False)
-axarr1.yaxis.set_ticks_position('left')
-axarr1.xaxis.set_ticks_position('bottom')
+axarr2.set_xlabel('行权价')
+axarr2.set_ylim([0.12,0.25])
+axarr2.legend()
+
+pu.set_frame([axarr,axarr1,axarr2])
+
 
 f.savefig('implied_vols_call ,'+ str(evalDate) +'.png', dpi=300, format='png')
 f1.savefig('implied_vols_put ,'+ str(evalDate) +'.png', dpi=300, format='png')
-
+f2.savefig('implied_vols_put&call ,'+ str(evalDate) +'.png', dpi=300, format='png')
 
 plt.draw()
 plt.show()

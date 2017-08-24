@@ -3,7 +3,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.dates import date2num
 import plot_util as pu
+import os
 import datetime
+
 exceldata     = pd.read_excel('option_volume.xlsx',sheetname ='volume')
 print(exceldata)
 print(exceldata.index)
@@ -14,7 +16,7 @@ index = exceldata.loc[['Index'],:].values[0]/1000000
 equity = exceldata.loc[['Equity'],:].values[0]/1000000
 
 dates = exceldata.axes[1]
-dates = dates.strftime("%Y-%m")
+dates = dates.strftime("%m/%y")
 
 ratio_equity = equity/etf
 ratio_index = index/etf

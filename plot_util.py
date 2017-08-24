@@ -22,3 +22,10 @@ l7 = l1
 l8 = l3
 l9 = l1
 l10 = l2
+
+def set_frame(axarrs):
+    for axarr in axarrs:
+        axarr.spines['right'].set_visible(False)
+        axarr.spines['top'].set_visible(False)
+        axarr.yaxis.set_ticks_position('left')
+        axarr.xaxis.set_ticks_position('bottom')

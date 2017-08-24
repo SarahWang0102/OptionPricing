@@ -217,32 +217,23 @@ x = np.arange(len(volumes))
 axarr.bar(x,volumes,width =w, color=pu.c1,label = '50ETF期权成交额')
 lgd = axarr.legend()
 axarr.set_xticks(x)
-axarr.set_xticklabels(['2017-01','2017-02','2017-03','2017-04','2017-05','2017-06','2017-07'])
+axarr.set_xticklabels(['01/17','02/17','03/17','04/17','05/17','06/17','07/17'])
 axarr.set_ylabel('成交额（百万）')
 
 f1, axarr1 = plt.subplots()
 x = np.arange(len(expected_etfs))
-axarr1.bar(x,expected_etfs,width =w, color=pu.c1,label = '50ETF期权成交额估计')
-axarr1.bar(x+w,expected_equities,width =w, color=pu.c2,label = '个股期权总成交额估计')
-axarr1.bar(x+w*2,expected_indexs,width =w, color=pu.c3,label = '沪深300指数期权成交额估计')
+axarr1.bar(x,expected_etfs,width =w, color=pu.c1,label = '50ETF期权')
+axarr1.bar(x+w,expected_equities,width =w, color=pu.c2,label = '个股期权')
+axarr1.bar(x+w*2,expected_indexs,width =w, color=pu.c3,label = '沪深300指数期权')
 lgd1 = axarr1.legend(bbox_to_anchor=(0., 1.02, 1.1, .102), loc=3,
-           ncol=2, borderaxespad=0.,columnspacing=0.5,frameon=False)
+           ncol=3, borderaxespad=0.,columnspacing=0.5,frameon=False)
 axarr1.set_xticks(x)
-axarr1.set_xticklabels(['2018-01','2018-02','2018-03','2018-04','2018-05','2018-06','2018-07','2018-08','2018-09','2018-10','2018-11','2018-12'])
+axarr1.set_xticklabels(['01/18','02/18','03/18','04/18','05/18','06/18','07/18','08/18','09/18','10/18','11/18','12/18'])
 axarr1.set_ylabel('成交额（百万）')
 
 
+pu.set_frame([axarr,axarr1])
 
-axarr.spines['right'].set_visible(False)
-axarr.spines['top'].set_visible(False)
-# Only show ticks on the left and bottom spines
-axarr.yaxis.set_ticks_position('left')
-axarr.xaxis.set_ticks_position('bottom')
-axarr1.spines['right'].set_visible(False)
-axarr1.spines['top'].set_visible(False)
-# Only show ticks on the left and bottom spines
-axarr1.yaxis.set_ticks_position('left')
-axarr1.xaxis.set_ticks_position('bottom')
 
 for label in axarr.get_xmajorticklabels() and axarr1.get_xmajorticklabels():
     label.set_rotation(30)

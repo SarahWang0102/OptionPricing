@@ -130,7 +130,6 @@ local_vol_surface = ql.LocalVolSurface(ql.BlackVolTermStructureHandle(black_var_
 local_vol_surface_smoothed = ql.LocalVolSurface(ql.BlackVolTermStructureHandle(black_var_surface_smoothed),yield_ts,dividend_ts,spot_c)
 
 # Plot
-
 plt.rcParams['font.sans-serif'] = ['STKaiti']
 plt.rcParams.update({'font.size': 13})
 plot_years = np.arange(0.05, 0.44, 0.05)
@@ -171,6 +170,6 @@ ax1.set_xlabel('K')
 ax1.set_ylabel('T')
 fig1.colorbar(surf, shrink=0.5, aspect=5)
 
-fig.savefig('svi_implied_vol_surface ，'+ str(date) +'.png', dpi=300, format='png')
-fig1.savefig('svi_implied_vol_surface_smoothed ，'+ str(date) +'.png', dpi=300, format='png')
+fig.savefig('svi_implied_vol_surface, put，'+ str(date) +'.png', dpi=300, format='png')
+fig1.savefig('svi_implied_vol_surface_smoothed, put ，'+ str(date) +'.png', dpi=300, format='png')
 plt.show()
