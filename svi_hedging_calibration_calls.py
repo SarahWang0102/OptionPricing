@@ -1,15 +1,9 @@
 import svi_read_data as wind_data
 import matplotlib.pyplot as plt
-from hedging_utility import get_spot_price,calculate_cash_position,calculate_delta_svi,calculate_hedging_error
-from utilities import convert_datelist_from_datetime_to_ql as to_ql_dates
-from utilities import convert_datelist_from_ql_to_datetime as to_dt_dates
-from utilities import convert_date_from_ql_to_datetime as to_dt_date
-from utilities import convert_date_from_datetime_to_ql as to_ql_date
+from utilities import *
 import svi_prepare_vol_data as svi_data
 import svi_calibration_utility as svi_util
 import QuantLib as ql
-import pandas as pd
-import math
 import numpy as np
 from WindPy import w
 import datetime
@@ -18,9 +12,9 @@ import os
 import pickle
 
 '''
-===========
+===================================
 Calibrate SVI Params (call option)
-==========
+===================================
 
 Only use daily call option data to calibrate SVI model,
 and could only be used for heging call options.

@@ -7,6 +7,18 @@ from WindPy import w
 import numpy as np
 import math
 
+'''
+===========================
+ SVI Params Optimization
+===========================
+
+Run n times Nelder-Mead optimization with random initials.
+Use PUT option data.
+Plot each optimization result.
+
+'''
+
+
 def run_optimization(data,ttm,sim_no = 100):
     logMoneynesses = data[0]
     totalvariance = data[1]
@@ -79,39 +91,5 @@ totalvariance = data[1]
 expiration_date = data[2]
 ttm = daycounter.yearFraction(evalDate, expiration_date)
 final_parames = run_optimization(data,ttm,30)
-'''
-i = 1
-plt.figure(i)
-nbr_month = month_indexs[i]
-data = data_months.get(i)
-logMoneynesses = data[0]
-totalvariance = data[1]
-expiration_date = data[2]
-ttm = daycounter.yearFraction(evalDate, expiration_date)
-final_parames = run_optimization(data,ttm,1)
 
-i = 2
-plt.figure(i)
-nbr_month = month_indexs[i]
-data = data_months.get(i)
-logMoneynesses = data[0]
-totalvariance = data[1]
-expiration_date = data[2]
-ttm = daycounter.yearFraction(evalDate, expiration_date)
-final_parames = run_optimization(data,ttm,1)
-
-
-i = 3
-plt.figure(i)
-nbr_month = month_indexs[i]
-data = data_months.get(i)
-logMoneynesses = data[0]
-totalvariance = data[1]
-expiration_date = data[2]
-ttm = daycounter.yearFraction(evalDate, expiration_date)
-final_parames = run_optimization(data,ttm,1)
-
-
-
-'''
 plt.show()

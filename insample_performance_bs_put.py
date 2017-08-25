@@ -1,27 +1,18 @@
 import hedging_utility as hedge_util
-from utilities import convert_datelist_from_datetime_to_ql as to_ql_dates
-from utilities import convert_date_from_ql_to_datetime as to_dt_date
-from utilities import convert_date_from_datetime_to_ql as to_ql_date
+from utilities import *
 import svi_prepare_vol_data as svi_data
 import svi_calibration_utility as svi_util
 import QuantLib as ql
 import pandas as pd
 import math
 import numpy as np
+from WindPy import w
 import datetime
 import timeit
 import os
 import pickle
 
-'''
-======================================
- SVI Insample Performance (put options)
-=======================================
 
-Calculate SVI insample percentage pricing errors for only put options. 
-Currently persent in report.
-
-'''
 start = timeit.default_timer()
 
 calendar = ql.China()
@@ -37,6 +28,8 @@ with open(os.getcwd()+'/intermediate_data/total_hedging_dates_puts.pickle','rb')
     dates = pickle.load(f)[0]
 with open(os.getcwd()+'/intermediate_data/total_hedging_daily_svi_dataset_puts.pickle','rb') as f:
     daily_svi_dataset = pickle.load(f)[0]
+with open(os.getcwd()+'/intermediate_data/total_hedging_bs_estimated_vols.pickle','rb') as f:
+    estimated_vols = pickle.load(f)[0]
 
 # Hedge option using underlying 50ETF
 daily_pricing_errors = {}
@@ -49,7 +42,7 @@ for idx_date,date in enumerate(dates[0:len(dates)-2]):
 
         optiontype = ql.Option.Put
 
-        calibrated_params = daily_params.get(to_dt_date(calibrate_date)) # on calibrate_date
+        estimate_vol = estimated_vols.get(to_dt_date(calibrate_date))
         curve = svi_data.get_curve_treasury_bond(calibrate_date,daycounter)
 
         # Local Vol Surface
@@ -57,10 +50,8 @@ for idx_date,date in enumerate(dates[0:len(dates)-2]):
         expiration_dates_h = to_ql_dates(maturity_dates_c)
         orgnized_data = svi_util.orgnize_data_for_hedging(
             calibrate_date, daycounter, put_vols_c, expiration_dates_h, spot_c)
-        black_var_surface = hedge_util.get_local_volatility_surface(calibrated_params,to_ql_dates(maturity_dates_c),calibrate_date,daycounter,calendar,spot_c,rf_c)
         pricing_error_Ms = {}
         for nbr_month in range(4):
-            params_Mi = calibrated_params[nbr_month]
             moneyness, strikes, close_prices, expiration_date = orgnized_data.get(nbr_month)
             rf = curve.zeroRate(expiration_date, daycounter, ql.Continuous).rate()
             pricing_errors = []
@@ -80,8 +71,8 @@ for idx_date,date in enumerate(dates[0:len(dates)-2]):
                 if close < 0.0001:
                    continue
                 ttm = daycounter.yearFraction(calibrate_date,expiration_date)
-                npv = hedge_util.calculate_NPV_sviVolSurface(black_var_surface, calibrate_date, daycounter, calendar, params_Mi,
-                                                      spot_c, rf, k, expiration_date, optiontype)
+                npv = hedge_util.calculate_NPV_bs(calibrate_date, daycounter, calendar,
+                                           estimate_vol, spot_c, rf, k, expiration_date, optiontype)
                 pct_error = (npv - close) /close
                 if pct_error > 3:
                    print('error is large ')
@@ -113,7 +104,7 @@ with open(os.getcwd() + '/intermediate_data/pricing_errors_svi_put_no_smoothing.
 container = [daily_pricing_errors]
 #samples = ['2015.9-2016.1', '2016.2-2016.7', '2016.8-2017.1', '2017.2-2017.7']
 print("=" * 100)
-print("SVI Model Average Pricing Percent Error,PUT (SVI VOL SURFACE 5-Day SMOOTHING) : ")
+print("BS Model Average Pricing Percent Error,PUT (SVI VOL SURFACE 5-Day SMOOTHING) : ")
 print("=" * 100)
 print("%20s %20s %30s" % ("contract month", "moneyness", "avg pricing error(%)"))
 for idx_c, r in enumerate(container):
@@ -147,4 +138,4 @@ for r in container:
 
 df = pd.DataFrame(data=results,index=index)
 print(df)
-df.to_csv('svi pricing errors put no smoothing.csv')
+df.to_csv('bs pricing errors put no smoothing.csv')

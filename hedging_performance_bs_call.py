@@ -1,17 +1,11 @@
-import svi_read_data as wind_data
-from hedging_utility import get_spot_price,hedging_performance,calculate_cash_position,calculate_delta_bs,calculate_hedging_error
-from utilities import convert_datelist_from_datetime_to_ql as to_ql_dates
-from utilities import convert_datelist_from_ql_to_datetime as to_dt_dates
-from utilities import convert_date_from_ql_to_datetime as to_dt_date
-from utilities import convert_date_from_datetime_to_ql as to_ql_date
-from bs_estimate_vol import estimiate_bs_constant_vol
+import hedging_utility as hedge_util
+from utilities import *
 import svi_prepare_vol_data as svi_data
 import svi_calibration_utility as svi_util
 import QuantLib as ql
 import pandas as pd
 import math
 import numpy as np
-from WindPy import w
 import datetime
 import timeit
 import os
@@ -97,11 +91,11 @@ for idx_date,date in enumerate(dates[0:len(dates)-3]):
                 ttm = daycounter.yearFraction(hedge_date, expiration_date_h)
                 if close_h < spot_on_hedge_date - k*math.exp(-rf*ttm):
                     continue
-                delta = calculate_delta_bs(hedge_date, daycounter, calendar,
+                delta = hedge_util.calculate_delta_bs(hedge_date, daycounter, calendar,
                                            estimate_vol, spot_c, rf, k, expiration_date_h, optiontype)
                 print('delta : ', delta)
-                cash_on_hedge_date = calculate_cash_position(hedge_date, close_h, spot_on_hedge_date, delta)
-                hedge_error = calculate_hedging_error(hedge_date,liquidition_date,daycounter,spot,close_l,
+                cash_on_hedge_date = hedge_util.calculate_cash_position(hedge_date, close_h, spot_on_hedge_date, delta)
+                hedge_error = hedge_util.calculate_hedging_error(hedge_date,liquidition_date,daycounter,spot,close_l,
                                                       delta,cash_on_hedge_date,rf)
                 hedge_error_pct = hedge_error/close_h
                 if abs(hedge_error_pct) > 10 :
@@ -136,7 +130,7 @@ with open(os.getcwd()+'/intermediate_data/total_hedging_daily_hedge_errors_bs_ca
 
 print(daily_pct_hedge_errors.keys())
 
-mny_0,mny_1,mny_2,mny_3 = hedging_performance(daily_pct_hedge_errors,daily_pct_hedge_errors.keys())
+mny_0,mny_1,mny_2,mny_3 = hedge_util.hedging_performance(daily_pct_hedge_errors,daily_pct_hedge_errors.keys())
 print("="*100)
 print("BS Model Average Hedging Percent Error,CALL  : ")
 print("="*100)
@@ -151,7 +145,7 @@ for i in range(4):
 print('total date : ', len(daily_pct_hedge_errors.keys()))
 #print(daily_pct_hedge_errors.keys())
 
-mny_0,mny_1,mny_2,mny_3 = hedging_performance(daily_hedge_errors,daily_pct_hedge_errors.keys())
+mny_0,mny_1,mny_2,mny_3 = hedge_util.hedging_performance(daily_hedge_errors,daily_pct_hedge_errors.keys())
 print("="*100)
 print("BS Model Average Hedging Percent Error,CALL : ")
 print("="*100)

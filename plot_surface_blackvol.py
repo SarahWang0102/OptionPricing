@@ -1,16 +1,11 @@
-from WindPy import w
-import QuantLib as ql
-import pandas as pd
 import numpy as np
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 from matplotlib import cm
 import svi_prepare_vol_data as svi_data
-import svi_calibration_utility as svi_util
 import pickle
 import os
-from utilities import convert_date_from_ql_to_datetime as to_dt_date
-from utilities import convert_datelist_from_datetime_to_ql as to_ql_dates
+from utilities import *
 
 with open(os.getcwd()+'/intermediate_data/total_hedging_daily_svi_dataset_puts.pickle','rb') as f:
     daily_svi_dataset = pickle.load(f)[0]

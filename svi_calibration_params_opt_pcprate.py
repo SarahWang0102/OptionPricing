@@ -7,6 +7,18 @@ from WindPy import w
 import numpy as np
 import math
 
+
+'''
+===========================
+ SVI Params Optimization
+===========================
+
+Run n times Nelder-Mead optimization with random initials.
+Use PUT CALL PARITY ADJUSTED RATES.
+Plot each optimization result.
+
+'''
+
 def run_optimization(data,ttm,sim_no = 100):
     logMoneynesses = data[0]
     totalvariance = data[1]
@@ -77,23 +89,3 @@ expiration_date = data[2]
 ttm = daycounter.yearFraction(evalDate, expiration_date)
 final_parames = run_optimization(data,ttm,50)
 plt.show()
-
-'''
-print(final_parames)
-a_star, b_star, rho_star, m_star, sigma_star = final_parames
-x_svi = np.arange(min(logMoneynesses) - 0.005, max(logMoneynesses) + 0.02, 0.1 / 100)  # log_forward_moneyness
-y_svi = np.divide((x_svi - m_star), sigma_star)
-
-tv_svi2 = np.multiply(a_star + b_star * (rho_star * (x_svi - m_star) + np.sqrt((x_svi - m_star) ** 2 + sigma_star ** 2)), ttm)
-
-plt.figure()
-plt.plot(logMoneynesses, totalvariance, 'ro')
-plt.plot(x_svi, tv_svi2, 'b--')
-scale1 = (max(totalvariance) - min(totalvariance)) / 10
-plt.ylim(min(totalvariance) - scale1/2, max(totalvariance) + scale1)
-t = str(round(daycounter.yearFraction(evalDate, expiration_date), 4))
-plt.title('SVI total variance, T = ' + t)
-
-
-w.stop()
-'''

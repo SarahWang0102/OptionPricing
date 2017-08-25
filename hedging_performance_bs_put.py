@@ -1,17 +1,11 @@
-import svi_read_data as wind_data
-from hedging_utility import get_spot_price,hedging_performance,get_4th_percentile_dates,get_3rd_percentile_dates,get_2nd_percentile_dates,get_1st_percentile_dates,calculate_cash_position,calculate_delta_bs,calculate_hedging_error
-from utilities import convert_datelist_from_datetime_to_ql as to_ql_dates
-from utilities import convert_datelist_from_ql_to_datetime as to_dt_dates
-from utilities import convert_date_from_ql_to_datetime as to_dt_date
-from utilities import convert_date_from_datetime_to_ql as to_ql_date
-from bs_estimate_vol import estimiate_bs_constant_vol_single_optiontype,estimiate_bs_constant_vol
+import hedging_utility as hedge_util
+from utilities import *
 import svi_prepare_vol_data as svi_data
 import svi_calibration_utility as svi_util
 import QuantLib as ql
 import pandas as pd
 import math
 import numpy as np
-from WindPy import w
 import datetime
 import timeit
 import os
@@ -102,10 +96,10 @@ for idx_date,date in enumerate(dates[0:len(dates)-5]):
                 if close_h < k*math.exp(-rf*ttm) - spot_on_hedge_date:
                     continue
                 #if close_h < 0.005: continue
-                delta = calculate_delta_bs(hedge_date, daycounter, calendar,
+                delta = hedge_util.calculate_delta_bs(hedge_date, daycounter, calendar,
                                            estimate_vol, spot_c, rf, k, expiration_date_h, optiontype)
-                cash_on_hedge_date = calculate_cash_position(hedge_date, close_h, spot_on_hedge_date, delta)
-                hedge_error = calculate_hedging_error(hedge_date,liquidition_date,daycounter,spot,close_l,delta,cash_on_hedge_date,rf)
+                cash_on_hedge_date = hedge_util.calculate_cash_position(hedge_date, close_h, spot_on_hedge_date, delta)
+                hedge_error = hedge_util.calculate_hedging_error(hedge_date,liquidition_date,daycounter,spot,close_l,delta,cash_on_hedge_date,rf)
                 hedge_error_pct = hedge_error/close_h
                 if abs(hedge_error_pct) > 6 :
                     print(date,',',nbr_month,',',k,'too large error', hedge_error_pct)
@@ -139,10 +133,10 @@ with open(os.getcwd()+'/intermediate_data/total_hedging_daily_hedge_errors_bs_pu
 
 print(daily_pct_hedge_errors.keys())
 
-p1 = get_1st_percentile_dates(daily_pct_hedge_errors)
-p2 = get_2nd_percentile_dates(daily_pct_hedge_errors)
-p3 = get_3rd_percentile_dates(daily_pct_hedge_errors)
-p4 = get_4th_percentile_dates(daily_pct_hedge_errors)
+p1 = hedge_util.get_1st_percentile_dates(daily_pct_hedge_errors)
+p2 = hedge_util.get_2nd_percentile_dates(daily_pct_hedge_errors)
+p3 = hedge_util.get_3rd_percentile_dates(daily_pct_hedge_errors)
+p4 = hedge_util.get_4th_percentile_dates(daily_pct_hedge_errors)
 container = [p1,p2,p3,p4]
 samples = ['2015.9-2016.1','2016.2-2016.7','2016.8-2017.1','2017.2-2017.7']
 print("="*100)

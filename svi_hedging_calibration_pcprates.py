@@ -17,7 +17,7 @@ import os
 import pickle
 '''
 ============================================
-Calibrate SVI Params (using put call parity)
+Calibrate SVI Params (put call parity)
 ============================================
 
 Use put and call option data to calibrate SVI model,

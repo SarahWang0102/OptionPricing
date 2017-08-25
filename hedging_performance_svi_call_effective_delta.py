@@ -1,16 +1,12 @@
-import svi_read_data as wind_data
-from hedging_utility import get_spot_price,calculate_cash_position,calculate_delta_svi,calculate_delta_formula_svi,get_local_volatility_surface_smoothed,calculate_delta_sviVolSurface,calculate_hedging_error,get_local_volatility_surface
-from utilities import convert_datelist_from_datetime_to_ql as to_ql_dates
-from utilities import convert_datelist_from_ql_to_datetime as to_dt_dates
-from utilities import convert_date_from_ql_to_datetime as to_dt_date
-from utilities import convert_date_from_datetime_to_ql as to_ql_date
+import hedging_utility as hedge_util
+from utilities import *
 import svi_prepare_vol_data as svi_data
 import svi_calibration_utility as svi_util
+import hedging_performance_utility as hp_util
 import QuantLib as ql
 import pandas as pd
 import math
 import numpy as np
-from WindPy import w
 import datetime
 import timeit
 import os
@@ -24,12 +20,19 @@ daycounter = ql.ActualActual()
 
 def Date(d,m,y):
     return ql.Date(d,m,y)
-
+'''
 with open(os.getcwd()+'/intermediate_data/hedging_daily_params_pcprates.pickle','rb') as f:
     daily_params = pickle.load(f)[0]
 with open(os.getcwd()+'/intermediate_data/hedging_dates_pcprates.pickle','rb') as f:
     dates = pickle.load(f)[0]
 with open(os.getcwd()+'/intermediate_data/hedging_daily_svi_dataset_pcprates.pickle','rb') as f:
+    daily_svi_dataset = pickle.load(f)[0]
+'''
+with open(os.getcwd()+'/intermediate_data/hedging_daily_params_calls.pickle','rb') as f:
+    daily_params = pickle.load(f)[0]
+with open(os.getcwd()+'/intermediate_data/hedging_dates_calls.pickle','rb') as f:
+    dates = pickle.load(f)[0]
+with open(os.getcwd()+'/intermediate_data/hedging_daily_svi_dataset_calls.pickle','rb') as f:
     daily_svi_dataset = pickle.load(f)[0]
 
 # Hedge option using underlying 50ETF
@@ -67,7 +70,7 @@ for idx_date,date in enumerate(dates[0:len(dates)-8]):
         # Local Vol Surface
         cal_vols_c, put_vols_c, maturity_dates_c, spot_c, rf_c  = daily_svi_dataset.get(to_dt_date(calibrate_date))
 
-        black_var_surface = get_local_volatility_surface(calibrated_params,to_ql_dates(maturity_dates_c),calibrate_date,daycounter,calendar,spot_c,rf_c)
+        black_var_surface = hedge_util.get_local_volatility_surface(calibrated_params,to_ql_dates(maturity_dates_c),calibrate_date,daycounter,calendar,spot_c,rf_c)
 
         hedge_error_Ms = {}
         hedge_error_pct_Ms = {}
@@ -92,11 +95,11 @@ for idx_date,date in enumerate(dates[0:len(dates)-8]):
                 ttm = daycounter.yearFraction(hedge_date,expiration_date_h)
                 if close_h < spot_on_hedge_date - k*math.exp(-rf_on_hedge_date*ttm):
                     continue
-                delta = calculate_delta_sviVolSurface(black_var_surface,hedge_date,daycounter,calendar,params_Mi,spot,rf,k,expiration_date_h,optiontype)
+                delta = hedge_util.calculate_effective_delta_svi(hedge_date,daycounter,calendar,params_Mi,spot,rf,k,expiration_date_h,optiontype)
                 if math.isnan(delta): continue
                 print('delta : ',delta)
-                cash_on_hedge_date = calculate_cash_position(hedge_date, close_h, spot_on_hedge_date, delta)
-                hedge_error = calculate_hedging_error(hedge_date,liquidition_date,
+                cash_on_hedge_date = hedge_util.calculate_cash_position(hedge_date, close_h, spot_on_hedge_date, delta)
+                hedge_error = hedge_util.calculate_hedging_error(hedge_date,liquidition_date,
                                                       daycounter,spot,close_l,delta,cash_on_hedge_date,rf)
                 if close_h == 0 : continue
                 hedge_error_pct = hedge_error/close_h
@@ -124,7 +127,7 @@ print('calibration time : ',stop-start)
 
 print('daily_hedge_errors = ',daily_hedge_errors)
 print('daily_pct_hedge_errors = ',daily_pct_hedge_errors)
-with open(os.getcwd()+'/intermediate_data/hedging_daily_hedge_errors_svi_pcprate_call.pickle','wb') as f:
+with open(os.getcwd()+'/intermediate_data/hedging_daily_hedge_errors_svi_call.pickle','wb') as f:
     pickle.dump([daily_hedge_errors,daily_pct_hedge_errors],f)
 
 
