@@ -3,8 +3,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.dates import date2num
 import Utilities.plot_util as pu
+import os
 
-exceldata     = pd.read_excel('option_volume.xlsx',sheetname ='volume')
+exceldata     = pd.read_excel(os.path.abspath('..') +'/excel_data/option_volume.xlsx',sheetname ='volume')
 print(exceldata)
 print(exceldata.index)
 

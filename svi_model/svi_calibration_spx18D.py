@@ -4,7 +4,7 @@ from WindPy import *
 import numpy as np
 import matplotlib.pyplot as plt
 import datetime
-import svi_calibration_utility as svi_util
+import Utilities.svi_calibration_utility as svi_util
 
 ###############################################################################
 ## Settings

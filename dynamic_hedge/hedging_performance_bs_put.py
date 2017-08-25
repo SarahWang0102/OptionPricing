@@ -21,13 +21,13 @@ daycounter = ql.ActualActual()
 def Date(d,m,y):
     return ql.Date(d,m,y)
 
-with open(os.getcwd()+'/intermediate_data/total_hedging_daily_params_puts.pickle','rb') as f:
+with open(os.path.abspath('..') +'/intermediate_data/total_hedging_daily_params_puts.pickle','rb') as f:
     daily_params = pickle.load(f)[0]
 #with open(os.getcwd()+'/intermediate_data/total_hedging_dates_puts.pickle','rb') as f:
 #    dates = pickle.load(f)[0]
-with open(os.getcwd()+'/intermediate_data/total_hedging_daily_svi_dataset_puts.pickle','rb') as f:
+with open(os.path.abspath('..') +'/intermediate_data/total_hedging_daily_svi_dataset_puts.pickle','rb') as f:
     daily_svi_dataset = pickle.load(f)[0]
-with open(os.getcwd()+'/intermediate_data/total_hedging_bs_estimated_vols.pickle','rb') as f:
+with open(os.path.abspath('..') +'/intermediate_data/total_hedging_bs_estimated_vols.pickle','rb') as f:
     estimated_vols = pickle.load(f)[0]
 
 # Hedge option using underlying 50ETF
@@ -129,7 +129,7 @@ print('calibration time : ',stop-start)
 
 print('daily_hedge_errors = ',daily_hedge_errors)
 print('daily_pct_hedge_errors = ',daily_pct_hedge_errors)
-with open(os.getcwd()+'/intermediate_data/total_hedging_daily_hedge_errors_bs_put.pickle','wb') as f:
+with open(os.path.abspath('..') +'/intermediate_data/total_hedging_daily_hedge_errors_bs_put.pickle','wb') as f:
     pickle.dump([daily_hedge_errors,daily_pct_hedge_errors],f)
 
 print(daily_pct_hedge_errors.keys())
@@ -145,7 +145,7 @@ print("BS Model Average Hedging Percent Error,PUT  : ")
 print("="*100)
 print("%20s %20s %20s %30s" % ("sample dates","contract month","moneyness", "avg hedging error(%)"))
 for idx_c,r in enumerate(container):
-    mny_0,mny_1,mny_2,mny_3 = hedging_performance(r,r.keys())
+    mny_0,mny_1,mny_2,mny_3 = hedge_util.hedging_performance(r,r.keys())
     print("-"*100)
     for i in range(4):
         if len(mny_0.get(i)) > 0: print("%20s %20s %20s %25s" % (samples[idx_c],i,' < 0.97',round(sum(np.abs(mny_0.get(i)))*100/len(mny_0.get(i)),4)))
@@ -159,7 +159,7 @@ results = {}
 index = ["sample dates","contract month","moneyness", "avg hedging error(%)"]
 count = 0
 for idx_c,r in enumerate(container):
-    mny_0,mny_1,mny_2,mny_3 = hedging_performance(r,r.keys())
+    mny_0,mny_1,mny_2,mny_3 = hedge_util.hedging_performance(r,r.keys())
     print("-"*100)
     for i in range(4):
         results.update({count:[samples[idx_c],i,' \'< 0.97',round(sum(np.abs(mny_0.get(i)))*100/len(mny_0.get(i)),4)]})
