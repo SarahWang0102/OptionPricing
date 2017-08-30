@@ -1,10 +1,14 @@
 import Utilities.svi_prepare_vol_data as svi_data
+from Utilities.utilities import *
+import Utilities.hedging_utility as hedge_util
 import QuantLib as ql
 import numpy as np
 import math
 import datetime
 import matplotlib.pyplot as plt
 import Utilities.plot_util as pu
+import os
+import pickle
 
 # down-and-out barrier call is worthless unless its minimum remains above some “low barrier” H.
 def down_out_barrier_npv(begDate,maturityDate,daycounter,calendar,simulation_no,S0,strike,barrier,rf,delta_t,parames,noise):
@@ -144,6 +148,14 @@ def up_out_barrier_npv(begDate,maturityDate,daycounter,calendar,simulation_no,S0
     return price,path_container,knock_out_times
 
 
+with open(os.path.abspath('..')+'/intermediate_data/total_hedging_daily_params_puts.pickle','rb') as f:
+    daily_params = pickle.load(f)[0]
+with open(os.path.abspath('..')+'/intermediate_data/total_hedging_dates_puts.pickle','rb') as f:
+    dates = pickle.load(f)[0]
+with open(os.path.abspath('..')+'/intermediate_data/total_hedging_daily_svi_dataset_puts.pickle','rb') as f:
+    daily_svi_dataset = pickle.load(f)[0]
+
+
 # Evaluation Settings
 begDate = ql.Date(14,7,2017)
 maturityDate = ql.Date(27,12,2017)
@@ -152,12 +164,20 @@ daycounter = ql.ActualActual()
 spot = 2.45
 S0 = 2.45*100
 strike = S0
-rf_Ks_months = svi_data.calculate_PCParity_riskFreeRate(begDate, daycounter, calendar)
-rf = rf_Ks_months.get(3).get(spot)
+
+calibrated_params = daily_params.get(to_dt_date(begDate))  # on calibrate_date
+
+cal_vols_c, put_vols_c, maturity_dates_c, spot_c, rf_c = daily_svi_dataset.get(to_dt_date(begDate))
+black_var_surface = hedge_util.get_local_volatility_surface(calibrated_params, to_ql_dates(maturity_dates_c),
+                                                            begDate, daycounter, calendar, spot_c, rf_c)
+
+
+rf = rf_c.get(3)
+
 # SVI model params
-params =  0.0107047521466, 0.297485230118, 0.647754886901, 0.0262354285707, 0.0554674716145
+params =  calibrated_params[3]
 # Monte Carlo Simulation
-N = 50000
+N = 500
 delta_t = 1.0/365
 dates = []
 evalDate = begDate

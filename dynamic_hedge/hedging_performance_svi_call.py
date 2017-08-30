@@ -28,7 +28,6 @@ daycounter = ql.ActualActual()
 def Date(d,m,y):
     return ql.Date(d,m,y)
 
-print(os.path.abspath('..'))
 with open(os.path.abspath('..')+'/intermediate_data/total_hedging_daily_params_puts.pickle','rb') as f:
     daily_params = pickle.load(f)[0]
 with open(os.path.abspath('..')+'/intermediate_data/total_hedging_dates_puts.pickle','rb') as f:

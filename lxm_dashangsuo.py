@@ -127,14 +127,13 @@ def spider(codename, firstdate):
             data['增减3'] = content_list[content_list.index % 12 == 11].apply(to_int).tolist()
             data['代码'] = content[0].string[67:75].strip()
             data['日期'] = content[0].string[-8:]
-            pos_condition = pos_condition.append(data, ignore_index=True)
-    pos_condition.to_excel('dce\\'+codename+'.xlsx')
+            data.to_pickle('DCE\\' + codename + content[0].string[-8:] + '.pkl')
 
 
 def get_data():
 
     # fd = {'i': '2013/10/18', 'jm': '2013/03/22', 'j': '2011/04/15'}
-    fd = {'pp': '2014/02/28', 'l': '2010/01/01', 'fb': '2013/12/06', 'c': '2010/01/01', 'cs': '2014/12/19', 'p': '2010/01/01'}
+    fd = { 'l': '2010/01/01', 'fb': '2013/12/06', 'cs': '2014/12/19', 'p': '2010/01/01'}
 
     # fd = {'v': '2009/05/25', 'b': '2004/12/22', 'm': '	2000/07/17', 'a': '1999/01/04', 'y': '2006/01/09',
     #       'jd': '2013/11/08', 'bb': '2013/12/06', 'jm': '2013/03/22', 'j': '2011/04/15', 'pp': '2014/02/28',
