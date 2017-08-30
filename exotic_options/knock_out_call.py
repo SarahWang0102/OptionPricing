@@ -35,7 +35,6 @@ black_var_surface = hedge_util.get_local_volatility_surface(calibrated_params, t
 maturityDate = to_ql_date(maturity_dates[i])
 rf = risk_free_rates.get(i)
 params =  calibrated_params[i]
-
 barrier = 0.9*spot
 strike = spot
 
