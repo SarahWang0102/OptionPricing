@@ -15,6 +15,7 @@ import re
 import os
 import progressbar
 import time
+import pickle
 w.start()
 
 
@@ -127,7 +128,9 @@ def spider(codename, firstdate):
             data['增减3'] = content_list[content_list.index % 12 == 11].apply(to_int).tolist()
             data['代码'] = content[0].string[67:75].strip()
             data['日期'] = content[0].string[-8:]
-            data.to_pickle('DCE\\' + codename + content[0].string[-8:] + '.pkl')
+            data.to_json('DCE\\' + codename + content[0].string[-8:] + '.json')
+            #with open(, 'wb') as f:
+             #   pickle.dump([data], f, pickle.HIGHEST_PROTOCOL)
 
 
 def get_data():
