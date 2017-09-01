@@ -16,6 +16,8 @@ import os
 import progressbar
 import time
 import pickle
+import string
+
 w.start()
 
 
@@ -96,6 +98,32 @@ def geturl(url, header, tries_num=20, sleep_time=0.1, time_out=10, max_retry=20)
             res = geturl(url, header, tries_num_p, sleep_time_p, time_out_p, max_retry)
         return res
 
+def spider2(codename, firstdate):
+
+    pos_condition = pd.DataFrame()
+    date_range = w.tdays(firstdate, "2017-08-28", "").Data[0]
+    for i in range(len(date_range)):
+        time.sleep(3)
+        date = date_range[i]
+        year, month, day = date.year, date.month, date.day
+        url = "http://www.dce.com.cn/publicweb/quotesdata/dayQuotesCh.html?dayQuotes.variety=all&dayQuotes.trade_type=1&year="+str(year)+'&month='+str(month-1)+'&day='+str(day)
+        # url = "http://www.dce.com.cn/publicweb/quotesdata/exportDayQuotesChData.html?dayQuotes.variety=all&dayQuotes.trade_type=1&year="+str(year)+'&month='+str(month-1)+'&day='+str(day)
+        result = geturl(url, header=randheader())
+        soap = BeautifulSoup(result.text, 'html.parser')
+        tag = soap.find_all(re.compile('tr'))[1]
+        item = []
+        origin = []
+        for child in tag.children:
+            origin.append(child.string)
+            print(child.string.encode('utf-8'))
+            item.append(bytearray(child.string.encode('utf-8')).translate(None, string.whitespace))
+        for i in item:
+            print(i.decode('utf-8'))
+            #data.to_json('marketdata\\' + codename + content[0].string[-8:] + '.json')
+
+            #with open(, 'wb') as f:
+             #   pickle.dump([data], f, pickle.HIGHEST_PROTOCOL)
+
 
 def spider(codename, firstdate):
 
@@ -108,33 +136,42 @@ def spider(codename, firstdate):
         url = 'http://www.dce.com.cn/publicweb/quotesdata/exportDayQuotesChData.html?dayQuotes.variety='\
               + codename+'&dayQuotes.trade_type=1&year='+str(year)+'&month='+str(month-1)+'&day='+str(day)
         result = geturl(url, header=randheader())
-        print(result.text)
-        soup = BeautifulSoup(result.text, 'html.parser')
-        a = soup.find_all(re.compile("td"))
-        #exit(0)
-        content_list = pd.Series(soup.find_all(re.compile("td")))
-        if len(content_list) == 0:
+        rows = result.text.split('\n')
+
+        if len(rows) == 0:
             pass
         else:
-            content = soup.find_all(re.compile("span"))
-            data = pd.DataFrame()
-            content_list = content_list.apply(lambda x: x.string)
-            print(content_list)
-            print(content_list.index)
-            data['code'] = content_list[content_list.index % 16 == 1].tolist()
-            data['close'] = content_list[content_list.index % 16 == 5].tolist()
-            data['date'] = date
-            print(data)
-            #data.to_json('marketdata\\' + codename + content[0].string[-8:] + '.json')
 
-            #with open(, 'wb') as f:
-             #   pickle.dump([data], f, pickle.HIGHEST_PROTOCOL)
+            index =  rows[0].split()
+            #a = rows[211].split()
+            data = pd.DataFrame(index=index)
+            #print(a)
+            #data.index = index
+            index_length = len(index)
+            for nbrRow in range(1,len(rows)):
+                #print(nbrRow)
+                row = rows[nbrRow]
+                colums_of_row = row.split()
+                if len(colums_of_row) != index_length:
+                    #print(colums_of_row)
+                    continue
+                data[nbrRow] = colums_of_row
+                #print(colums_of_row[1])
+                #data['code'] = colums_of_row[1]
+                #data['close'] = colums_of_row[5]
+                #data['date'] = date
+                #print(data)
+            datestr = str(date.year) + "-" + str(date.month) + "-" + str(date.day)
+            data.to_json('marketdata\\' + codename + '_mkt_' + datestr + '.json')
+            #print(data)
+                #with open(, 'wb') as f:
+                 #   pickle.dump([data], f, pickle.HIGHEST_PROTOCOL)
 
 
 def get_data():
 
     # fd = {'i': '2013/10/18', 'jm': '2013/03/22', 'j': '2011/04/15'}
-    fd = { 'm': '2017/08/01'}
+    fd = { 'm': '2017/03/01'}
 
     # fd = {'v': '2009/05/25', 'b': '2004/12/22', 'm': '	2000/07/17', 'a': '1999/01/04', 'y': '2006/01/09',
     #       'jd': '2013/11/08', 'bb': '2013/12/06', 'jm': '2013/03/22', 'j': '2011/04/15', 'pp': '2014/02/28',

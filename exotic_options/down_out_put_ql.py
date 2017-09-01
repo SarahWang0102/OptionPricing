@@ -40,7 +40,7 @@ barrier_engine = ql.AnalyticBarrierEngine(bs_process)
 european_engine = ql.AnalyticEuropeanEngine(bs_process)
 option.setPricingEngine(barrier_engine)
 reference_npv = option.NPV()
-print(reference_npv)
+print('reference npv :',reference_npv)
 
 portfolio = ql.CompositeInstrument()
 # Long a put struck at strike
@@ -84,6 +84,7 @@ ql.Settings.instance().evaluationDate = today
 underlying.setValue(spot)
 portfolio_value = portfolio.NPV()
 print(portfolio_value)
+print('portfolio npv :',portfolio_value)
 
 
 '''

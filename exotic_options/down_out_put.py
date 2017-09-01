@@ -1,5 +1,4 @@
 import exotic_options.exotic_option_utilities as exotic_otil
-import Utilities.svi_prepare_vol_data as svi_data
 from Utilities.utilities import *
 import Utilities.hedging_utility as hedge_util
 import os
@@ -27,33 +26,20 @@ daycounter = ql.ActualActual()
 #delta_t = 1.0/365
 i = 3
 
-# Down and out Call
-optiontype = ql.Option.Call
+# Down and out Put
+optiontype = ql.Option.Put
 barrierType = ql.Barrier.DownOut
-curve = svi_data.get_curve_treasury_bond(today,daycounter)
+
 calibrated_params = daily_params.get(to_dt_date(today))  # on calibrate_date
 cal_vols, put_vols, maturity_dates, spot, risk_free_rates = daily_svi_dataset.get(to_dt_date(today))
 black_var_surface = hedge_util.get_local_volatility_surface(calibrated_params, to_ql_dates(maturity_dates),
                                                             today, daycounter, calendar, spot, risk_free_rates)
-
+flat_vol = ql.BlackVolTermStructureHandle(ql.BlackConstantVol(0,ql.NullCalendar(), ql.QuoteHandle(ql.SimpleQuote(0.2)), daycounter))
 maturityDate = to_ql_date(maturity_dates[i])
 rf = risk_free_rates.get(i)
 params =  calibrated_params[i]
-
-#maturityDate = calendar.advance(today,ql.Period(6,ql.Months))
-print(maturityDate)
-print(rf)
-#rf = 0.0
-#spot = 100
 barrier = spot - 0.2
-strike = spot + 0.1
-ttm = daycounter.yearFraction(today,maturityDate)
-strike2 = ((barrier)**2)/strike
-strike3 = ((barrier*np.exp(rf*ttm))**2)/strike
-print('strike3,2 : ',strike3,strike2)
-k_container = []
-for vol in cal_vols[i].values():
-    k_container.append(vol[1])
+strike = spot
 
 print('barrier : ', barrier)
 print('strike : ', strike)
@@ -61,7 +47,6 @@ print('strike : ', strike)
 
 yield_ts = ql.YieldTermStructureHandle(ql.FlatForward(today, rf, daycounter))
 dividend_ts = ql.YieldTermStructureHandle(ql.FlatForward(today, 0.0, daycounter))
-flat_vol = ql.BlackVolTermStructureHandle(ql.BlackConstantVol(0,ql.NullCalendar(), ql.QuoteHandle(ql.SimpleQuote(0.157)), daycounter))
 exercise = ql.EuropeanExercise(maturityDate)
 payoff = ql.PlainVanillaPayoff(optiontype, strike)
 underlying = ql.SimpleQuote(spot)
@@ -74,69 +59,50 @@ barrier_engine = ql.AnalyticBarrierEngine(process)
 european_engine = ql.AnalyticEuropeanEngine(process)
 option.setPricingEngine(barrier_engine)
 reference_npv = option.NPV()
+print(reference_npv)
 
 portfolio = ql.CompositeInstrument()
+# Long a put struck at strike
+put1 = ql.EuropeanOption(payoff,exercise)
+put1.setPricingEngine(european_engine)
+portfolio.add(put1)
+# minus a digital put struck at barrier of notional strike-barrier
+digital_payoff = ql.CashOrNothingPayoff(ql.Option.Put, barrier, 1.0)
+digital_put = ql.EuropeanOption(digital_payoff,exercise)
+digital_put.setPricingEngine(european_engine)
+portfolio.subtract(digital_put,strike-barrier)
+# minus a put option struck at barrier
+lowerPayoff = ql.PlainVanillaPayoff(ql.Option.Put, barrier)
+put2 = ql.EuropeanOption(lowerPayoff,exercise)
+put2.setPricingEngine(european_engine)
+portfolio.subtract(put2)
 
-# Long a call struck at strike
-call = ql.EuropeanOption(payoff,exercise)
-call.setPricingEngine(european_engine)
-call_price = call.NPV()
-print('call value : ',call_price)
-portfolio.add(call)
-
-'''
-# Use interation to get put strike
-e = 10
-strike1 = 0.0
-for k in np.arange(2,4,0.001):
-    payoff = ql.PlainVanillaPayoff(ql.Option.Put, k)
-    put1 = ql.EuropeanOption(payoff, exercise)
-    put1.setPricingEngine(european_engine)
-    p = put1.NPV()
-    e1 = np.abs(p*np.sqrt(strike/k)-call_price)
-    if e1 < e :
-        e = e1
-        strike1 = k
-print('strike iter :',strike1,e)
-'''
-
-# short put_ratio shares of puts struck at k_put
-k_put = strike3
-put_payoff = ql.PlainVanillaPayoff(ql.Option.Put, k_put)
-put = ql.EuropeanOption(put_payoff,exercise)
-put.setPricingEngine(european_engine)
-put_price = put.NPV()
-put_ratio = np.sqrt(strike/k_put)
-print('put_ratio : ',put_ratio,call_price/put_price,np.abs(put_price*np.sqrt(strike/k_put)-call_price))
-print('put value : ',put.NPV())
-# Find the shares of put that make replication portfolio = 0.0 at barrier
-put_ratio2 = 1.0
-diff = 10
-for r in np.arange(0,2,0.001):
-    portfolio1 = ql.CompositeInstrument()
-    portfolio1.add(call)
+# Now we use puts struck at B to kill the value of the
+# portfolio on a number of points (B,t).  For the first
+# portfolio, we'll use 12 dates at one-month's distance.
+inner_maturity = maturityDate
+while inner_maturity > today:
+    print(inner_maturity)
+    inner_exercise = ql.EuropeanExercise(inner_maturity)
+    inner_payoff = ql.PlainVanillaPayoff(ql.Option.Put,barrier)
+    putn = ql.EuropeanOption(inner_payoff,inner_exercise)
+    putn.setPricingEngine(european_engine)
+    inner_maturity = calendar.advance(inner_maturity, ql.Period(-1, ql.Months))
+    ql.Settings.instance().evaluationDate = inner_maturity
     underlying.setValue(barrier)
-    portfolio1.subtract(put, r)
-    npv = portfolio1.NPV()
-    if abs(npv - 0) < diff :
-        diff = abs(npv - 0)
-        put_ratio2 = r
-print('put_ratio2 : ',put_ratio2)
-portfolio.subtract(put,put_ratio2)
-
-underlying.setValue(spot)
-portfolio_value = portfolio.NPV()
-print('reference npv :',reference_npv)
-print('replicate npv :',portfolio_value)
-print('hedge error : ',reference_npv-portfolio_value)
-print("="*100)
-print("%15s %25s %25s %25s" % ("spot","reference npv","replicate npv", "hedge error"))
-print("-"*100)
-for s in np.arange(barrier,strike+0.2,0.01):
-    underlying.setValue(s)
-    reference_npv = option.NPV()
     portfolio_value = portfolio.NPV()
-    print("%15s %25s %25s %25s" % (s, round(reference_npv,4), round(portfolio_value,4), round(reference_npv-portfolio_value,4)))
+    put_value = putn.NPV()
+    notional = portfolio_value/put_value
+    portfolio.subtract(putn,notional)
+
+print(portfolio)
+
+ql.Settings.instance().evaluationDate = today
+underlying.setValue(spot)
+
+portfolio_value = portfolio.NPV()
+print(portfolio_value)
+
 
 '''
 underlyings = np.arange(0.85*spot,1.02*spot,0.005)

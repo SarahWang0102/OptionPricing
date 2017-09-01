@@ -26,9 +26,9 @@ print('ratio_equity = ',ratio_equity)
 print(dates)
 print(etf)
 plt.rcParams['font.sans-serif'] = ['STKaiti']
-plt.rcParams.update({'font.size': 13})
+plt.rcParams.update({'font.size': 15})
 x = np.arange(len(dates))
-w = 0.2
+w = 0.15
 print(x)
 print(x+w)
 f, axarr  = plt.subplots()
@@ -47,7 +47,7 @@ axarr.xaxis.set_ticks_position('bottom')
 lgd = axarr.legend(bbox_to_anchor=(0., 1.02, 1.1, .102), loc=3,
            ncol=3, borderaxespad=0.,columnspacing=1.5,frameon=False)
 for label in axarr.get_xmajorticklabels() :
-    label.set_rotation(30)
+    label.set_rotation(270)
     label.set_horizontalalignment("right")
 f.savefig('volume_us.png', dpi=300, format='png', bbox_extra_artists=(lgd,), bbox_inches='tight')
 plt.show()

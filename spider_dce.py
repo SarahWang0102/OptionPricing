@@ -1,11 +1,3 @@
-#!/usr/bin/env python
-# encoding: utf-8
-"""
-@Auther: simon
-@Filename: zhongjinsuo.py
-@Creation Time: 2017/08/17 10:24
-@Version : Python 3.5.3
-"""
 from bs4 import BeautifulSoup
 from WindPy import *
 import requests
@@ -77,24 +69,22 @@ def to_int(number):
     except ValueError:
         return None
 
-
 def geturl(url, header, tries_num=20, sleep_time=0.1, time_out=10, max_retry=20):
-
-        sleep_time_p = sleep_time
-        time_out_p = time_out
-        tries_num_p = tries_num
-        try:
-            res = requests.get(url, headers=header, timeout=time_out)
-            res.raise_for_status()
-        except requests.RequestException as e:
-            sleep_time_p += 5
-            time_out_p += 5
-            tries_num_p += - 1
-            if tries_num_p > 0:
-                time.sleep(sleep_time_p)
-                print(url, 'URL Connection Error: 第', max_retry - tries_num_p, u'次 Retry Connection',e)
-            res = geturl(url, header, tries_num_p, sleep_time_p, time_out_p, max_retry)
-        return res
+    sleep_time_p = sleep_time
+    time_out_p = time_out
+    tries_num_p = tries_num
+    try:
+        res = requests.get(url, headers=header, timeout=time_out)
+        res.raise_for_status()
+    except requests.RequestException as e:
+        sleep_time_p += 5
+        time_out_p += 5
+        tries_num_p += - 1
+        if tries_num_p > 0:
+            time.sleep(sleep_time_p)
+            print(url, 'URL Connection Error: 第', max_retry - tries_num_p, u'次 Retry Connection', e)
+        res = geturl(url, header, tries_num_p, sleep_time_p, time_out_p, max_retry)
+    return res
 
 
 def spider(codename, firstdate):
@@ -105,26 +95,11 @@ def spider(codename, firstdate):
         time.sleep(3)
         date = date_range[i]
         year, month, day = date.year, date.month, date.day
-        url = 'http://www.dce.com.cn/publicweb/quotesdata/exportDayQuotesChData.html?dayQuotes.variety='\
+        url = 'http://www.dce.com.cn/publicweb/quotesdata/dayQuotesCh.html?dayQuotes.variety='\
               + codename+'&dayQuotes.trade_type=1&year='+str(year)+'&month='+str(month-1)+'&day='+str(day)
-        result = geturl(url, header=randheader())
-        print(result.text)
-        soup = BeautifulSoup(result.text, 'html.parser')
-        a = soup.find_all(re.compile("td"))
-        #exit(0)
-        content_list = pd.Series(soup.find_all(re.compile("td")))
-        if len(content_list) == 0:
-            pass
-        else:
-            content = soup.find_all(re.compile("span"))
-            data = pd.DataFrame()
-            content_list = content_list.apply(lambda x: x.string)
-            print(content_list)
-            print(content_list.index)
-            data['code'] = content_list[content_list.index % 16 == 1].tolist()
-            data['close'] = content_list[content_list.index % 16 == 5].tolist()
-            data['date'] = date
-            print(data)
+        response = requests.get(url)
+        print(response.content)
+
             #data.to_json('marketdata\\' + codename + content[0].string[-8:] + '.json')
 
             #with open(, 'wb') as f:

@@ -6,12 +6,20 @@ import numpy as np
 
 def save_optionsinfo(evalDate):
     # 50ETF currently trading contracts
-    # datestr     = str(evalDate.year()) + "-" + str(evalDate.month()) + "-" + str(evalDate.dayOfMonth())
     optioncontractbasicinfo = w.wset("optioncontractbasicinfo",
                                      "exchange=sse;windcode=510050.SH;status=all;field=wind_"
                                      "code,call_or_put,exercise_price,exercise_date")
     df_option   = pd.DataFrame(data=optioncontractbasicinfo.Data, index=optioncontractbasicinfo.Fields)
     df_option.to_json(os.path.abspath('..') + '\marketdata\optioncontractbasicinfo' + '.json')
+    return optioncontractbasicinfo.ErrorCode
+
+def save_optionsinfo_m(evalDate):
+    # 豆粕
+    optioncontractbasicinfo = w.wset("optionfuturescontractbasicinfo",
+                                     "exchange=DCE;productcode=M;contract=all;"
+                                     "field=wind_code,call_or_put,expire_date")
+    df_option   = pd.DataFrame(data=optioncontractbasicinfo.Data, index=optioncontractbasicinfo.Fields)
+    df_option.to_json(os.path.abspath('..') + '\marketdata\optioncontractbasicinfo_m' + '.json')
     return optioncontractbasicinfo.ErrorCode
 
 
@@ -26,6 +34,16 @@ def save_optionmkt(evalDate):
     df.to_json(os.path.abspath('..') + '\marketdata\optionmkt_' + datestr + '.json')
     return optionmkt.ErrorCode
 
+def save_optionmkt_m(evalDate):
+    # 50ETF market price data
+    datestr = str(evalDate.year()) + "-" + str(evalDate.month()) + "-" + str(evalDate.dayOfMonth())
+    query       = "startdate="+datestr+";enddate="+datestr+\
+                  ";exchange=sse;windcode=510050.SH;field=date,option_code," \
+                  "option_name,amount,pre_settle,open,highest,lowest,close,settlement_price"
+    optionmkt   = w.wset("optiondailyquotationstastics",query)
+    df          = pd.DataFrame(data=optionmkt.Data,index=optionmkt.Fields)
+    df.to_json(os.path.abspath('..') + '\marketdata\optionmkt_' + datestr + '.json')
+    return optionmkt.ErrorCode
 
 def save_curve_treasury_bond(evalDate,daycounter):
     datestr = str(evalDate.year()) + "-" + str(evalDate.month()) + "-" + str(evalDate.dayOfMonth())

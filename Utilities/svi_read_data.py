@@ -27,6 +27,38 @@ def get_underlying_ts():
         spot_dic.update({date_ql:spot_ts[idx_dt][0]})
     return spot_dic
 
+def get_commodity_option_data(evalDate):
+    datestr = str(evalDate.year()) + "-" + str(evalDate.month()) + "-" + str(evalDate.dayOfMonth())
+
+    try:
+        # 50ETF contrats info
+        optioncontractbasicinfo = pd.read_json(os.path.abspath('..') + '\marketdata\optioncontractbasicinfo' + '.json')
+        optionData = optioncontractbasicinfo.values.tolist()
+        optionFlds = optioncontractbasicinfo.index.tolist()
+        # 50ETF market price data
+        optionmkt = pd.read_json(os.path.abspath('..') + '\marketdata\optionmkt_' + datestr + '.json')
+        mktFlds = optionmkt.index.tolist()
+        mktData = optionmkt.values.tolist()
+        # Uderlying market price
+        underlyingdata = pd.read_json(os.path.abspath('..') + '\marketdata\spotclose' + '.json')
+        spot_ts = underlyingdata.values.tolist()
+        dates_ts = underlyingdata.index.tolist()
+        dt = datetime.datetime(evalDate.year(), evalDate.month(), evalDate.dayOfMonth(),
+                               dates_ts[0].hour, dates_ts[0].minute, dates_ts[0].second, dates_ts[0].microsecond)
+        spot = spot_ts[dates_ts.index(dt)][0]
+        optionids = mktData[mktFlds.index('option_code')]
+        optionids_SH = []
+        for i, id in enumerate(optionids):
+            id_sh = id + '.SH'
+            optionids_SH.append(id_sh)
+        vols = []
+    except Exception as e:
+        print(e)
+        print('Error def -- get_wind_data in \'svi_read_data\' on date : ', evalDate)
+        return
+    return vols, spot, mktData, mktFlds, optionData, optionFlds, optionids
+
+
 def get_wind_data(evalDate):
     datestr = str(evalDate.year()) + "-" + str(evalDate.month()) + "-" + str(evalDate.dayOfMonth())
 

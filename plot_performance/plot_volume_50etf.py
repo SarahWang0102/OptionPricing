@@ -210,9 +210,9 @@ print('expected_etfs : ',expected_etfs)
 print('expected_indexs',expected_indexs)
 
 plt.rcParams['font.sans-serif'] = ['STKaiti']
-plt.rcParams.update({'font.size': 13})
+plt.rcParams.update({'font.size': 15})
 f, axarr = plt.subplots()
-w = 0.2
+w = 0.15
 x = np.arange(len(volumes))
 axarr.bar(x,volumes,width =w, color=pu.c1,label = '50ETF期权成交额')
 lgd = axarr.legend()
@@ -236,7 +236,7 @@ pu.set_frame([axarr,axarr1])
 
 
 for label in axarr.get_xmajorticklabels() and axarr1.get_xmajorticklabels():
-    label.set_rotation(30)
+    label.set_rotation(270)
     label.set_horizontalalignment("right")
 
 f.savefig('volume_50.png', dpi=500, format='png', bbox_extra_artists=(lgd,), bbox_inches='tight')
