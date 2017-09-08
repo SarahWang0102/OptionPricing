@@ -42,8 +42,7 @@ for idx,v in enumerate(call_volum_months_sum):
 plt.rcParams['font.sans-serif'] = ['STKaiti']
 plt.rcParams.update({'font.size': 11})
 f, axarr = plt.subplots(3, sharex=True)
-date_fmt = "%d/%m/%y"
-
+date_fmt = "%m/%y"
 # Use a list comprehension to convert your dates into datetime objects.
 # In the list comp. strptime is used to convert from a string to a datetime
 # object.
@@ -78,7 +77,7 @@ box2 = axarr[2].get_position()
 axarr[2].set_position([box2.x0, box2.y0, box2.width * 0.8, box2.height])
 lgd2 = axarr[2].legend(loc='center left', bbox_to_anchor=(1, 0.5),frameon=False)
 
-axarr[2].xaxis.set_major_formatter(mdates.DateFormatter('%d/%m/%Y'))
+axarr[2].xaxis.set_major_formatter(mdates.DateFormatter(date_fmt))
 for i in range(3):
     # Hide the right and top spines
     axarr[i].spines['right'].set_visible(False)
@@ -88,7 +87,7 @@ for i in range(3):
     axarr[i].xaxis.set_ticks_position('bottom')
 
     for label in axarr[i].get_xmajorticklabels():
-        label.set_rotation(30)
+        label.set_rotation(270)
         label.set_horizontalalignment("right")
 
 f.savefig('CPIV.png', dpi=300, format='png', bbox_extra_artists=(lgd0,lgd1,lgd2,), bbox_inches='tight')

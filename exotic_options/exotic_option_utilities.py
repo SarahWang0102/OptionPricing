@@ -126,7 +126,7 @@ def up_out_barrier_npv(begDate,maturityDate,daycounter,calendar,simulation_no,S0
             vol_svi = np.sqrt(a+b*(rho*(moneyness-m)+np.sqrt((moneyness-m)**2+sigma**2)))
             St = St+rf*St*delta_t+vol_svi*St*np.sqrt(delta_t)*e
             path.append(St)
-            if St > barrier: I = False # down and our
+            if St > barrier: I = False # down and out
             evalDate = calendar.advance(evalDate,ql.Period(1,ql.Days))
             nbr_date += 1
         ttm = daycounter.yearFraction(begDate,maturityDate)
@@ -138,3 +138,65 @@ def up_out_barrier_npv(begDate,maturityDate,daycounter,calendar,simulation_no,S0
     #print('Option price is :', price)
     #print(barrier, ' : ',knock_out_times)
     return price,path_container,knock_out_times
+
+def barrier_npv_ql(evalDate,hist_spots,barrierType, barrier, payoff, exercise,process):
+    ql.Settings.instance().evaluationDate = evalDate
+    barrier_engine = ql.AnalyticBarrierEngine(process)
+    european_engine = ql.AnalyticEuropeanEngine(process)
+    # check if hist_spots hit the barrier
+    if len(hist_spots) == 0:
+        option = ql.BarrierOption(barrierType, barrier, 0.0, payoff, exercise)
+        option.setPricingEngine(barrier_engine)
+        try:
+            option_price = option.NPV()
+        except:
+            return 0.0
+    else:
+        if barrierType == ql.Barrier.DownOut:
+            if min(hist_spots) < barrier :
+                return 0.0
+            else:
+                option = ql.BarrierOption(barrierType, barrier, 0.0, payoff, exercise)
+                option.setPricingEngine(barrier_engine)
+                try:
+                    option_price = option.NPV()
+                except:
+                    return 0.0
+        elif barrierType == ql.Barrier.UpOut:
+            if max(hist_spots) > barrier:
+                return 0.0
+            else:
+                option = ql.BarrierOption(barrierType, barrier, 0.0, payoff, exercise)
+                option.setPricingEngine(barrier_engine)
+                try:
+                    option_price = option.NPV()
+                except:
+                    return 0.0
+        elif barrierType == ql.Barrier.DownIn:
+            if min(hist_spots)>barrier:
+                option = ql.BarrierOption(barrierType, barrier, 0.0, payoff, exercise)
+                option.setPricingEngine(barrier_engine)
+                try:
+                    option_price = option.NPV()
+                except:
+                    return 0.0
+            else:
+                option = ql.EuropeanOption(payoff, exercise)
+                option.setPricingEngine(european_engine)
+                option_price =  option.NPV()
+        else:
+            if max(hist_spots) < barrier:
+                option = ql.BarrierOption(barrierType, barrier, 0.0, payoff, exercise)
+                option.setPricingEngine(barrier_engine)
+                try:
+                    option_price = option.NPV()
+                except:
+                    return 0.0
+            else:
+                option = ql.EuropeanOption(payoff, exercise)
+                option.setPricingEngine(european_engine)
+                option_price = option.NPV()
+    if math.isnan(option_price):
+        return 0.0
+    else:
+        return option_price

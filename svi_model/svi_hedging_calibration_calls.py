@@ -25,8 +25,8 @@ start = timeit.default_timer()
 np.random.seed()
 w.start()
 
-#begDate = ql.Date(1, 12, 2016)
-begDate = ql.Date(1, 6, 2017)
+#begDate = ql.Date(15, 7, 2017)
+begDate = ql.Date(1, 9, 2015)
 endDate = ql.Date(20, 7, 2017)
 calendar = ql.China()
 daycounter = ql.ActualActual()
@@ -98,11 +98,11 @@ print('daily_params = ',daily_params)
 print('daily_svi_dataset = ',daily_svi_dataset)
 print('dates = ', dates)
 
-with open(os.getcwd()+'/intermediate_data/hedging_daily_params_calls.pickle','wb') as f:
+with open(os.path.abspath('..')+'/intermediate_data/total_hedging_daily_params_calls_2.pickle','wb') as f:
     pickle.dump([daily_params],f)
-with open(os.getcwd()+'/intermediate_data/hedging_dates_calls.pickle','wb') as f:
+with open(os.path.abspath('..')+'/intermediate_data/total_hedging_dates_calls_2.pickle','wb') as f:
     pickle.dump([dates],f)
-with open(os.getcwd()+'/intermediate_data/hedging_daily_svi_dataset_calls.pickle','wb') as f:
+with open(os.path.abspath('..')+'/intermediate_data/total_hedging_daily_svi_dataset_calls_2.pickle','wb') as f:
     pickle.dump([daily_svi_dataset],f)
 
 plt.show()

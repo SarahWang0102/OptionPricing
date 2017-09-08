@@ -41,7 +41,7 @@ def calculate_effective_delta_svi(hedge_date,daycounter,calendar,params_Mi,spot,
     delta = (npv_plus-npv_minus)/(s_plus-s_minus)
     return delta
 
-def calculate_delta_svi(black_var_surface,hedge_date,daycounter,calendar,params_Mi,spot,rf,strike,maturitydt,optiontype):
+def calculate_delta_svi(black_var_surface,hedge_date,daycounter,calendar,spot,rf,strike,maturitydt,optiontype):
     ql.Settings.instance().evaluationDate = hedge_date
     yield_ts = ql.YieldTermStructureHandle(ql.FlatForward(hedge_date, rf, daycounter))
     dividend_ts = ql.YieldTermStructureHandle(ql.FlatForward(hedge_date, 0.0, daycounter))

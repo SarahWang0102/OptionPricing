@@ -34,7 +34,7 @@ def delta_hedge_svi(hedge_date,liquidition_date,daycounter,calendar,
                 continue
             if close_h < 0.0001:
                 continue
-            delta = hedge_util.calculate_delta_svi(black_var_surface, hedge_date, daycounter, calendar, params_Mi,
+            delta = hedge_util.calculate_delta_svi(black_var_surface, hedge_date, daycounter, calendar,
                                                   spot_c, rf, k, expiration_date_h, optiontype)
             cash_on_hedge_date = hedge_util.calculate_cash_position(hedge_date, close_h, spot_h, delta)
             hedge_error = hedge_util.calculate_hedging_error(hedge_date, liquidition_date, daycounter, spot_l, close_l, delta,
