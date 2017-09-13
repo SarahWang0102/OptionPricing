@@ -133,8 +133,10 @@ def spider(codename, firstdate):
         time.sleep(3)
         date = date_range[i]
         year, month, day = date.year, date.month, date.day
-        url = 'http://www.dce.com.cn/publicweb/quotesdata/exportDayQuotesChData.html?dayQuotes.variety='\
-              + codename+'&dayQuotes.trade_type=1&year='+str(year)+'&month='+str(month-1)+'&day='+str(day)
+        #url = 'http://www.dce.com.cn/publicweb/quotesdata/exportDayQuotesChData.html?dayQuotes.variety='\
+        #      + codename+'&dayQuotes.trade_type=1&year='+str(year)+'&month='+str(month-1)+'&day='+str(day)
+        url = 'http://www.dce.com.cn/publicweb/quotesdata/exportDayQuotesChData.html?dayQuotes.variety=' \
+              + codename + '&dayQuotes.trade_type=0&year=' + str(year) + '&month=' + str(month - 1) + '&day=' + str(day)
         result = geturl(url, header=randheader())
         rows = result.text.split('\n')
 
@@ -162,7 +164,7 @@ def spider(codename, firstdate):
                 #data['date'] = date
                 #print(data)
             datestr = str(date.year) + "-" + str(date.month) + "-" + str(date.day)
-            data.to_json('marketdata\\' + codename + '_mkt_' + datestr + '.json')
+            data.to_json('marketdata\\' + codename + '_future_mkt_' + datestr + '.json')
             #print(data)
                 #with open(, 'wb') as f:
                  #   pickle.dump([data], f, pickle.HIGHEST_PROTOCOL)

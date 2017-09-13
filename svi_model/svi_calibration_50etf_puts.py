@@ -25,7 +25,7 @@ start = timeit.default_timer()
 np.random.seed()
 w.start()
 
-begDate = ql.Date(1, 3, 2017)
+begDate = ql.Date(1, 9, 2015)
 #begDate = ql.Date(1, 6, 2017)
 endDate = ql.Date(20, 7, 2017)
 calendar = ql.China()
@@ -44,16 +44,16 @@ while evalDate <= endDate:
     evalDate = calendar.advance(evalDate, ql.Period(1, ql.Days))
     ql.Settings.instance().evaluationDate = evalDate
     try:
-        cal_vols, put_vols, expiration_dates_c,expiration_dates_p, spot, curve = svi_data.get_call_put_impliedVols_m(
+        cal_vols, put_vols, expiration_dates, spot, curve = svi_data.get_call_put_impliedVols_tbcurve(
             evalDate, daycounter, calendar, maxVol=1.0, step=0.0001, precision=0.001, show=False)
-        # OPTION TYPE IS CALL!
-        data_months = svi_util.orgnize_data_for_optimization_m(
-            evalDate, daycounter, put_vols, expiration_dates_c,curve,ql.Option.Call)
+        # OPTION TYPE IS PUT!
+        data_months = svi_util.orgnize_data_for_optimization_single_optiontype(
+            evalDate, daycounter, put_vols, expiration_dates, spot,curve,ql.Option.Put)
         #print(data_months)
         key_date = datetime.date(evalDate.year(), evalDate.month(), evalDate.dayOfMonth())
-        maturity_dates = to_dt_dates(expiration_dates_p)
+        maturity_dates = to_dt_dates(expiration_dates)
         rfs = {}
-        for idx_dt,dt in enumerate(expiration_dates_p):
+        for idx_dt,dt in enumerate(expiration_dates):
             rfs.update({idx_dt:curve.zeroRate(dt, daycounter, ql.Continuous).rate()})
         svi_dataset =  cal_vols, put_vols, maturity_dates, spot, rfs
         daily_svi_dataset.update({key_date:svi_dataset})
@@ -98,9 +98,9 @@ print('daily_params = ',daily_params)
 print('daily_svi_dataset = ',daily_svi_dataset)
 print('dates = ', dates)
 
-with open(os.getcwd()+'/intermediate_data/m_hedging_daily_params_puts.pickle','wb') as f:
+with open(os.getcwd()+'/intermediate_data/total_hedging_daily_params_puts.pickle','wb') as f:
     pickle.dump([daily_params],f)
-with open(os.getcwd()+'/intermediate_data/m_hedging_dates_puts.pickle','wb') as f:
+with open(os.getcwd()+'/intermediate_data/total_hedging_dates_puts.pickle','wb') as f:
     pickle.dump([dates],f)
-with open(os.getcwd()+'/intermediate_data/m_hedging_daily_svi_dataset_puts.pickle','wb') as f:
+with open(os.getcwd()+'/intermediate_data/total_hedging_daily_svi_dataset_puts.pickle','wb') as f:
     pickle.dump([daily_svi_dataset],f)

@@ -26,7 +26,7 @@ np.random.seed()
 w.start()
 
 #begDate = ql.Date(15, 7, 2017)
-begDate = ql.Date(1, 3, 2017)
+begDate = ql.Date(10, 7, 2017)
 endDate = ql.Date(20, 7, 2017)
 calendar = ql.China()
 daycounter = ql.ActualActual()

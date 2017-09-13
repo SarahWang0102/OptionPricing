@@ -115,7 +115,7 @@ for barrier in barriers:
             cash_bs_h = option_price_h - delta_bs*spot_h
             replicate_svi_h = delta_svi * spot_h + cash_svi_h
             replicate_bs_h = delta_bs * spot_h + cash_bs_h
-            #ratio_svi = replicate_svi_h/option_price_h
+            #ratio_svi = replicate_svi_h / option_price_h
             #ratio_bs = replicate_bs_h / option_price_h
             #print(ratio_bs,ratio_svi)
             # liquidate replication portfolio
