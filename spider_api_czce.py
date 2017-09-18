@@ -130,7 +130,7 @@ def spider(codename, firstdate):
     pos_condition = pd.DataFrame()
     date_range = w.tdays(firstdate, "2017-08-28", "").Data[0]
     for i in range(len(date_range)):
-        time.sleep(3)
+        time.sleep(0.5)
         date = date_range[i]
         print(date)
         year, month, day = date.year, date.month, date.day
@@ -165,11 +165,13 @@ def spider(codename, firstdate):
                 row = rows[nbrRow]
                 column_res = []
                 colums_of_row = row.split('|')
-                for column in colums_of_row:
-                    column_res.extend(column.split())
-                if len(column_res) != len(index):
+                #for column in colums_of_row:
+                #    column_res.extend(column.split())
+                if len(colums_of_row) != len(index):
                     continue
-                data[nbrRow] = column_res
+                if colums_of_row[0][0:2] == '小计' or colums_of_row[0][0:2] == '总计':
+                    continue
+                data[nbrRow] = colums_of_row
             datestr = str(date.year) + "-" + str(date.month) + "-" + str(date.day)
             data.to_json('marketdata\\' + codename + '_future_mkt_' + datestr + '.json')
 
@@ -177,7 +179,7 @@ def spider(codename, firstdate):
 def get_data():
 
     # fd = {'i': '2013/10/18', 'jm': '2013/03/22', 'j': '2011/04/15'}
-    fd = { 'sr': '2017/05/15'}
+    fd = { 'sr': '2017/07/14'}
 
     # fd = {'v': '2009/05/25', 'b': '2004/12/22', 'm': '	2000/07/17', 'a': '1999/01/04', 'y': '2006/01/09',
     #       'jd': '2013/11/08', 'bb': '2013/12/06', 'jm': '2013/03/22', 'j': '2011/04/15', 'pp': '2014/02/28',
