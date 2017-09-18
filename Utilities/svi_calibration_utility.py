@@ -6,6 +6,33 @@ import pandas as pd
 import os
 import math
 
+def get_svi_optimal_params_m(data,ttm,sim_no = 100):
+    #ms_rnd = [0.1,0.1]
+    #adc_rnd = [1,1,1]
+    logMoneynesses = data[0]
+    totalvariance = data[1]
+    calibrated_params = []
+    min_sse = 10
+    for iter in range(sim_no):
+        ms_0 = [0.1,0.1]
+        adc_0 = [0.1,0.1,0.1]
+        nm = SVI_NelderMeadOptimization(data,adc_0,ms_0,1e-7)
+        calibrated_params, obj = nm.optimization()
+        _a_star, _d_star, _c_star, m_star, sigma_star = calibrated_params
+        sse = 0.0
+        for i, m in enumerate(logMoneynesses):
+            tv = totalvariance[i]
+            y_1 = np.divide((m - m_star), sigma_star)
+            tv_1 = _a_star + _d_star * y_1 + _c_star * np.sqrt(y_1 ** 2 + 1)
+            sse += (tv - tv_1) ** 2
+        if sse >= min_sse: continue
+        min_sse = sse
+    _a_star, _d_star, _c_star, m_star, sigma_star = calibrated_params
+    a_star = np.divide(_a_star, ttm)
+    b_star = np.divide(_c_star, (sigma_star * ttm))
+    rho_star = np.divide(_d_star, _c_star)
+    final_parames = [a_star, b_star, rho_star, m_star, sigma_star]
+    return final_parames
 
 def get_svi_optimal_params(data,ttm,sim_no = 100):
     ms_rnd = np.random.random([sim_no, 2])*5

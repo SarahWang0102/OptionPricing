@@ -37,7 +37,7 @@ def run_optimization(data,ttm,sim_no = 100):
             y_1 = np.divide((m - m_star), sigma_star)
             tv_1 = _a_star + _d_star * y_1 + _c_star * np.sqrt(y_1 ** 2 + 1)
             sse += (tv - tv_1) ** 2
-        #if sse >= min_sse: continue
+        if sse >= min_sse: continue
         min_sse = sse
         _a_star, _d_star, _c_star, m_star, sigma_star = calibrated_params
         a_star = np.divide(_a_star, ttm)
@@ -66,14 +66,16 @@ def run_optimization(data,ttm,sim_no = 100):
 np.random.seed()
 calendar = ql.China()
 daycounter = ql.ActualActual()
-evalDate = ql.Date(18, 7, 2017)
+evalDate = ql.Date(18, 5, 2017)
 evalDate = calendar.advance(evalDate, ql.Period(1, ql.Days))
 month_indexs = svi_data.get_contract_months(evalDate)
 ql.Settings.instance().evaluationDate = evalDate
 curve = svi_data.get_curve_treasury_bond(evalDate, daycounter)
 
-cal_vols,put_vols,expiration_dates,spot,r = svi_data.get_call_put_impliedVols_tbcurve(
-        evalDate,daycounter,calendar,maxVol=1.0,step=0.0001,precision=0.05,show=True)
+#cal_vols,put_vols,expiration_dates,spot,r = svi_data.get_call_put_impliedVols_tbcurve(
+#        evalDate,daycounter,calendar,maxVol=1.0,step=0.0001,precision=0.05,show=True)
+cal_vols, put_vols, expiration_dates_c, expiration_dates, spot, curve = svi_data.get_call_put_impliedVols_m(
+    evalDate, daycounter, calendar, maxVol=1.0, step=0.0001, precision=0.001, show=False)
 # USE ONY PUT OPTION IMPLIED VOLATILITIES!!
 data_months = svi_util.orgnize_data_for_optimization_put(
         evalDate,daycounter,cal_vols,put_vols,expiration_dates,spot)
@@ -87,6 +89,6 @@ logMoneynesses = data[0]
 totalvariance = data[1]
 expiration_date = data[2]
 ttm = daycounter.yearFraction(evalDate, expiration_date)
-final_parames = run_optimization(data,ttm,30)
+final_parames = run_optimization(data,ttm,10)
 
 plt.show()
