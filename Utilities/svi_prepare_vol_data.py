@@ -1,17 +1,28 @@
 # -*- coding: utf-8 -*-
-from Utilities.svi_read_data import get_wind_data,get_curve_treasury_bond,get_contract_months,get_commodity_m_data
+from Utilities.svi_read_data import get_wind_data,get_curve_treasury_bond,get_contract_months,get_commodity_m_data,get_commodity_sr_data
 import QuantLib as ql
 import math
 import pandas as pd
 from WindPy import w
 
-# prepare volatility data for 豆粕
+# prepare volatility data for commodities
 def get_call_put_impliedVols_m(evalDate,daycounter,calendar,maxVol=1.0,step=0.0001,precision=0.05,show=True):
+    results_call, results_put, underlying_prices = get_commodity_m_data(evalDate, calendar)
+    call_vols, put_vols, expiration_dates_c, expiration_dates_p, curve = get_call_put_impliedVols_cmd(
+        evalDate,daycounter,calendar,results_call, results_put, underlying_prices)
+    return call_vols,put_vols,expiration_dates_c,expiration_dates_p,underlying_prices,curve
+
+def get_call_put_impliedVols_sr(evalDate,daycounter,calendar,maxVol=1.0,step=0.0001,precision=0.05,show=True):
+    results_call, results_put, underlying_prices = get_commodity_sr_data(evalDate, calendar)
+    call_vols, put_vols, expiration_dates_c, expiration_dates_p, curve = get_call_put_impliedVols_cmd(
+        evalDate,daycounter,calendar,results_call, results_put, underlying_prices)
+    return call_vols,put_vols,expiration_dates_c,expiration_dates_p,underlying_prices,curve
+
+def get_call_put_impliedVols_cmd(evalDate,daycounter,calendar,results_call, results_put, underlying_prices,maxVol=1.0,step=0.0001,precision=0.05,show=True):
     try:
         curve = get_curve_treasury_bond(evalDate, daycounter)
-        results_call, results_put,underlying_prices = get_commodity_m_data(evalDate,calendar)
         ql.Settings.instance().evaluationDate = evalDate
-        yield_ts = ql.YieldTermStructureHandle(curve)
+
         dividend_ts = ql.YieldTermStructureHandle(ql.FlatForward(evalDate, 0.0, daycounter))
         call_vols = []
         put_vols = []
@@ -20,49 +31,60 @@ def get_call_put_impliedVols_m(evalDate,daycounter,calendar,maxVol=1.0,step=0.00
             expiration_dates_c.append(mdate)
             call_volatilities = {}
             optiontype = ql.Option.Call
-            dic = results_call.get(mdate)
-            rf = curve.zeroRate(mdate, daycounter, ql.Continuous).rate()
+            dataset = results_call.get(mdate)
+            #print(dataset)
+            maxdate = curve.maxDate()
+            if mdate > maxdate:
+                rf = curve.zeroRate(maxdate, daycounter, ql.Continuous).rate()
+            else:
+                rf = curve.zeroRate(mdate, daycounter, ql.Continuous).rate()
+            yield_ts = ql.YieldTermStructureHandle(ql.FlatForward(evalDate, rf, daycounter))
+            #print(rf)
             ttm = daycounter.yearFraction(evalDate, mdate)
-            for idx_contract,contract in enumerate(dic):
-                id =  list(contract.keys())[0]
-                index = id.index('-')
-                underlyingId = id[1:index]
-                spot = underlying_prices.get(underlyingId)
-                data = contract.get(id)
+            for data in dataset:
+                spotid = data[-1]
                 strike = data[0]
                 close = data[1]
+                if close < 0.0001 : continue
+                spot = underlying_prices.get(spotid)
+                if spot < 0.0001: continue
                 Ft = spot * math.exp(rf * ttm)
                 moneyness = math.log(strike / Ft, math.e)
                 implied_vol, error = calculate_vol_BS(mdate, optiontype, strike, spot, dividend_ts, yield_ts,
                                                       close, evalDate, calendar, daycounter, precision, maxVol, step)
-                call_volatilities.update({moneyness:[implied_vol,strike,close]})
+                call_volatilities.update({moneyness:[implied_vol,strike,close,spotid]})
             call_vols.append(call_volatilities)
         expiration_dates_p = []
-        for idx_m,mdate in enumerate(results_put):
+        for idx_m, mdate in enumerate(results_put):
             expiration_dates_p.append(mdate)
             put_volatilities = {}
             optiontype = ql.Option.Put
-            dic = results_call.get(mdate)
-            rf = curve.zeroRate(mdate, daycounter, ql.Continuous).rate()
+            dataset = results_put.get(mdate)
             ttm = daycounter.yearFraction(evalDate, mdate)
-            for idx_contract,contract in enumerate(dic):
-                id = list(contract.keys())[0]
-                index = id.index('-')
-                underlyingId = id[1:index]
-                spot = underlying_prices.get(underlyingId)
-                data = contract.get(id)
+            maxdate = curve.maxDate()
+            if mdate > maxdate:
+                rf = curve.zeroRate(maxdate, daycounter, ql.Continuous).rate()
+            else:
+                rf = curve.zeroRate(mdate, daycounter, ql.Continuous).rate()
+            yield_ts = ql.YieldTermStructureHandle(ql.FlatForward(evalDate, rf, daycounter))
+            for data in dataset:
+                spotid = data[-1]
                 strike = data[0]
                 close = data[1]
+                if close < 0.0001 : continue
+                spot = underlying_prices.get(spotid)
+                if spot < 0.0001: continue
                 Ft = spot * math.exp(rf * ttm)
                 moneyness = math.log(strike / Ft, math.e)
                 implied_vol, error = calculate_vol_BS(mdate, optiontype, strike, spot, dividend_ts, yield_ts,
                                                       close, evalDate, calendar, daycounter, precision, maxVol, step)
-                put_volatilities.update({moneyness:[implied_vol,strike,close]})
+                put_volatilities.update({moneyness:[implied_vol,strike,close,spotid]})
             put_vols.append(put_volatilities)
-    except:
-        print('Error -- get_call_put_impliedVols_m failed')
+    except Exception as e:
+        print(e)
         return
-    return call_vols,put_vols,expiration_dates_c,expiration_dates_p,underlying_prices,curve
+    return call_vols,put_vols,expiration_dates_c,expiration_dates_p,curve
+
 # Use call options for IV data; use put options for put IV data; both use treasury bond curve
 def get_call_put_impliedVols_tbcurve(
         evalDate,daycounter,calendar,maxVol=1.0,step=0.0001,precision=0.05,show=True):
