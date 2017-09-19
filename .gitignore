@@ -7,3 +7,6 @@ results
 *.csv
 *.xlsx
 *.xls
+*.json
+*.pickle
+*.pkl
