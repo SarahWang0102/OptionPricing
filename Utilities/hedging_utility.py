@@ -2,6 +2,7 @@ import datetime
 import QuantLib as ql
 import math
 import numpy as np
+from pricing_engines.blackcalculator import blackcalculator
 
 
 def implied_vol_function(params,x_svi):
@@ -9,7 +10,19 @@ def implied_vol_function(params,x_svi):
     iv = np.sqrt( a_star + b_star * (rho_star * (x_svi - m_star) + np.sqrt((x_svi - m_star) ** 2 + sigma_star ** 2)))
     return iv
 
-def calculate_effective_delta_svi(hedge_date,daycounter,calendar,params_Mi,spot,rf_h_d,strike,maturitydt,optiontype):
+def calculate_effective_delta_svi(self,spot, dS,strike,discount,iscall):
+    s_plus = spot+dS
+    s_minus = spot-dS
+    f_plus = s_plus / discount
+    f_minus = s_minus / discount
+    stdDev_plus = self.svi_iv_function(math.log(strike/f_plus, math.e))*math.sqrt(self.ttm)
+    stdDev_minus = self.svi_iv_function(math.log(strike/f_plus, math.e))*math.sqrt(self.ttm)
+    black_splus = blackcalculator(strike,f_plus,stdDev_plus,discount,iscall)
+    black_sminus = blackcalculator(strike, f_minus, stdDev_minus, discount, iscall)
+    delta_eff = (black_splus.value()-black_sminus.value())/(s_plus-s_minus)
+    return delta_eff
+
+def calculate_effective_delta_svi2(hedge_date,daycounter,calendar,params_Mi,spot,rf_h_d,strike,maturitydt,optiontype):
     ql.Settings.instance().evaluationDate = hedge_date
     step = 0.005
     rf = rf_h_d
@@ -233,6 +246,31 @@ def hedging_performance(svi_pct,dates):
                 else:
                     mny_3.get(nbr_m).append(e)
     return mny_0,mny_1,mny_2,mny_3
+
+def hedging_performance_atm(svi_pct,dates):
+    atm = {} # 0.98 - 1.02
+    for date in dates:
+        if date in svi_pct.keys():
+            pct_Ms = svi_pct.get(date)
+        else:
+            print('date not in list')
+            continue
+        # month number = 1
+        for nbr_m in pct_Ms.keys():
+            if nbr_m not in atm.keys():atm.update({nbr_m:[]})
+            moneyness = pct_Ms.get(nbr_m)[0]
+            errors = pct_Ms.get(nbr_m)[1]
+            if type(moneyness) == float:
+                moneyness = [moneyness]
+                errors = [errors]
+            for idx_m,m in enumerate(moneyness):
+                e = errors[idx_m]
+                if math.isnan(e) :
+                    #print(e)
+                    e = 0.0
+                if m > 0.98 and m <= 1.02 :
+                    atm.get(nbr_m).append(e)
+    return atm
 
 def get_1st_percentile_dates(daily_pct_hedge_errors):
     # 1st_percentile from 2015.9 to 2016.1

@@ -35,7 +35,7 @@ with open(os.path.abspath('..')+'/intermediate_data/total_hedging_daily_svi_data
 
 # Hedge option using underlying 50ETF
 daily_hedge_errors = {}
-daily_pct_hedge_errors = {}
+daily_pct_hedge_errors_td = {}
 option_last_close_Ms = {}
 
 for idx_date,date in enumerate(dates[0:len(dates)-2]):
@@ -72,67 +72,14 @@ for idx_date,date in enumerate(dates[0:len(dates)-2]):
             calibrated_params,orgnized_data_liquidition_date,orgnized_data_hedge_date,rfs_on_hedge_date,optiontype)
         key_date1 = datetime.date(liquidition_date.year(),liquidition_date.month(),liquidition_date.dayOfMonth())
         daily_hedge_errors.update({key_date1: hedge_error_Ms})
-        daily_pct_hedge_errors.update({key_date1: hedge_error_pct_Ms})
+        daily_pct_hedge_errors_td.update({key_date1: hedge_error_pct_Ms})
     except Exception as e:
         print(e)
         continue
 
-stop = timeit.default_timer()
-print('calibration time : ',stop-start)
-with open(os.path.abspath('..') + '/intermediate_data/hedging_daily_hedge_errors_svi_put_no_smoothing.pickle', 'wb') as f:
-    pickle.dump([daily_hedge_errors, daily_pct_hedge_errors], f)
-
-p1 = hedge_util.get_1st_percentile_dates(daily_pct_hedge_errors)
-p2 = hedge_util.get_2nd_percentile_dates(daily_pct_hedge_errors)
-p3 = hedge_util.get_3rd_percentile_dates(daily_pct_hedge_errors)
-p4 = hedge_util.get_4th_percentile_dates(daily_pct_hedge_errors)
-container = [p1, p2, p3, p4]
-samples = ['2015.9-2016.1', '2016.2-2016.7', '2016.8-2017.1', '2017.2-2017.7']
-print("=" * 100)
-print("SVI Model Average Hedging Percent Error, PUT, Total Delta (NO SMOOTHING) : ")
-print("=" * 100)
-print("%20s %20s %20s %30s" % ("sample dates", "contract month", "moneyness", "avg hedging error(%)"))
-for idx_c, r in enumerate(container):
-    mny_0, mny_1, mny_2, mny_3 = hedge_util.hedging_performance(r, r.keys())
-    print("-" * 100)
-    for i in range(4):
-        if len(mny_0.get(i)) > 0: print("%20s %20s %20s %25s" % (
-        samples[idx_c], i, ' < 0.97', round(sum(mny_0.get(i)) * 100 / len(mny_0.get(i)), 4)))
-        if len(mny_1.get(i)) > 0: print("%20s %20s %20s %25s" % (
-        samples[idx_c], i, ' 0.97 - 1.00', round(sum(mny_1.get(i)) * 100 / len(mny_1.get(i)), 4)))
-        if len(mny_2.get(i)) > 0: print("%20s %20s %20s %25s" % (
-        samples[idx_c], i, ' 1.00 - 1.03', round(sum(mny_2.get(i)) * 100 / len(mny_2.get(i)), 4)))
-        if len(mny_3.get(i)) > 0: print("%20s %20s %20s %25s" % (
-        samples[idx_c], i, ' > 1.03', round(sum(mny_3.get(i)) * 100 / len(mny_3.get(i)), 4)))
-        print("-" * 100)
-    print('total date : ', len(r.keys()))
-
-results = {}
-index = ["sample dates", "contract month", "moneyness", "avg hedging error(%)"]
-count = 0
-for idx_c, r in enumerate(container):
-    mny_0, mny_1, mny_2, mny_3 = hedge_util.hedging_performance(r, r.keys())
-    for i in range(4):
-        results.update(
-            {count: [samples[idx_c], i, ' \'< 0.97', round(sum(mny_0.get(i)) * 100 / len(mny_0.get(i)), 4)]})
-
-        results.update({count + 1: [samples[idx_c], i, ' \'0.97 - 1.00',
-                                    round(sum(mny_1.get(i)) * 100 / len(mny_1.get(i)), 4)]})
-        results.update({count + 2: [samples[idx_c], i, ' \'1.00 - 1.03',
-                                    round(sum(mny_2.get(i)) * 100 / len(mny_2.get(i)), 4)]})
-        results.update({count + 3: [samples[idx_c], i, ' \'> 1.03',
-                                    round(sum(mny_3.get(i)) * 100 / len(mny_3.get(i)), 4)]})
-        count += 4
-    results.update({'total sample' + str(idx_c): ['Total Sample', len(r.keys()), 0, 0]})
-
-df = pd.DataFrame(data=results, index=index)
-#print(df)
-df.to_csv('heging_svi_put_totaldelta.csv')
-
-
 # Effective Delta
 daily_hedge_errors = {}
-daily_pct_hedge_errors = {}
+daily_pct_hedge_errors_ed = {}
 option_last_close_Ms = {}
 
 for idx_date,date in enumerate(dates[0:len(dates)-2]):
@@ -169,59 +116,48 @@ for idx_date,date in enumerate(dates[0:len(dates)-2]):
             calibrated_params,orgnized_data_liquidition_date,orgnized_data_hedge_date,rfs_on_hedge_date,optiontype)
         key_date1 = datetime.date(liquidition_date.year(),liquidition_date.month(),liquidition_date.dayOfMonth())
         daily_hedge_errors.update({key_date1: hedge_error_Ms})
-        daily_pct_hedge_errors.update({key_date1: hedge_error_pct_Ms})
+        daily_pct_hedge_errors_ed.update({key_date1: hedge_error_pct_Ms})
     except Exception as e:
         print(e)
         continue
 
-stop = timeit.default_timer()
-print('calibration time : ',stop-start)
-with open(os.path.abspath('..') + '/intermediate_data/hedging_daily_hedge_errors_svi_put_no_smoothing.pickle', 'wb') as f:
-    pickle.dump([daily_hedge_errors, daily_pct_hedge_errors], f)
 
-p1 = hedge_util.get_1st_percentile_dates(daily_pct_hedge_errors)
-p2 = hedge_util.get_2nd_percentile_dates(daily_pct_hedge_errors)
-p3 = hedge_util.get_3rd_percentile_dates(daily_pct_hedge_errors)
-p4 = hedge_util.get_4th_percentile_dates(daily_pct_hedge_errors)
-container = [p1, p2, p3, p4]
+print("=" * 110)
+print("SVI Model Average Hedging Percent Error, PUT (NO SMOOTHING) : ")
+print("=" * 110)
+print("%20s %15s %15s %25s %25s" % ("sample dates", "month", "moneyness", "total delta PnL(%)","eff delta PnL(%)"))
 samples = ['2015.9-2016.1', '2016.2-2016.7', '2016.8-2017.1', '2017.2-2017.7']
-print("=" * 100)
-print("SVI Model Average Hedging Percent Error, PUT, Effective Delta (NO SMOOTHING) : ")
-print("=" * 100)
-print("%20s %20s %20s %30s" % ("sample dates", "contract month", "moneyness", "avg hedging error(%)"))
-for idx_c, r in enumerate(container):
-    mny_0, mny_1, mny_2, mny_3 = hedge_util.hedging_performance(r, r.keys())
-    print("-" * 100)
-    for i in range(4):
-        if len(mny_0.get(i)) > 0: print("%20s %20s %20s %25s" % (
-        samples[idx_c], i, ' < 0.97', round(sum(mny_0.get(i)) * 100 / len(mny_0.get(i)), 4)))
-        if len(mny_1.get(i)) > 0: print("%20s %20s %20s %25s" % (
-        samples[idx_c], i, ' 0.97 - 1.00', round(sum(mny_1.get(i)) * 100 / len(mny_1.get(i)), 4)))
-        if len(mny_2.get(i)) > 0: print("%20s %20s %20s %25s" % (
-        samples[idx_c], i, ' 1.00 - 1.03', round(sum(mny_2.get(i)) * 100 / len(mny_2.get(i)), 4)))
-        if len(mny_3.get(i)) > 0: print("%20s %20s %20s %25s" % (
-        samples[idx_c], i, ' > 1.03', round(sum(mny_3.get(i)) * 100 / len(mny_3.get(i)), 4)))
-        print("-" * 100)
-    print('total date : ', len(r.keys()))
-
+p1_td = hedge_util.get_1st_percentile_dates(daily_pct_hedge_errors_td)
+p2_td = hedge_util.get_2nd_percentile_dates(daily_pct_hedge_errors_td)
+p3_td = hedge_util.get_3rd_percentile_dates(daily_pct_hedge_errors_td)
+p4_td = hedge_util.get_4th_percentile_dates(daily_pct_hedge_errors_td)
+container_td = [p1_td, p2_td, p3_td, p4_td]
+p1_ed = hedge_util.get_1st_percentile_dates(daily_pct_hedge_errors_ed)
+p2_ed = hedge_util.get_2nd_percentile_dates(daily_pct_hedge_errors_ed)
+p3_ed = hedge_util.get_3rd_percentile_dates(daily_pct_hedge_errors_ed)
+p4_ed = hedge_util.get_4th_percentile_dates(daily_pct_hedge_errors_ed)
+container = [p1_ed, p2_ed, p3_ed, p4_ed]
 results = {}
-index = ["sample dates", "contract month", "moneyness", "avg hedging error(%)"]
+index = ["sample dates", "contract month", "moneyness", "total delta PnL(%)","eff delta PnL(%)"]
 count = 0
-for idx_c, r in enumerate(container):
-    mny_0, mny_1, mny_2, mny_3 = hedge_util.hedging_performance(r, r.keys())
+for idx_c, r_ed in enumerate(container):
+    r_td = container_td[idx_c]
+    mny_td = hedge_util.hedging_performance_atm(r_td, r_td.keys())
+    mny_ed = hedge_util.hedging_performance_atm(r_ed, r_ed.keys())
+    print("-" * 110)
     for i in range(4):
+        print("%20s %15s %15s %25s %25s" % (
+            samples[idx_c], i, 'ATM', round(sum(mny_td.get(i)) / len(mny_td.get(i)), 4),
+            round(sum(mny_ed.get(i)) / len(mny_ed.get(i)), 4)))
         results.update(
-            {count: [samples[idx_c], i, ' \'< 0.97', round(sum(mny_0.get(i)) * 100 / len(mny_0.get(i)), 4)]})
+            {count: [samples[idx_c], i, ' ATM', round(sum(mny_td.get(i)) / len(mny_td.get(i)), 4),
+                     round(sum(mny_ed.get(i)) / len(mny_ed.get(i)), 4)]})
 
-        results.update({count + 1: [samples[idx_c], i, ' \'0.97 - 1.00',
-                                    round(sum(mny_1.get(i)) * 100 / len(mny_1.get(i)), 4)]})
-        results.update({count + 2: [samples[idx_c], i, ' \'1.00 - 1.03',
-                                    round(sum(mny_2.get(i)) * 100 / len(mny_2.get(i)), 4)]})
-        results.update({count + 3: [samples[idx_c], i, ' \'> 1.03',
-                                    round(sum(mny_3.get(i)) * 100 / len(mny_3.get(i)), 4)]})
-        count += 4
-    results.update({'total sample' + str(idx_c): ['Total Sample', len(r.keys()), 0, 0]})
+        count += 1
+    results.update({'total sample' + str(idx_c): ['Total Sample', len(r_td.keys()), 0, 0, 0]})
+    #print('total date : ', len(r_ed.keys()))
+print("=" * 110)
 
 df = pd.DataFrame(data=results, index=index)
-#print(df)
-df.to_csv('heging_svi_put_effdelta.csv')
+print(df)
+df.to_csv('heging_svi_put_atm.csv')
