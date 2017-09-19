@@ -27,6 +27,82 @@ def get_underlying_ts():
         spot_dic.update({date_ql:spot_ts[idx_dt][0]})
     return spot_dic
 
+def get_commodity_sr_data(evalDate,calendar):
+    datestr = str(evalDate.year()) + "-" + str(evalDate.month()) + "-" + str(evalDate.dayOfMonth())
+
+    try:
+        # 白糖
+        optionmkt = pd.read_json(os.path.abspath('..')+'\marketdata\sr_mkt_' + datestr + '.json')
+        mktFlds = optionmkt.index.tolist()
+        mktData = optionmkt.values.tolist()
+        optionids = mktData[mktFlds.index('品种代码')]
+        underlyingIds = []
+        for i, id in enumerate(optionids):
+            id_sh = id[0:5]
+            if id_sh not in underlyingIds:
+                underlyingIds.append(id_sh)
+        spotmkt = pd.read_json(os.path.abspath('..')+'\marketdata\sr_future_mkt_' + datestr + '.json')
+        spotFlds = spotmkt.index.tolist()
+        spotData = spotmkt.values.tolist()
+        spot_ids = spotData[spotFlds.index('品种月份')]
+        spot_ids2 = []
+        for s in spot_ids:
+            spot_ids2.extend(s.split())
+        close_prices = spotData[spotFlds.index('今收盘')]
+        underlying_prices = {}
+        for spotId in underlyingIds:
+            p = close_prices[spot_ids2.index(spotId)]
+            p = float(p.replace(',', ''))
+            underlying_prices.update({spotId: int(p)})
+        contract_months = underlying_prices.keys()
+        maturity_dates = []
+        for c in contract_months:
+            year = '201' + c[2]
+            month = c[3:5]
+            date = ql.Date(1, int(month), int(year))
+            maturity_date = calendar.advance(calendar.advance(date, ql.Period(-1, ql.Months)), ql.Period(-5, ql.Days))
+            maturity_dates.append(maturity_date)
+
+        orgnised_data = {}
+        for idx in range(len(mktData[0])):
+            data = []
+            id = mktData[mktFlds.index('品种代码')][idx]
+            close = mktData[mktFlds.index('今收盘')][idx]
+            volume = mktData[mktFlds.index('成交额(万元)')][idx]
+            strike = id[-4:len(id)]
+            data.append(int(strike))
+            data.append(float(close))
+            data.append(float(volume))
+            data.append(id[5])  # C or P
+            data.append(id[0:5])  # spot id
+            orgnised_data.update({id: data})
+
+        results_call = {}
+        results_put = {}
+        for idx, key in enumerate(orgnised_data):
+            data = orgnised_data.get(key)
+            year = '201' + key[2]
+            month = key[3:5]
+            date = ql.Date(1, int(month), int(year))
+            mdate = calendar.advance(calendar.advance(date, ql.Period(-1, ql.Months)), ql.Period(-5, ql.Days))
+            if data[3] == 'C':
+                if mdate not in results_call:
+                    results_call.update({mdate: [data]})
+                else:
+                    results_call.get(mdate).append(data)
+            else:
+                if mdate not in results_put:
+                    results_put.update({mdate: [data]})
+                else:
+                    results_put.get(mdate).append(data)
+
+    except Exception as e:
+        print(e)
+        print('Error def -- get_wind_data in \'svi_read_data\' on date : ', evalDate)
+        return
+    return results_call,results_put,underlying_prices
+
+
 def get_commodity_m_data(evalDate,calendar):
     datestr = str(evalDate.year()) + "-" + str(evalDate.month()) + "-" + str(evalDate.dayOfMonth())
 
@@ -69,10 +145,13 @@ def get_commodity_m_data(evalDate,calendar):
             close = mktData[mktFlds.index('收盘价')][idx]
             volume = mktData[mktFlds.index('成交额')][idx]
             strike = id[-4:len(id)]
+            index = id.index('-')
+            spotid = id[1:index]
             data.append(int(strike))
             data.append(float(close))
             data.append(float(volume))
-            data.append(id[id.index('-') + 1])
+            data.append(id[id.index('-') + 1]) # C or P
+            data.append(spotid) # spot id
             orgnised_data.update({id: data})
 
         results_call = {}
@@ -86,14 +165,14 @@ def get_commodity_m_data(evalDate,calendar):
             mdate = calendar.advance(calendar.advance(date, ql.Period(-1, ql.Months)), ql.Period(4, ql.Days))
             if data[3] == 'C':
                 if mdate not in results_call:
-                    results_call.update({mdate: [{key: data}]})
+                    results_call.update({mdate: [data]})
                 else:
-                    results_call.get(mdate).append({key: data})
+                    results_call.get(mdate).append(data)
             else:
                 if mdate not in results_put:
-                    results_put.update({mdate: [{key: data}]})
+                    results_put.update({mdate: [data]})
                 else:
-                    results_put.get(mdate).append({key: data})
+                    results_put.get(mdate).append(data)
 
     except Exception as e:
         print(e)

@@ -122,22 +122,24 @@ def orgnize_data_for_optimization_single_optiontype(
         data_for_optimiztion_months.update({idx_month:data})
     return data_for_optimiztion_months
 
-def orgnize_data_for_optimization_m(
-        evalDate,daycounter,vols_data_moneyness,expiration_dates,curve,optiontype):
+def orgnize_data_for_optimization_cmd(
+        evalDate,daycounter,vols_data_moneyness,expiration_dates):
     data_for_optimiztion_months = {}
     for idx_month, option_data in enumerate(vols_data_moneyness):
+        if len(option_data) == 0 : continue
         expiration_date = expiration_dates[idx_month]
         ttm = daycounter.yearFraction(evalDate, expiration_date)
-        rf = curve.zeroRate(expiration_date, daycounter, ql.Continuous).rate()
         vols = []
         logMoneynesses = []
         total_variance = []
         impliedvols = []
         strikes = []
+        spotid = idx_month
         for moneyness in option_data.keys():
             vol = option_data.get(moneyness)[0]
             strike = option_data.get(moneyness)[1]
             close = option_data.get(moneyness)[2]
+            spotid = option_data.get(moneyness)[3]
             tv = (vol ** 2) * ttm
             total_variance.append(tv)
             vols.append(vol)
@@ -145,7 +147,7 @@ def orgnize_data_for_optimization_m(
             impliedvols.append(vol)
             strikes.append(strike)
         data = [logMoneynesses, total_variance,expiration_date,impliedvols,strikes]
-        data_for_optimiztion_months.update({idx_month:data})
+        data_for_optimiztion_months.update({spotid:data})
     return data_for_optimiztion_months
 
 

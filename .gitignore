@@ -8,3 +8,5 @@ results
 *.xlsx
 *.xls
 *.json
+*.pkl
+*.pickle
