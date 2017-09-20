@@ -19,5 +19,7 @@ import pickle
 
 calendar = ql.China()
 
-d = pd.read_json('dce\cs20141219.json')
-print(d)
+sr = pd.read_json('marketdata\sr_mkt_2017-7-14.json')
+m = pd.read_json('marketdata\m_mkt_2017-7-14.json')
+print(sr)
+print(m)

@@ -15,11 +15,11 @@ calendar = ql.China()
 #with open(os.path.abspath('..') +'/intermediate_data/m_hedging_daily_params_puts.pickle','rb') as f:
 #    daily_params = pickle.load(f)[0]
 
-with open(os.path.abspath('..') +'/intermediate_data/sr_hedging_daily_params_calls_noZeroVol.pickle','rb') as f:
+with open(os.path.abspath('..') +'/intermediate_data/m_hedging_daily_params_calls_noZeroVol.pickle','rb') as f:
     daily_params = pickle.load(f)[0]
 
 
-begDate = ql.Date(19, 4, 2017)
+begDate = ql.Date(1, 7, 2017)
 #begDate = ql.Date(1, 6, 2017)
 endDate = ql.Date(20, 7, 2017)
 daycounter = ql.ActualActual()
@@ -33,10 +33,10 @@ count = 0
 while evalDate <= endDate:
     print('Start : ', evalDate)
 
-    evalDate = calendar.advance(evalDate, ql.Period(1, ql.Weeks))
+    evalDate = calendar.advance(evalDate, ql.Period(1, ql.Days))
     ql.Settings.instance().evaluationDate = evalDate
     try:
-        cal_vols, put_vols, expiration_dates_c,expiration_dates_p, spot, curve = svi_data.get_call_put_impliedVols_sr(
+        cal_vols, put_vols, expiration_dates_c,expiration_dates_p, spot, curve = svi_data.get_call_put_impliedVols_m(
             evalDate, daycounter, calendar, maxVol=1.0, step=0.0001, precision=0.001, show=False)
         data_months = svi_util.orgnize_data_for_optimization_cmd(
             evalDate, daycounter, cal_vols, expiration_dates_c)
