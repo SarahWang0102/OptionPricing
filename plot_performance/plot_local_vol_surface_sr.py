@@ -20,31 +20,31 @@ daycounter = ql.ActualActual()
 date = calendar.advance(date,ql.Period(1,ql.Days))
 
 
-with open(os.path.abspath('..')+'/intermediate_data/m_hedging_daily_params_puts_noZeroVol.pickle','rb') as f:
+with open(os.path.abspath('..')+'/intermediate_data/sr_hedging_daily_params_puts_noZeroVol.pickle','rb') as f:
     daily_params = pickle.load(f)[0]
-with open(os.path.abspath('..')+'/intermediate_data/m_hedging_dates_puts_noZeroVol.pickle','rb') as f:
+with open(os.path.abspath('..')+'/intermediate_data/sr_hedging_dates_puts_noZeroVol.pickle','rb') as f:
     dates = pickle.load(f)[0]
-with open(os.path.abspath('..')+'/intermediate_data/m_hedging_daily_svi_dataset_puts_noZeroVol.pickle','rb') as f:
+with open(os.path.abspath('..')+'/intermediate_data/sr_hedging_daily_svi_dataset_puts_noZeroVol.pickle','rb') as f:
     daily_svi_dataset = pickle.load(f)[0]
 
 
 # 1,5,9主力合约
-core_maturities = ['01','09']
+core_maturities = ['801','709']
 
 #paramset_core = {}
 calibrated_params = {}
 dataset = daily_svi_dataset.get(to_dt_date(date))
 paramset = daily_params.get(to_dt_date(date))
 for contractId in paramset.keys():
-    if contractId[-2:] in core_maturities:
+    if contractId[-3:] in core_maturities:
         calibrated_params.update({contractId:paramset.get(contractId)})
 
-print('calibrated_params')
-print(calibrated_params)
+
 
 # Local Vol Surface
 cal_vols, put_vols, maturitydates, underlying_prices, rfs = daily_svi_dataset.get(to_dt_date(date))
-black_var_surface = localVol.get_black_variance_surface_cmd(calibrated_params, date, daycounter, calendar, underlying_prices,'m')
+print(put_vols)
+black_var_surface = localVol.get_black_variance_surface_cmd(calibrated_params, date, daycounter, calendar, underlying_prices,'sr')
 curve = get_curve_treasury_bond(date,daycounter)
 yield_ts = get_yield_ts(date,curve,to_ql_date(max(maturitydates)),daycounter)
 dividend_ts = ql.YieldTermStructureHandle(ql.FlatForward(date, 0.0, daycounter))
@@ -82,7 +82,7 @@ calibrated_params = paramset
 # Local Vol Surface
 cal_vols, put_vols, maturitydates, underlying_prices, rfs = daily_svi_dataset.get(to_dt_date(date))
 print(put_vols)
-black_var_surface = localVol.get_black_variance_surface_cmd(calibrated_params, date, daycounter, calendar, underlying_prices,'m')
+black_var_surface = localVol.get_black_variance_surface_cmd(calibrated_params, date, daycounter, calendar, underlying_prices,'sr')
 curve = get_curve_treasury_bond(date,daycounter)
 yield_ts = get_yield_ts(date,curve,to_ql_date(max(maturitydates)),daycounter)
 dividend_ts = ql.YieldTermStructureHandle(ql.FlatForward(date, 0.0, daycounter))
@@ -112,6 +112,6 @@ fig1.colorbar(surf, shrink=0.5, aspect=5)
 
 
 
-fig.savefig('svi_implied_vol_surface_m1, put，'+ str(date) +'.png', dpi=300, format='png')
-fig1.savefig('svi_implied_vol_surface_m2, put，'+ str(date) +'.png', dpi=300, format='png')
+fig.savefig('svi_implied_vol_surface_sr1, put，'+ str(date) +'.png', dpi=300, format='png')
+fig1.savefig('svi_implied_vol_surface_sr2, put，'+ str(date) +'.png', dpi=300, format='png')
 plt.show()

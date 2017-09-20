@@ -15,11 +15,11 @@ calendar = ql.China()
 #with open(os.path.abspath('..') +'/intermediate_data/m_hedging_daily_params_puts.pickle','rb') as f:
 #    daily_params = pickle.load(f)[0]
 
-with open(os.path.abspath('..') +'/intermediate_data/m_hedging_daily_params_calls_noZeroVol.pickle','rb') as f:
+with open(os.path.abspath('..') +'/intermediate_data/m_hedging_daily_params_puts_noZeroVol.pickle','rb') as f:
     daily_params = pickle.load(f)[0]
 
 
-begDate = ql.Date(1, 7, 2017)
+begDate = ql.Date(18, 7, 2017)
 #begDate = ql.Date(1, 6, 2017)
 endDate = ql.Date(20, 7, 2017)
 daycounter = ql.ActualActual()
