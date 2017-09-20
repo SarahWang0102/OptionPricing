@@ -48,7 +48,7 @@ black_var_surface = localVol.get_black_variance_surface_cmd(calibrated_params, d
 curve = get_curve_treasury_bond(date,daycounter)
 yield_ts = get_yield_ts(date,curve,to_ql_date(max(maturitydates)),daycounter)
 dividend_ts = ql.YieldTermStructureHandle(ql.FlatForward(date, 0.0, daycounter))
-#local_vol_surface = ql.LocalVolSurface(ql.BlackVolTermStructureHandle(black_var_surface),yield_ts,dividend_ts,underlying_prices.get('1801'))
+local_vol_surface = ql.LocalVolSurface(ql.BlackVolTermStructureHandle(black_var_surface),yield_ts,dividend_ts,underlying_prices.get('1801'))
 
 # Plot
 plt.rcParams['font.sans-serif'] = ['STKaiti']
@@ -86,7 +86,7 @@ black_var_surface = localVol.get_black_variance_surface_cmd(calibrated_params, d
 curve = get_curve_treasury_bond(date,daycounter)
 yield_ts = get_yield_ts(date,curve,to_ql_date(max(maturitydates)),daycounter)
 dividend_ts = ql.YieldTermStructureHandle(ql.FlatForward(date, 0.0, daycounter))
-#local_vol_surface = ql.LocalVolSurface(ql.BlackVolTermStructureHandle(black_var_surface),yield_ts,dividend_ts,underlying_prices.get('1801'))
+local_vol_surface = ql.LocalVolSurface(ql.BlackVolTermStructureHandle(black_var_surface),yield_ts,dividend_ts,underlying_prices.get('1801'))
 
 # Plot
 plt.rcParams['font.sans-serif'] = ['STKaiti']

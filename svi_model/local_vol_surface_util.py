@@ -20,7 +20,7 @@ def get_black_variance_surface_cmd(calibrated_params,calibrate_date,daycounter,c
         rf = util.get_rf_tbcurve(calibrate_date,daycounter,mdt)
         spot = underlying_prices.get(contractId)
         Ft = spot * math.exp(rf * ttm)
-        x_svi =  np.log(strikes/Ft)
+        x_svi =  np.log(strikes/Ft, np.e)
         vol = np.sqrt(np.maximum(0,a_star + b_star * (rho_star * (x_svi - m_star) + np.sqrt((x_svi - m_star) ** 2 + sigma_star ** 2))))
         data_BVS.append(vol)
     implied_vols = ql.Matrix(len(strikes), len(maturity_dates))
