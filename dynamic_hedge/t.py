@@ -15,7 +15,7 @@ calendar = ql.China()
 #with open(os.path.abspath('..') +'/intermediate_data/m_hedging_daily_params_puts.pickle','rb') as f:
 #    daily_params = pickle.load(f)[0]
 
-with open(os.path.abspath('..') +'/intermediate_data/m_hedging_daily_params_calls.pickle','rb') as f:
+with open(os.path.abspath('..') +'/intermediate_data/sr_hedging_daily_params_calls_noZeroVol.pickle','rb') as f:
     daily_params = pickle.load(f)[0]
 
 
@@ -33,10 +33,10 @@ count = 0
 while evalDate <= endDate:
     print('Start : ', evalDate)
 
-    evalDate = calendar.advance(evalDate, ql.Period(1, ql.Days))
+    evalDate = calendar.advance(evalDate, ql.Period(1, ql.Weeks))
     ql.Settings.instance().evaluationDate = evalDate
     try:
-        cal_vols, put_vols, expiration_dates_c,expiration_dates_p, spot, curve = svi_data.get_call_put_impliedVols_m(
+        cal_vols, put_vols, expiration_dates_c,expiration_dates_p, spot, curve = svi_data.get_call_put_impliedVols_sr(
             evalDate, daycounter, calendar, maxVol=1.0, step=0.0001, precision=0.001, show=False)
         data_months = svi_util.orgnize_data_for_optimization_cmd(
             evalDate, daycounter, cal_vols, expiration_dates_c)
@@ -45,7 +45,12 @@ while evalDate <= endDate:
         maturity_dates = to_dt_dates(expiration_dates_p)
         rfs = {}
         for idx_dt,dt in enumerate(expiration_dates_p):
-            rfs.update({idx_dt:curve.zeroRate(dt, daycounter, ql.Continuous).rate()})
+            maxdate = curve.maxDate()
+            if dt > maxdate:
+                rf = curve.zeroRate(maxdate, daycounter, ql.Continuous).rate()
+            else:
+                rf = curve.zeroRate(dt, daycounter, ql.Continuous).rate()
+            rfs.update({idx_dt: rf})
         svi_dataset =  cal_vols, put_vols, maturity_dates, spot, rfs
         daily_svi_dataset.update({key_date:svi_dataset})
         dividend_ts = ql.YieldTermStructureHandle(ql.FlatForward(evalDate, 0.0, daycounter))

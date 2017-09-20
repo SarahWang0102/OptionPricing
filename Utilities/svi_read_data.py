@@ -70,9 +70,9 @@ def get_commodity_sr_data(evalDate,calendar):
             close = mktData[mktFlds.index('今收盘')][idx]
             volume = mktData[mktFlds.index('成交额(万元)')][idx]
             strike = id[-4:len(id)]
-            data.append(int(strike))
-            data.append(float(close))
-            data.append(float(volume))
+            data.append(int(strike.replace(',', '')))
+            data.append(float(close.replace(',', '')))
+            data.append(float(volume.replace(',', '')))
             data.append(id[5])  # C or P
             data.append(id[0:5])  # spot id
             orgnised_data.update({id: data})

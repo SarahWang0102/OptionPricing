@@ -137,6 +137,7 @@ def orgnize_data_for_optimization_cmd(
         spotid = idx_month
         for moneyness in option_data.keys():
             vol = option_data.get(moneyness)[0]
+            if abs(vol) < 0.0001: continue
             strike = option_data.get(moneyness)[1]
             close = option_data.get(moneyness)[2]
             spotid = option_data.get(moneyness)[3]

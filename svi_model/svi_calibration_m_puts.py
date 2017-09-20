@@ -94,9 +94,9 @@ print('daily_params = ', daily_params)
 print('daily_svi_dataset = ', daily_svi_dataset)
 print('dates = ', dates)
 
-with open(os.path.abspath('..') + '/intermediate_data/m_hedging_daily_params_puts.pickle', 'wb') as f:
+with open(os.path.abspath('..') + '/intermediate_data/m_hedging_daily_params_puts_noZeroVol.pickle', 'wb') as f:
     pickle.dump([daily_params], f)
-with open(os.path.abspath('..') + '/intermediate_data/m_hedging_dates_puts.pickle', 'wb') as f:
+with open(os.path.abspath('..') + '/intermediate_data/m_hedging_dates_puts_noZeroVol.pickle', 'wb') as f:
     pickle.dump([dates], f)
-with open(os.path.abspath('..') + '/intermediate_data/m_hedging_daily_svi_dataset_puts.pickle', 'wb') as f:
+with open(os.path.abspath('..') + '/intermediate_data/m_hedging_daily_svi_dataset_puts_noZeroVol.pickle', 'wb') as f:
     pickle.dump([daily_svi_dataset], f)
