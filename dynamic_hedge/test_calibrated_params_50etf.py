@@ -15,7 +15,7 @@ calendar = ql.China()
 #with open(os.path.abspath('..') +'/intermediate_data/m_hedging_daily_params_puts.pickle','rb') as f:
 #    daily_params = pickle.load(f)[0]
 
-with open(os.path.abspath('..') +'/intermediate_data/total_hedging_daily_params_calls_2.pickle','rb') as f:
+with open(os.path.abspath('..') +'/intermediate_data/total_hedging_daily_params_calls_1.pickle','rb') as f:
     daily_params = pickle.load(f)[0]
 
 
@@ -36,15 +36,16 @@ while evalDate <= endDate:
     evalDate = calendar.advance(evalDate, ql.Period(1, ql.Days))
     ql.Settings.instance().evaluationDate = evalDate
     try:
-        cal_vols, put_vols, expiration_dates_c,expiration_dates_p, spot, curve = svi_data.get_call_put_impliedVols_m(
+        cal_vols, put_vols, expiration_dates, spot, curve = svi_data.get_call_put_impliedVols_tbcurve(
             evalDate, daycounter, calendar, maxVol=1.0, step=0.0001, precision=0.001, show=False)
-        data_months = svi_util.orgnize_data_for_optimization_cmd(
-            evalDate, daycounter, put_vols, expiration_dates_c)
+        data_months = svi_util.orgnize_data_for_optimization(
+            evalDate, daycounter, cal_vols,
+            put_vols, expiration_dates, spot)
         #print(data_months)
         key_date = datetime.date(evalDate.year(), evalDate.month(), evalDate.dayOfMonth())
-        maturity_dates = to_dt_dates(expiration_dates_p)
+        maturity_dates = to_dt_dates(expiration_dates)
         rfs = {}
-        for idx_dt,dt in enumerate(expiration_dates_p):
+        for idx_dt,dt in enumerate(expiration_dates):
             maxdate = curve.maxDate()
             if dt > maxdate:
                 rf = curve.zeroRate(maxdate, daycounter, ql.Continuous).rate()
@@ -56,13 +57,14 @@ while evalDate <= endDate:
         dividend_ts = ql.YieldTermStructureHandle(ql.FlatForward(evalDate, 0.0, daycounter))
         month_indexs = wind_data.get_contract_months(evalDate)
         plt.figure()
-        for nbr_month, contractId in enumerate(data_months):
-            data = data_months.get(contractId)
+        for i in range(4):
+            nbr_month = month_indexs[i]
+            data = data_months.get(i)
             logMoneynesses = data[0]
             totalvariance = data[1]
             expiration_date = data[2]
             ttm = daycounter.yearFraction(evalDate, expiration_date)
-            params = daily_params.get(to_dt_date(evalDate)).get(contractId)
+            params = daily_params.get(to_dt_date(evalDate))[i]
 
             a_star, b_star, rho_star, m_star, sigma_star = params
             x_svi = np.arange(min(logMoneynesses) - 0.005, max(logMoneynesses) + 0.02,
@@ -74,11 +76,11 @@ while evalDate <= endDate:
             plt.figure()
             plt.plot(logMoneynesses, vol, 'ro')
             plt.plot(x_svi, vol_svi, 'b--')
-            plt.title('vol,'+str(evalDate) + ',' + str(contractId))
+            plt.title('vol,'+str(evalDate) + ',' + str(i))
             plt.figure()
             plt.plot(logMoneynesses, totalvariance, 'ro')
             plt.plot(x_svi, tv_svi2, 'b--')
-            plt.title('tv,'+str(evalDate) + ',' + str(contractId))
+            plt.title('tv,'+str(evalDate) + ',' + str(i))
         plt.show()
         count += 1
     except Exception as e:
