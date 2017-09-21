@@ -35,7 +35,8 @@ class SVI_NelderMeadOptimization:
             {'type':'ineq','fun': lambda x: x[2] - abs(x[1])},
             {'type':'ineq','fun': lambda x: 4*sigma - x[2] - abs(x[1])}
         )
-        inner_res = minimize(inner_fun,adc_0,method='SLSQP',bounds = bnds,constraints=cons, tol=1e-6)
+        #inner_res = minimize(inner_fun,adc_0,method='SLSQP',bounds = bnds,constraints=cons, tol=1e-6)
+        inner_res = minimize(inner_fun, adc_0, method='SLSQP', tol=1e-6)
         a_star,d_star,c_star = inner_res.x
         #global _a_star,_d_star,_c_star
         self._a_star, self._d_star, self._c_star = inner_res.x

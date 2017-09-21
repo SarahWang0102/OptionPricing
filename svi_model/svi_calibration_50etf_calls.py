@@ -81,6 +81,7 @@ while evalDate <= endDate:
         plt.plot(x_svi, tv_svi2, 'b--')
         plt.title(str(evalDate)+','+str(i))
         params_months.append(params)
+        plt.show()
     count += 1
     daily_params.update({key_date:params_months})
     dates.append(key_date)
@@ -98,11 +99,11 @@ print('daily_params = ',daily_params)
 print('daily_svi_dataset = ',daily_svi_dataset)
 print('dates = ', dates)
 
-with open(os.path.abspath('..')+'/intermediate_data/total_hedging_daily_params_calls_2.pickle','wb') as f:
+with open(os.path.abspath('..')+'/intermediate_data/total_hedging_daily_params_calls_nobnd.pickle','wb') as f:
     pickle.dump([daily_params],f)
-with open(os.path.abspath('..')+'/intermediate_data/total_hedging_dates_calls_2.pickle','wb') as f:
+with open(os.path.abspath('..')+'/intermediate_data/total_hedging_dates_calls_nobnd.pickle','wb') as f:
     pickle.dump([dates],f)
-with open(os.path.abspath('..')+'/intermediate_data/total_hedging_daily_svi_dataset_calls_2.pickle','wb') as f:
+with open(os.path.abspath('..')+'/intermediate_data/total_hedging_daily_svi_dataset_calls_nobnd.pickle','wb') as f:
     pickle.dump([daily_svi_dataset],f)
 
-plt.show()
+
