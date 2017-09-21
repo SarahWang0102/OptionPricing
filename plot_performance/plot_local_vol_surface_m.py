@@ -14,7 +14,7 @@ import pickle
 
 start = timeit.default_timer()
 
-date = ql.Date(17,7,2017)
+date = ql.Date(17,4,2017)
 calendar = ql.China()
 daycounter = ql.ActualActual()
 date = calendar.advance(date,ql.Period(1,ql.Days))
@@ -29,8 +29,7 @@ with open(os.path.abspath('..')+'/intermediate_data/m_hedging_daily_svi_dataset_
 
 
 # 1,5,9主力合约
-core_maturities = ['01','09']
-
+core_maturities = ['01','05','09']
 #paramset_core = {}
 calibrated_params = {}
 dataset = daily_svi_dataset.get(to_dt_date(date))
@@ -42,19 +41,22 @@ for contractId in paramset.keys():
 print('calibrated_params')
 print(calibrated_params)
 
+strikes = np.arange(2400.0, 3200.0, 1.0)
+#strikes = np.arange(1.0, 5.0, 0.1 / 100)
 # Local Vol Surface
 cal_vols, put_vols, maturitydates, underlying_prices, rfs = daily_svi_dataset.get(to_dt_date(date))
-black_var_surface = localVol.get_black_variance_surface_cmd(calibrated_params, date, daycounter, calendar, underlying_prices,'m')
+black_var_surface = localVol.get_black_variance_surface_cmd(calibrated_params, date, daycounter, calendar, underlying_prices,'m',strikes)
 curve = get_curve_treasury_bond(date,daycounter)
 yield_ts = get_yield_ts(date,curve,to_ql_date(max(maturitydates)),daycounter)
 dividend_ts = ql.YieldTermStructureHandle(ql.FlatForward(date, 0.0, daycounter))
 local_vol_surface = ql.LocalVolSurface(ql.BlackVolTermStructureHandle(black_var_surface),yield_ts,dividend_ts,underlying_prices.get('1801'))
 
+print(black_var_surface.maxStrike())
 # Plot
 plt.rcParams['font.sans-serif'] = ['STKaiti']
 plt.rcParams.update({'font.size': 13})
 plot_years = np.arange(0.1, black_var_surface.maxTime(), 0.05)
-plot_strikes = np.arange(2.1, 2.6, 0.03)
+plot_strikes = np.arange(2400.0, 3200.0, 10.0)
 
 fig = plt.figure()
 ax = fig.gca(projection='3d')
@@ -72,7 +74,7 @@ Z = np.array([black_var_surface.blackVol(y, x)
 #print(Z)
 #print(Z[np.argmin(Z[:,1]),0])
 surf = ax.plot_surface(X,Y,Z, rstride=1, cstride=1, cmap=cm.coolwarm,
-                linewidth=0.1)
+                linewidth=0.1,vmin = 0.1,vmax = 0.3)
 ax.set_xlabel('K')
 ax.set_ylabel('T')
 fig.colorbar(surf, shrink=0.5, aspect=5)
@@ -82,7 +84,7 @@ calibrated_params = paramset
 # Local Vol Surface
 cal_vols, put_vols, maturitydates, underlying_prices, rfs = daily_svi_dataset.get(to_dt_date(date))
 print(put_vols)
-black_var_surface = localVol.get_black_variance_surface_cmd(calibrated_params, date, daycounter, calendar, underlying_prices,'m')
+black_var_surface = localVol.get_black_variance_surface_cmd(calibrated_params, date, daycounter, calendar, underlying_prices,'m',strikes)
 curve = get_curve_treasury_bond(date,daycounter)
 yield_ts = get_yield_ts(date,curve,to_ql_date(max(maturitydates)),daycounter)
 dividend_ts = ql.YieldTermStructureHandle(ql.FlatForward(date, 0.0, daycounter))
@@ -92,7 +94,7 @@ local_vol_surface = ql.LocalVolSurface(ql.BlackVolTermStructureHandle(black_var_
 plt.rcParams['font.sans-serif'] = ['STKaiti']
 plt.rcParams.update({'font.size': 13})
 plot_years = np.arange(0.1, black_var_surface.maxTime(), 0.05)
-plot_strikes = np.arange(2.1, 2.6, 0.03)
+#plot_strikes = np.arange(2500.0, 3000.0, 1.0)
 
 fig1= plt.figure()
 ax1 = fig1.gca(projection='3d')
@@ -103,7 +105,7 @@ Z = np.array([black_var_surface.blackVol(y, x)
              ).reshape(len(X), len(X[0]))
 print(Z[np.argmin(Z[:,1]),0])
 surf = ax1.plot_surface(X,Y,Z, rstride=1, cstride=1, cmap=cm.coolwarm,
-                linewidth=0.1)
+                linewidth=0.1,vmin = 0.1,vmax = 0.3)
 ax1.set_xlabel('K')
 ax1.set_ylabel('T')
 fig1.colorbar(surf, shrink=0.5, aspect=5)

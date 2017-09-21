@@ -6,9 +6,9 @@ from Utilities import utilities as util
 def Date(d, m, y):
     return ql.Date(d, m, y)
 
-def get_black_variance_surface_cmd(calibrated_params,calibrate_date,daycounter,calendar,underlying_prices,contractType):
-    strikes = np.arange(1.0, 5.0, 0.1 / 100)
-    data_BVS = []
+def get_black_variance_surface_cmd(calibrated_params,calibrate_date,daycounter,calendar,underlying_prices,contractType,strikes):
+    #strikes = np.arange(2400, 3200, 1)
+    volset = []
     maturity_dates = []
     contract_ids = sorted(calibrated_params.keys())
     for contractId in contract_ids:
@@ -20,14 +20,18 @@ def get_black_variance_surface_cmd(calibrated_params,calibrate_date,daycounter,c
         rf = util.get_rf_tbcurve(calibrate_date,daycounter,mdt)
         spot = underlying_prices.get(contractId)
         Ft = spot * math.exp(rf * ttm)
-        x_svi =  np.log(strikes/Ft, np.e)
+        x_svi =  np.log(strikes/Ft)
         vol = np.sqrt(np.maximum(0,a_star + b_star * (rho_star * (x_svi - m_star) + np.sqrt((x_svi - m_star) ** 2 + sigma_star ** 2))))
-        data_BVS.append(vol)
+        volset.append(vol)
     implied_vols = ql.Matrix(len(strikes), len(maturity_dates))
     for i in range(implied_vols.rows()):
         for j in range(implied_vols.columns()):
-            implied_vols[i][j] = data_BVS[j][i]
+            implied_vols[i][j] = volset[j][i]
     #maturity_dates = [maturity_dates[1],maturity_dates[0]]
+    #print(type(strikes))
+    #print(type(implied_vols))
+    #print(strikes)
+    #print(implied_vols)
     black_var_surface = ql.BlackVarianceSurface(calibrate_date, calendar,maturity_dates, strikes,implied_vols, daycounter)
     return black_var_surface
 

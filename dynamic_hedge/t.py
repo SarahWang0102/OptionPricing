@@ -19,7 +19,7 @@ with open(os.path.abspath('..') +'/intermediate_data/m_hedging_daily_params_puts
     daily_params = pickle.load(f)[0]
 
 
-begDate = ql.Date(18, 7, 2017)
+begDate = ql.Date(17, 7, 2017)
 #begDate = ql.Date(1, 6, 2017)
 endDate = ql.Date(20, 7, 2017)
 daycounter = ql.ActualActual()
@@ -39,7 +39,7 @@ while evalDate <= endDate:
         cal_vols, put_vols, expiration_dates_c,expiration_dates_p, spot, curve = svi_data.get_call_put_impliedVols_m(
             evalDate, daycounter, calendar, maxVol=1.0, step=0.0001, precision=0.001, show=False)
         data_months = svi_util.orgnize_data_for_optimization_cmd(
-            evalDate, daycounter, cal_vols, expiration_dates_c)
+            evalDate, daycounter, put_vols, expiration_dates_c)
         #print(data_months)
         key_date = datetime.date(evalDate.year(), evalDate.month(), evalDate.dayOfMonth())
         maturity_dates = to_dt_dates(expiration_dates_p)
@@ -55,7 +55,7 @@ while evalDate <= endDate:
         daily_svi_dataset.update({key_date:svi_dataset})
         dividend_ts = ql.YieldTermStructureHandle(ql.FlatForward(evalDate, 0.0, daycounter))
         month_indexs = wind_data.get_contract_months(evalDate)
-        plt.figure(count)
+        plt.figure()
         for nbr_month, contractId in enumerate(data_months):
             data = data_months.get(contractId)
             logMoneynesses = data[0]
@@ -69,11 +69,17 @@ while evalDate <= endDate:
                               0.1 / 100)  # log_forward_moneyness
             tv_svi2 = np.multiply(
                 a_star + b_star * (rho_star * (x_svi - m_star) + np.sqrt((x_svi - m_star) ** 2 + sigma_star ** 2)), ttm)
-
+            vol = np.sqrt(np.divide(totalvariance,ttm))
+            vol_svi = np.sqrt(a_star + b_star * (rho_star * (x_svi - m_star) + np.sqrt((x_svi - m_star) ** 2 + sigma_star ** 2)))
+            plt.figure()
+            plt.plot(logMoneynesses, vol, 'ro')
+            plt.plot(x_svi, vol_svi, 'b--')
+            plt.title('vol,'+str(evalDate) + ',' + str(contractId))
+            plt.figure()
             plt.plot(logMoneynesses, totalvariance, 'ro')
             plt.plot(x_svi, tv_svi2, 'b--')
-            plt.title(str(evalDate) + ',' + str(contractId))
-            plt.show()
+            plt.title('tv,'+str(evalDate) + ',' + str(contractId))
+        plt.show()
         count += 1
     except Exception as e:
         print(e)
