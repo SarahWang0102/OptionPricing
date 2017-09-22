@@ -84,7 +84,7 @@ for spot in np.arange(2,3,0.05):
 print('='*100)
 result['delta_total_call'] = res_delta_total
 result['delta_cnst_call'] = res_delta_cnst
-
+result['diff_put'] = res_delta_total-res_delta_cnst
 iscall = False
 print('strike = ',strike,', option type : put')
 print('='*100)
@@ -95,7 +95,7 @@ svi_p = svimodel(ttm,params_p)
 res_delta_total = []
 res_delta_cnst = []
 
-for spot in np.arange(2,3,0.05):
+for spot in np.arange(2,3,0.025):
     forward = spot / discount
     x = math.log(strike /forward , math.e)
     vol = svi_p.svi_iv_function(x)

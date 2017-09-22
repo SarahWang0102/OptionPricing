@@ -62,7 +62,7 @@ while evalDate <= endDate:
     dividend_ts = ql.YieldTermStructureHandle(ql.FlatForward(evalDate, 0.0, daycounter))
     month_indexs = wind_data.get_contract_months(evalDate)
     params_months = []
-    plt.figure(count)
+   # plt.figure(count)
     for i in range(4):
         nbr_month = month_indexs[i]
         data = data_months.get(i)
@@ -77,11 +77,11 @@ while evalDate <= endDate:
         tv_svi2 = np.multiply(
                 a_star + b_star * (rho_star * (x_svi - m_star) + np.sqrt((x_svi - m_star) ** 2 + sigma_star ** 2)), ttm)
 
-        plt.plot(logMoneynesses, totalvariance, 'ro')
-        plt.plot(x_svi, tv_svi2, 'b--')
-        plt.title(str(evalDate)+','+str(i))
+        #plt.plot(logMoneynesses, totalvariance, 'ro')
+        #plt.plot(x_svi, tv_svi2, 'b--')
+        #plt.title(str(evalDate)+','+str(i))
         params_months.append(params)
-        plt.show()
+        #plt.show()
     count += 1
     daily_params.update({key_date:params_months})
     dates.append(key_date)
