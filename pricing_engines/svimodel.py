@@ -28,6 +28,16 @@ class svimodel:
         dSigma_dK = dVol_dX*dX_dK
         return dSigma_dK
 
+    def calculate_dSigma_dS(self, spot, dS, strike, discount):
+        s_plus = spot + dS
+        s_minus = spot - dS
+        f_plus = s_plus / discount
+        f_minus = s_minus / discount
+        stdDev_plus = self.svi_iv_function(math.log(strike / f_plus, math.e)) * math.sqrt(self.ttm)
+        stdDev_minus = self.svi_iv_function(math.log(strike / f_minus, math.e)) * math.sqrt(self.ttm)
+        dSigma_dS = (stdDev_plus-stdDev_minus)/(s_plus - s_minus)
+        return dSigma_dS
+
     # 计算Effective Delta
     def calculate_effective_delta(self, spot, dS, strike, discount, iscall):
         s_plus = spot + dS
@@ -35,7 +45,7 @@ class svimodel:
         f_plus = s_plus / discount
         f_minus = s_minus / discount
         stdDev_plus = self.svi_iv_function(math.log(strike / f_plus, math.e)) * math.sqrt(self.ttm)
-        stdDev_minus = self.svi_iv_function(math.log(strike / f_plus, math.e)) * math.sqrt(self.ttm)
+        stdDev_minus = self.svi_iv_function(math.log(strike / f_minus, math.e)) * math.sqrt(self.ttm)
         black_splus = blackcalculator(strike, f_plus, stdDev_plus, discount, iscall)
         black_sminus = blackcalculator(strike, f_minus, stdDev_minus, discount, iscall)
         delta_eff = (black_splus.value() - black_sminus.value()) / (s_plus - s_minus)

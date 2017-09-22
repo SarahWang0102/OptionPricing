@@ -42,6 +42,7 @@ def get_mdate_by_contractid(commodityType,contractId,calendar):
 def get_rf_tbcurve(evalDate,daycounter,maturitydate):
     curve = get_curve_treasury_bond(evalDate, daycounter)
     maxdate = curve.maxDate()
+    #print(maxdate,maturitydate)
     if maturitydate > maxdate:
         rf = curve.zeroRate(maxdate, daycounter, ql.Continuous).rate()
     else:
@@ -56,3 +57,7 @@ def get_yield_ts(evalDate,curve,mdate,daycounter):
         rf = curve.zeroRate(mdate, daycounter, ql.Continuous).rate()
     yield_ts = ql.YieldTermStructureHandle(ql.FlatForward(evalDate, rf, daycounter))
     return yield_ts
+
+def get_dividend_ts(evalDate,daycounter):
+    dividend_ts = ql.YieldTermStructureHandle(ql.FlatForward(evalDate, 0.0, daycounter))
+    return dividend_ts
