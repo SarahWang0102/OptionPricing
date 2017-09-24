@@ -1,15 +1,15 @@
 from pricing_engines.blackcalculator import blackcalculator
 from pricing_engines.svimodel import svimodel
-#from pricing_options.OptionPlainVanilla import OptionPlainVanilla
-#from pricing_options.Evaluation import Evaluation
-#from pricing_options.OptionEngine import OptionEngine
+from pricing_engines.OptionPlainVanilla import OptionPlainVanilla
+from pricing_engines.Evaluation import Evaluation
+from pricing_engines.OptionEngine import OptionEngine
 from Utilities.utilities import *
 import QuantLib as ql
 import math
 import datetime
 
 hedge_date = datetime.date(2017,7,19)
-#evaluation = Evaluation(to_ql_date(hedge_date))
+evaluation = Evaluation(to_ql_date(hedge_date))
 maturitydt = datetime.date(2017,9,27)
 spot = 2.702
 rf = 0.030
@@ -24,18 +24,18 @@ engineType = 'AnalyticEuropeanEngine'
 
 print('spot = ',spot)
 print('='*100)
-print("%10s %25s %25s %25s " % ("Strike","delta_total","delta_eff ","delta_constant_vol "))
+print("%10s %25s %25s %25s " % ("Strike","delta_total","delta_total_ql ","delta_constant_vol "))
 print('-'*100)
 underlying_ql = ql.SimpleQuote(spot)
 daycounter = ql.ActualActual()
 calendar = ql.China()
 svi = svimodel(ttm,params)
 for strike in vols.keys():
-    #option_call = OptionPlainVanilla(strike, to_ql_date(maturitydt), ql.Option.Call).get_european_option()
+    option_call = OptionPlainVanilla(strike, to_ql_date(maturitydt), ql.Option.Call).get_european_option()
     vol = vols.get(strike)
-    #process = evaluation.get_bsmprocess_cnstvol(daycounter,calendar, underlying_ql, vol)
-    #engine = OptionEngine(process, engineType).engine
-    #option_call.setPricingEngine(engine)
+    process = evaluation.get_bsmprocess_cnstvol(daycounter,calendar, underlying_ql, vol)
+    engine = OptionEngine(process, engineType).engine
+    option_call.setPricingEngine(engine)
     stdDev = vol * math.sqrt(ttm)
     forward = spot/discount
     black = blackcalculator(strike,forward,stdDev,discount,iscall)
@@ -46,12 +46,12 @@ for strike in vols.keys():
     # 全Delta
     delta_total = black.delta_total(spot,ttm,dSigma_dK)
 
-    #delta_total_ql = delta - option_call.vega() * (strike/spot)*dSigma_dK
+    delta_total_ql = delta - option_call.vega() * (strike/spot)*dSigma_dK
     # Effective Delta
     delta_eff = svi.calculate_effective_delta(spot, dS,strike,discount,iscall)
 
     delta1 = round(delta, 6)
     delta_t1 = round(delta_total, 6)
     delta_eff1 = round(delta_eff, 6)
-    print("%10s %25s %25s %25s " % (strike,delta_total, delta_eff,delta1))
+    print("%10s %25s %25s %25s " % (strike,delta_total, delta_total_ql,delta1))
 print('='*100)

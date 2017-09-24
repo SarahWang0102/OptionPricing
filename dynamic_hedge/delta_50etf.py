@@ -1,5 +1,8 @@
-from pricing_engines.blackcalculator import blackcalculator
-from pricing_engines.SviPricingModel import SviPricingModel,SviVolSurface
+from pricing_options.SviPricingModel import SviPricingModel
+from pricing_options.SviVolSurface import SviVolSurface
+from pricing_options.OptionPlainVanilla import OptionPlainVanilla
+from pricing_options.OptionEngine import OptionEngine
+from pricing_options.Evaluation import Evaluation
 from Utilities import utilities as util
 from Utilities.svi_read_data import get_curve_treasury_bond
 import QuantLib as ql
@@ -10,17 +13,8 @@ import datetime
 import os
 import pickle
 
-#hedge_date = datetime.date(2017,7,19)
-#maturitydt = datetime.date(2017,9,27)
-#spot = 2.702
-#rf = 0.030
-#params = [-0.0689813692309 , 4.57986004886 , -0.980043687933 , -0.617957974368 , 0.117468005221]
-#vols = {2.2: 0.2449897447635236, 2.25: 0.22837076995826824, 2.3: 0.21949149068217633, 2.35: 0.20985304700906196, 2.4: 0.2041719266214876, 2.45: 0.20033927445461783, 2.5: 0.19807488063669001, 2.55: 0.19085764979481112, 2.6: 0.19159774017588876, 2.65: 0.1919016701828232, 2.7: 0.1934624432856883, 2.75: 0.19404949435809657}
 
-daycounter = ql.ActualActual()
-calendar = ql.China()
-
-with open(os.path.abspath('..')+'/intermediate_data/total_hedging_daily_params_calls_2.pickle','rb') as f:
+with open(os.path.abspath('..')+'/intermediate_data/total_hedging_daily_params_calls_nobnd.pickle','rb') as f:
     daily_params_c = pickle.load(f)[0]
 with open(os.path.abspath('..')+'/intermediate_data/total_hedging_daily_svi_dataset_puts.pickle','rb') as f:
     daily_svi_dataset = pickle.load(f)[0]
@@ -30,12 +24,17 @@ with open(os.path.abspath('..')+'/intermediate_data/total_hedging_daily_params_p
 
 date = datetime.date(2017,7,17)
 date_ql = util.to_ql_date(date)
+evaluation = Evaluation(date_ql)
+
+daycounter = ql.ActualActual()
+calendar = ql.China()
+
 
 paramset_c = daily_params_c.get(date)
 paramset_p = daily_params_p.get(date)
 dataset = daily_svi_dataset.get(date)
 cal_vols, put_vols, maturity_dates, underlying, rfs = dataset
-index = 0
+index = 3
 mdate = maturity_dates[index]
 maturitydt = util.to_ql_date(mdate)
 params_c = paramset_c[index]
@@ -51,14 +50,21 @@ iscall = True
 curve = get_curve_treasury_bond(date_ql, daycounter)
 yield_ts = util.get_yield_ts(date_ql,curve,maturitydt,daycounter)
 dividend_ts = util.get_dividend_ts(date_ql,daycounter)
+spot_range = np.arange(2,3.5,0.025)
+contractType = '50etf'
+engineType = 'AnalyticEuropeanEngine'
 
 print('strike = ',strike,', option type : call')
 print('='*100)
 print("%10s %25s %25s %25s %25s" % ("Spot","delta_total","delta_eff","delta_constant_vol ","diff"))
 print('-'*100)
 
+option_call = OptionPlainVanilla(strike,maturitydt,ql.Option.Call).get_european_option()
+
 volSurface_call = SviVolSurface(date_ql,paramset_c,daycounter,calendar)
-svi_call = SviPricingModel(date_ql,volSurface_call,underlying,daycounter,calendar,util.to_ql_dates(maturity_dates),ql.Option.Call,'50etf')
+svi_call = SviPricingModel(volSurface_call,underlying,daycounter,calendar,
+                           util.to_ql_dates(maturity_dates),ql.Option.Call,contractType)
+vol_surface_call = svi_call.black_var_surface()
 
 call_delta_total = []
 call_delta_cnst = []
@@ -66,13 +72,17 @@ call_delta_eff = []
 call_diff = []
 #index=['data_total','data_const']
 result = pd.DataFrame()
-for spot in np.arange(2,3.5,0.025):
-
-    delta = svi_call.get_option(spot,strike,maturitydt,ql.Option.Call).delta()
+underlying_ql = ql.SimpleQuote(0.0)
+process = evaluation.get_bsmprocess(daycounter, underlying_ql, vol_surface_call)
+for spot in spot_range:
+    underlying_ql.setValue(spot)
+    engine = OptionEngine(process, engineType).engine
+    option_call.setPricingEngine(engine)
+    delta = option_call.delta()
     # 全Delta
-    delta_total = svi_call.calculate_total_delta(spot,strike,maturitydt,ql.Option.Call,spot*0.001)
+    delta_total = svi_call.calculate_total_delta(evaluation,option_call,engineType,spot,strike,maturitydt,spot*0.0001)
     # Effective Delta
-    delta_eff = svi_call.calculate_effective_delta(spot,strike,maturitydt,ql.Option.Call, dS)
+    delta_eff = svi_call.calculate_effective_delta(evaluation,option_call,engineType,spot, dS)
 
     delta1 = round(delta, 4)
     delta_t1 = round(delta_total, 4)
@@ -83,9 +93,10 @@ for spot in np.arange(2,3.5,0.025):
     call_diff.append(delta_total-delta)
     print("%10s %25s %25s %25s %25s" % (spot,delta_t1,delta_eff1,delta1,round(delta_total-delta,4)))
 print('='*100)
-result['delta_total_call'] = call_delta_total
-result['delta_eff_call'] = call_delta_eff
-result['delta_cnst_call'] = call_delta_cnst
+result['Spot'] = spot_range
+result['TotalDelta_m_call'] = call_delta_total
+result['EffectiveDelta_m_call'] = call_delta_eff
+result['TotalDelta_k_call'] = call_delta_cnst
 
 
 print('strike = ',strike,', option type : put')
@@ -93,22 +104,27 @@ print('='*100)
 print("%10s %25s %25s %25s %25s" % ("Spot","delta_total","delta_eff","delta_constant_vol ","diff"))
 print('-'*100)
 
+option_put = OptionPlainVanilla(strike,maturitydt,ql.Option.Put).get_european_option()
 volSurface_put = SviVolSurface(date_ql,paramset_p,daycounter,calendar)
-svi_put = SviPricingModel(date_ql,volSurface_put,underlying,daycounter,calendar,util.to_ql_dates(maturity_dates),ql.Option.Put,'50etf')
+svi_put = SviPricingModel(volSurface_put,underlying,daycounter,calendar,
+                          util.to_ql_dates(maturity_dates),ql.Option.Put,'50etf')
+vol_surface_put = svi_put.black_var_surface()
 
 put_delta_total = []
 put_delta_cnst = []
 put_delta_eff = []
 put_diff = []
 
-result = pd.DataFrame()
-for spot in np.arange(2,3.5,0.025):
-
-    delta = svi_call.get_option(spot,strike,maturitydt,ql.Option.Put).delta()
+process = evaluation.get_bsmprocess(daycounter, underlying_ql, vol_surface_put)
+for spot in spot_range:
+    underlying_ql.setValue(spot)
+    engine = OptionEngine(process, engineType).engine
+    option_put.setPricingEngine(engine)
+    delta = option_put.delta()
     # 全Delta
-    delta_total = svi_call.calculate_total_delta(spot,strike,maturitydt,ql.Option.Put,spot*0.001)
+    delta_total = svi_call.calculate_total_delta(evaluation,option_put,engineType,spot,strike,maturitydt,spot*0.0001)
     # Effective Delta
-    delta_eff = svi_call.calculate_effective_delta(spot,strike,maturitydt,ql.Option.Put, dS)
+    delta_eff = svi_call.calculate_effective_delta(evaluation,option_put,engineType,spot, dS)
 
     delta1 = round(delta, 4)
     delta_t1 = round(delta_total, 4)
@@ -121,8 +137,8 @@ for spot in np.arange(2,3.5,0.025):
 print('='*100)
 
 
-result['delta_total_put'] = put_delta_total
-result['delta_eff_put'] = put_delta_eff
-result['delta_cnst_put'] = put_delta_cnst
+result['TotalDelta_m_put'] = put_delta_total
+result['EffectiveDelta_m_put'] = put_delta_eff
+result['TotalDelta_k_put'] = put_delta_cnst
 #result['diff_put'] = put_diff
-result.to_csv('delta_ql_50etf.csv')
+result.to_csv('delta_ql_50etf1.csv')

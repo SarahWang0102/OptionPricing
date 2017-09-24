@@ -7,7 +7,6 @@ import math
 class SviVolSurface:
 
     def __init__(self, evalDate, calibrated_params, daycounter, calendar):
-        ql.Settings.instance().evaluationDate = evalDate
         self.evalDate = evalDate
         self.calibrated_params = calibrated_params
         self.daycounter = daycounter

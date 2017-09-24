@@ -9,7 +9,7 @@ import datetime
 import pickle
 import os
 
-calendar = ql.China()
+
 
 
 with open(os.path.abspath('..') +'/intermediate_data/total_hedging_daily_params_puts.pickle','rb') as f:
@@ -22,6 +22,7 @@ with open(os.path.abspath('..') +'/intermediate_data/total_hedging_daily_params_
 begDate = ql.Date(16, 7, 2017)
 #begDate = ql.Date(1, 6, 2017)
 endDate = ql.Date(20, 7, 2017)
+calendar = ql.China()
 daycounter = ql.ActualActual()
 w.start()
 evalDate = begDate
@@ -66,7 +67,7 @@ while evalDate <= endDate:
             params = daily_params.get(to_dt_date(evalDate))[i]
 
             a_star, b_star, rho_star, m_star, sigma_star = params
-            x_svi = np.arange(min(logMoneynesses) - 0.005, max(logMoneynesses) + 0.02,
+            x_svi = np.arange(min(logMoneynesses) - 0.1, max(logMoneynesses) + 0.1,
                               0.1 / 100)  # log_forward_moneyness
             tv_svi2 = np.multiply(
                 a_star + b_star * (rho_star * (x_svi - m_star) + np.sqrt((x_svi - m_star) ** 2 + sigma_star ** 2)), ttm)

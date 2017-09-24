@@ -14,7 +14,7 @@ class SVI_NelderMeadOptimization:
 
     def outter_fun(self,params):
         m,sigma = params
-        sigma = max(1e-10,sigma)
+        sigma = max(0,sigma)
         adc_0 = self.init_adc
         def inner_fun(params):
             a,d,c = params
@@ -59,26 +59,3 @@ class SVI_NelderMeadOptimization:
         calibrated_params = [self._a_star, self._d_star, self._c_star,m_star,sigma_star]
         return calibrated_params,obj
 
-
-    def one_fuction(self,params):
-        a,d,c,m,sigma = params
-        sum = 0.0
-        for i,xi in enumerate(self.data[0]):
-            yi = (xi - m)/sigma
-            f_msigma = (a + d*yi + c * math.sqrt((yi**2 + 1)) - self.data[1][i])**2
-            sum += f_msigma
-        return sum
-
-    def optimization_SLSQP(self):
-        [a0,d0,c0,m0,sigma0] = [1,1,1,1,1]
-        bnds = ((0,max(self.data[1])),(None,None),(0,None),(None,None),(0,None))
-        cons = (
-            {'type': 'ineq', 'fun': lambda x: 4*x[4] - x[2]}, # 4sigma - c >= 0
-            {'type': 'ineq', 'fun': lambda x: x[2] - abs(x[1])}, # |d| <= c
-            {'type': 'ineq', 'fun': lambda x: 4*x[4] - x[2] - abs(x[1])} # |d| <= 4sigma -c
-        )
-        res = minimize(self.one_fuction, np.array([a0,d0,c0,m0,sigma0]),
-                       method='SLSQP',bounds = bnds,constraints=cons, tol=1e-6)
-        a_star,d_star,c_star, m_star, sigma_star = res.x
-        print('a_star,d_star,c_star, m_star, sigma_star: ', a_star,d_star,c_star, m_star, sigma_star)
-        return a_star,d_star,c_star, m_star, sigma_star
