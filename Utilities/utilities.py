@@ -61,3 +61,11 @@ def get_yield_ts(evalDate,curve,mdate,daycounter):
 def get_dividend_ts(evalDate,daycounter):
     dividend_ts = ql.YieldTermStructureHandle(ql.FlatForward(evalDate, 0.0, daycounter))
     return dividend_ts
+
+def get_closest_strike(strikes,target):
+    res = strikes[0]
+    emin = 100.0
+    for strike in strikes:
+        e = strike-target
+        if e < emin : res = strike
+    return res

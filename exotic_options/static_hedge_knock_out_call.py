@@ -1,6 +1,8 @@
-from pricing_engines.SviPricingModel import SviPricingModel
-from pricing_engines.SviVolSurface import SviVolSurface
-from pricing_engines.Evaluation import Evaluation
+from pricing_options.SviPricingModel import SviPricingModel
+from pricing_options.SviVolSurface import SviVolSurface
+from pricing_options.Evaluation import Evaluation
+from pricing_options.StaticHedgePortfolio import StaticHedgePortfolio
+from pricing_options.OptionBarrierEuropean import OptionBarrierEuropean
 import Utilities.svi_prepare_vol_data as svi_data
 from Utilities import utilities as util
 from exotic_options import exotic_option_utilities as exotic
@@ -20,10 +22,9 @@ with open(os.path.abspath('..')+'/intermediate_data/total_hedging_daily_svi_data
 
 # Evaluation Settings
 today = ql.Date(17,7,2017)
-evaluation = Evaluation(today)
-ql.Settings.instance().evaluationDate = today
 calendar = ql.China()
 daycounter = ql.ActualActual()
+evaluation = Evaluation(today,daycounter,calendar)
 contractType = '50etf'
 engineType = 'AnalyticEuropeanEngine'
 facevalue = 10000
@@ -33,11 +34,13 @@ i = 3
 curve = svi_data.get_curve_treasury_bond(today,daycounter)
 calibrated_params = daily_params.get(util.to_dt_date(today))  # on calibrate_date
 cal_vols, put_vols, maturity_dates, spot, risk_free_rates = daily_svi_dataset.get(util.to_dt_date(today))
-
+call_strikes = []
+put_strikes = []
 volSurface = SviVolSurface(today,calibrated_params,daycounter,calendar)
 svi_model = SviPricingModel(volSurface,spot,daycounter,calendar,
                            util.to_ql_dates(maturity_dates),ql.Option.Call,contractType)
-black_var_surface = svi_model.black_var_surface()
+#black_var_surface = svi_model.black_var_surface()
+black_var_surface = volSurface.get_black_var_surface(spot,contractType,util.to_ql_dates(maturity_dates))
 maturityDate = util.to_ql_date(maturity_dates[i])
 print(maturityDate)
 rf = util.get_rf_tbcurve(today,daycounter,maturityDate)
@@ -53,6 +56,11 @@ barrierType = ql.Barrier.DownOut
 exercise = ql.EuropeanExercise(maturityDate)
 payoff = ql.PlainVanillaPayoff(optiontype, strike)
 barrieroption = ql.BarrierOption(barrierType, barrier, 0.0,payoff, exercise)
+
+barrier_option = OptionBarrierEuropean(strike,maturityDate,optiontype,barrier,barrierType)
+staticHedge = StaticHedgePortfolio(barrier_option)
+#staticHedge.set_static_portfolio(evaluation,spot,black_var_surface)
+
 
 ttm = daycounter.yearFraction(today,maturityDate)
 strike_barrier = ((barrier)**2)/strike

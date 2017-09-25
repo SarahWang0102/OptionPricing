@@ -50,7 +50,7 @@ iscall = True
 curve = get_curve_treasury_bond(date_ql, daycounter)
 yield_ts = util.get_yield_ts(date_ql,curve,maturitydt,daycounter)
 dividend_ts = util.get_dividend_ts(date_ql,daycounter)
-spot_range = np.arange(2,3.5,0.025)
+spot_range = np.arange(2,3.5,0.05)
 contractType = '50etf'
 engineType = 'AnalyticEuropeanEngine'
 

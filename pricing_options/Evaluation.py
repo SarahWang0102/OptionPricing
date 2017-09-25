@@ -3,8 +3,10 @@ from Utilities.svi_read_data import get_curve_treasury_bond
 
 class Evaluation:
 
-    def __init__(self,evalDate):
+    def __init__(self,evalDate,daycounter,calendar):
         self.evalDate = evalDate
+        self.daycounter = daycounter
+        self.calendar = calendar
         ql.Settings.instance().evaluationDate = evalDate
 
     def get_bsmprocess(self,daycounter,underlying,vol_surface):
