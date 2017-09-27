@@ -2,7 +2,7 @@ from pricing_engines.blackcalculator import blackcalculator
 from pricing_engines.svimodel import svimodel
 from pricing_options.SviPricingModel import SviPricingModel
 from pricing_options.SviVolSurface import SviVolSurface
-from pricing_options.OptionPlainVanilla import OptionPlainVanilla
+from pricing_options.Options import OptionPlainEuropean
 from pricing_options.OptionEngine import OptionEngine
 from pricing_options.Evaluation import Evaluation
 from Utilities.utilities import *
@@ -33,7 +33,7 @@ daycounter = ql.ActualActual()
 calendar = ql.China()
 svi = svimodel(ttm,params)
 for strike in vols.keys():
-    option_call = OptionPlainVanilla(strike, to_ql_date(maturitydt), ql.Option.Call).get_european_option()
+    option_call = OptionPlainEuropean(strike, to_ql_date(maturitydt), ql.Option.Call).option
     vol = vols.get(strike)
     process = evaluation.get_bsmprocess_cnstvol(daycounter,calendar, underlying_ql, vol)
     engine = OptionEngine(process, engineType).engine

@@ -10,6 +10,10 @@ class OptionEngine:
             engine = ql.AnalyticEuropeanEngine(bsmprocess)
         elif engineType == 'AnalyticBarrierEngine':
             engine = ql.AnalyticBarrierEngine(bsmprocess)
+        elif engineType == 'BinomialBarrierEngine':
+            engine = ql.BinomialBarrierEngine(bsmprocess,'crr',801)
+        elif engineType == 'BinomialEuropeanEngine':
+            engine = ql.BinomialVanillaEngine(bsmprocess,'crr',801)
         else:
             engine = ''
         return engine

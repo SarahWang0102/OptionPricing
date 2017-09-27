@@ -2,7 +2,7 @@ from pricing_options.SviPricingModel import SviPricingModel
 from pricing_options.SviVolSurface import SviVolSurface
 from pricing_options.Evaluation import Evaluation
 from pricing_options.StaticHedgePortfolio import StaticHedgePortfolio
-from pricing_options.OptionBarrierEuropean import OptionBarrierEuropean
+from pricing_options.Options import OptionBarrierEuropean
 import Utilities.svi_prepare_vol_data as svi_data
 from Utilities import utilities as util
 from exotic_options import exotic_option_utilities as exotic

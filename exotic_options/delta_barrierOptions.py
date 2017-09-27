@@ -4,7 +4,9 @@ from pricing_options.Options import OptionPlainEuropean,OptionBarrierEuropean
 from pricing_options.OptionEngine import OptionEngine
 from pricing_options.Evaluation import Evaluation
 from Utilities import utilities as util
+from Utilities.PlotUtil import PlotUtil
 from Utilities.svi_read_data import get_curve_treasury_bond
+import matplotlib.pyplot as plt
 import QuantLib as ql
 import pandas as pd
 import numpy as np
@@ -50,19 +52,20 @@ curve = get_curve_treasury_bond(date_ql, daycounter)
 yield_ts = util.get_yield_ts(date_ql,curve,maturitydt,daycounter)
 dividend_ts = util.get_dividend_ts(date_ql,daycounter)
 #spot_range = np.arange(2,3.5,0.05)
-spot_range = np.arange(2.0,2.5,0.0025)
+spot_range = np.arange(2.3,2.7,0.0025)
 contractType = '50etf'
 engineType = 'AnalyticEuropeanEngine'
+barrier_type = 'barrier upout call'
 
 print('strike = ',strike,', option type : call')
 print('='*100)
 print("%10s %25s %25s %25s %25s %25s" % ("Spot","barrier_delta","european_delta","delta_total","delta_eff","diff"))
 print('-'*100)
-barrier = 2.1
-#barrier = 2.6
+#barrier = 2.2
+barrier = 2.6
 option_call = OptionPlainEuropean(strike,maturitydt,ql.Option.Call)
 optionql_call = option_call.option_ql
-barrier_option = OptionBarrierEuropean(strike,maturitydt,ql.Option.Call,barrier,ql.Barrier.DownOut)
+barrier_option = OptionBarrierEuropean(strike,maturitydt,ql.Option.Call,barrier,ql.Barrier.UpOut)
 barrierql = barrier_option.option_ql
 volSurface_call = SviVolSurface(date_ql,paramset_c,daycounter,calendar)
 svi_call = SviPricingModel(volSurface_call,underlying,daycounter,calendar,
@@ -107,51 +110,9 @@ result['TotalDelta_m_call'] = call_delta_total
 result['EffectiveDelta_m_call'] = call_delta_eff
 result['TotalDelta_k_call'] = call_delta_cnst
 
-'''
-print('strike = ',strike,', option type : put')
-print('='*100)
-print("%10s %25s %25s %25s %25s" % ("Spot","delta_total","delta_eff","delta_constant_vol ","diff"))
-print('-'*100)
-
-option_put = OptionPlainEuropean(strike,maturitydt,ql.Option.Put)
-optionql_put = option_put.option_ql
-volSurface_put = SviVolSurface(date_ql,paramset_p,daycounter,calendar)
-svi_put = SviPricingModel(volSurface_put,underlying,daycounter,calendar,
-                          util.to_ql_dates(maturity_dates),ql.Option.Put,'50etf')
-vol_surface_put = svi_put.black_var_surface()
-
-put_delta_total = []
-put_delta_cnst = []
-put_delta_eff = []
-put_diff = []
-
-process = evaluation.get_bsmprocess(daycounter, underlying_ql, vol_surface_put)
-for spot in spot_range:
-    underlying_ql.setValue(spot)
-    engine = OptionEngine(process, engineType).engine
-    optionql_put.setPricingEngine(engine)
-    delta = optionql_put.delta()
-    # 全Delta
-    delta_total = svi_call.calculate_total_delta(evaluation,option_put,engineType,spot,spot*0.0001)
-    # Effective Delta
-    delta_eff = svi_call.calculate_effective_delta(evaluation,option_put,engineType,spot, dS)
-
-    delta1 = round(delta, 4)
-    delta_t1 = round(delta_total, 4)
-    delta_eff1 = round(delta_eff, 4)
-    put_delta_total.append(delta_total)
-    put_delta_cnst.append(delta)
-    put_delta_eff.append(delta_eff)
-    put_diff.append(delta_total-delta)
-    print("%10s %25s %25s %25s %25s" % (spot,delta_t1,delta_eff1,delta1,round(delta_total-delta,4)))
-print('='*100)
-
-
-result['TotalDelta_m_put'] = put_delta_total
-result['EffectiveDelta_m_put'] = put_delta_eff
-result['TotalDelta_k_put'] = put_delta_cnst
-#result['diff_put'] = put_diff
-#result.to_csv('delta_ql_50etf1.csv')
-'''
-
-result.to_csv('delta_barrier_do.csv')
+pu = PlotUtil()
+# strike = 2.4, barrier = 2.2/2.6
+f = pu.get_figure(list(spot_range),[call_barrierdelta,call_delta_cnst],[barrier_type,'plain vanilla call'],'spot','Delta')
+plt.show()
+f.savefig(barrier_type+'.png',dpi = 300,format='png')
+#result.to_csv('delta_barrier_do.csv')
