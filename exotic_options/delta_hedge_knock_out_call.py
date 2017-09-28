@@ -85,7 +85,7 @@ for barrier in barriers:
     barrierql = barrier_option.option_ql
     while l_date <= maturityDate:
         try:
-
+            print(l_date)
             c_date = calendar.advance(c_date, ql.Period(1, ql.Days))
             h_date = calendar.advance(c_date, ql.Period(1, ql.Days)) # hedge date
             l_date = calendar.advance(c_date, ql.Period(2, ql.Days)) # liquidation date
@@ -129,6 +129,7 @@ for barrier in barriers:
                 delta_binomial = barrierql.delta()
                 barrierql.setPricingEngine(ql.BinomialBarrierEngine(process_bs_h, 'crr', 801))
                 delta_bs = barrierql.delta()
+
             # Construct replicate portfolio
             cash_svi_h = optionprice_svi_h - delta_binomial * spot_h
             cash_bs_h = optionprice_bs_h - delta_bs*spot_h

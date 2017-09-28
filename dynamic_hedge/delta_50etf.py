@@ -107,7 +107,7 @@ result['TotalDelta_m_call'] = call_delta_total
 result['EffectiveDelta_m_call'] = call_delta_eff
 result['TotalDelta_k_call'] = call_delta_cnst
 
-'''
+
 print('strike = ',strike,', option type : put')
 print('='*100)
 print("%10s %25s %25s %25s %25s" % ("Spot","delta_total","delta_eff","delta_constant_vol ","diff"))
@@ -151,7 +151,7 @@ result['TotalDelta_m_put'] = put_delta_total
 result['EffectiveDelta_m_put'] = put_delta_eff
 result['TotalDelta_k_put'] = put_delta_cnst
 #result['diff_put'] = put_diff
-#result.to_csv('delta_ql_50etf1.csv')
-'''
+result.to_csv('delta_ql_50etf1.csv')
 
-result.to_csv('delta_barrier_do.csv')
+
+#result.to_csv('delta_barrier_do.csv')

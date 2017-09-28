@@ -208,51 +208,43 @@ def calculate_barrier_price(evaluation,barrier_option,hist_spots,process,engineT
     barrier_ql = barrier_option.option_ql
     exercise = barrier_option.exercise
     payoff = barrier_option.payoff
-    barrier_engine = OptionEngine(process,engineType).engine
-    european_engine = ql.AnalyticEuropeanEngine(process)
+    barrier_engine = ql.BinomialBarrierEngine(process, 'crr', 801)
+    european_engine = ql.BinomialVanillaEngine(process, 'crr', 801)
     barrier_ql.setPricingEngine(barrier_engine)
     option_ql = ql.EuropeanOption(payoff, exercise)
     option_ql.setPricingEngine(european_engine)
     # check if hist_spots hit the barrier
     if len(hist_spots) == 0:
-        try:
-            option_price = barrier_ql.NPV()
-        except:
-            return 0.0
+        option_price = barrier_ql.NPV()
+        option_delta = barrier_ql.delta()
     else:
         if barrierType == ql.Barrier.DownOut:
             if min(hist_spots) < barrier :
-                return 0.0
+                return 0.0,0.0
             else:
-                try:
-                    option_price = barrier_ql.NPV()
-                except:
-                    return 0.0
+                option_price = barrier_ql.NPV()
+                option_delta = barrier_ql.delta()
         elif barrierType == ql.Barrier.UpOut:
             if max(hist_spots) > barrier:
-                return 0.0
+                return 0.0,0.0
             else:
-                try:
-                    option_price = barrier_ql.NPV()
-                except:
-                    return 0.0
+                option_price = barrier_ql.NPV()
+                option_delta = barrier_ql.delta()
         elif barrierType == ql.Barrier.DownIn:
             if min(hist_spots) > barrier:
-                try:
-                    option_price = barrier_ql.NPV()
-                except:
-                    return 0.0
+                option_price = barrier_ql.NPV()
+                option_delta = barrier_ql.delta()
             else:
                 option_price =  option_ql.NPV()
+                option_delta = option_ql.delta()
         else:
             if max(hist_spots) < barrier:
-                try:
-                    option_price = barrier_ql.NPV()
-                except:
-                    return 0.0
+                option_price = barrier_ql.NPV()
+                option_delta = barrier_ql.delta()
             else:
                 option_price = option_ql.NPV()
+                option_delta = option_ql.delta()
     if math.isnan(option_price):
-        return 0.0
+        return 0.0,0.0
     else:
-        return option_price
+        return option_price,option_delta
