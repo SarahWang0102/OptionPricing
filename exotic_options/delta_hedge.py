@@ -44,12 +44,12 @@ fee = 0.6/100
 dt = 1.0/365
 rf = 0.03
 c, p, maturity_dates, S0, r = daily_svi_dataset.get(to_dt_date(begDate))
-maturity_date = maturity_dates[3]
+maturity_date = maturity_dates[1]
 maturitydt = to_ql_date(maturity_date)
 print(maturitydt)
 strike = S0
 print(S0)
-barrier = 2.33
+barrier = 2.34
 optionType = ql.Option.Call
 barrierType = ql.Barrier.DownIn
 contractType = '50etf'
@@ -95,11 +95,11 @@ price_bs, delta_bs = exotic_util.calculate_barrier_price(evaluation, optionBarri
 
 tradingcost_svi = delta_svi*spot*fee
 tradingcost_bs = delta_bs*spot*fee
-#cash_svi = price_svi - delta_svi*spot
-#cash_bs = price_bs - delta_bs*spot
+cash_svi = price_svi - delta_svi*spot
+cash_bs = price_bs - delta_bs*spot
 print('initial barrier option value : ',price_svi,price_bs)
-cash_svi = - delta_svi*spot
-cash_bs = - delta_bs*spot
+#cash_svi = - delta_svi*spot
+#cash_bs = - delta_bs*spot
 replicate_svi = delta_svi*spot + cash_svi
 replicate_bs = delta_bs*spot + cash_bs
 
@@ -153,8 +153,10 @@ while evalDate < maturitydt:
         price_bs = last_price_bs
         delta_svi = last_delta_svi
         delta_bs = last_delta_bs
-    #if evalDate == maturitydt or price_svi == 0.0:
+    if evalDate == maturitydt or price_svi == 0.0:
         # 复制组合清仓
+        delta_svi = 0.0
+        delta_bs = 0.0
         #continue
 
     cash_svi = cash_svi*math.exp(rf * dt)
@@ -200,15 +202,15 @@ while evalDate < maturitydt:
     cont_optionprice_bs.append(price_bs)
     cont_pnl_svi.append(pnl_svi)
     cont_pnl_bs.append(pnl_bs)
-    #cont_spot.append(spot)
+    cont_spot.append(spot)
 
     last_spot = spot
     spot, black_var_surface, const_vol = get_vol_data(evalDate,daycounter,calendar,contractType)
     hist_spots.append(spot)
     underlying.setValue(spot)
-    cont_spot.append(spot)
+    #cont_spot.append(spot)
 print("=" * 120)
-print("%15s %15s %15s %15s %15s %15s %15s %15s %15s" % ("spot","hedgeerror_svi","hedgeerror_bs",
+print("%15s %15s %15s %15s %15s %15s %15s %15s %15s" % ("last close","hedgeerror_svi","hedgeerror_bs",
                                                                 "delta_svi","delta_bs",
                                                                 "optionprice","pnl_svi",
                                                            "pnl_bs",""))

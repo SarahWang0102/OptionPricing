@@ -26,8 +26,8 @@ np.random.seed()
 w.start()
 
 #begDate = ql.Date(15, 7, 2017)
-begDate = ql.Date(1, 9, 2015)
-endDate = ql.Date(20, 7, 2017)
+begDate = ql.Date(23, 3, 2017)
+endDate = ql.Date(20, 8, 2017)
 calendar = ql.China()
 daycounter = ql.ActualActual()
 
@@ -39,9 +39,9 @@ daily_svi_dataset = {}
 dates = []
 count = 0
 while evalDate <= endDate:
-    print('Start : ', evalDate)
-
+    #print('Start : ', evalDate)
     evalDate = calendar.advance(evalDate, ql.Period(1, ql.Days))
+    print('Start : ', evalDate)
     ql.Settings.instance().evaluationDate = evalDate
     try:
         cal_vols, put_vols, expiration_dates, spot, curve = svi_data.get_call_put_impliedVols_tbcurve(
@@ -50,7 +50,8 @@ while evalDate <= endDate:
         data_months = svi_util.orgnize_data_for_optimization_single_optiontype(
             evalDate, daycounter, cal_vols, expiration_dates, spot,curve,ql.Option.Call)
         #print(data_months)
-    except:
+    except Exception as e:
+        print(e)
         continue
     key_date = datetime.date(evalDate.year(), evalDate.month(), evalDate.dayOfMonth())
     maturity_dates = to_dt_dates(expiration_dates)
@@ -69,27 +70,37 @@ while evalDate <= endDate:
         logMoneynesses = data[0]
         totalvariance = data[1]
         expiration_date = data[2]
+        vol = data[3]
+        strikes = data[4]
+        #print('strikes : ',strikes)
+        #print('vols : ', vol)
         ttm = daycounter.yearFraction(evalDate, expiration_date)
-        params = svi_util.get_svi_optimal_params(data, ttm, 50)
+        params = svi_util.get_svi_optimal_params(data, ttm, 10)
+        print(params)
+        params_months.append(params)
 
-        a_star, b_star, rho_star, m_star, sigma_star = params
-        x_svi = np.arange(min(logMoneynesses) - 0.005, max(logMoneynesses) + 0.02, 0.1 / 100)  # log_forward_moneyness
-        tv_svi2 = np.multiply(
-                a_star + b_star * (rho_star * (x_svi - m_star) + np.sqrt((x_svi - m_star) ** 2 + sigma_star ** 2)), ttm)
-
+        #a_star, b_star, rho_star, m_star, sigma_star = params
+        #x_svi = np.arange(min(logMoneynesses) - 0.005, max(logMoneynesses) + 0.02, 0.1 / 100)  # log_forward_moneyness
+        #tv_svi2 = np.multiply(
+        #        a_star + b_star * (rho_star * (x_svi - m_star) + np.sqrt((x_svi - m_star) ** 2 + sigma_star ** 2)), ttm)
+        #vol_svi = np.sqrt(
+        #    a_star + b_star * (rho_star * (x_svi - m_star) + np.sqrt((x_svi - m_star) ** 2 + sigma_star ** 2)))
+        #plt.figure()
+        #plt.plot(logMoneynesses, vol, 'ro')
+        #plt.plot(x_svi, vol_svi, 'b--')
+        #plt.title('vol,' + str(evalDate) + ',' + str(i))
+        #plt.figure()
         #plt.plot(logMoneynesses, totalvariance, 'ro')
         #plt.plot(x_svi, tv_svi2, 'b--')
-        #plt.title(str(evalDate)+','+str(i))
-        params_months.append(params)
+        #plt.title('tv, '+str(evalDate)+','+str(i))
         #plt.show()
     count += 1
     daily_params.update({key_date:params_months})
     dates.append(key_date)
+    #print(daily_params)
     print('Finished : ',evalDate)
-    print(params_months[0])
-    print(params_months[1])
-    print(params_months[2])
-    print(params_months[3])
+
+
 
 
 #print(daily_params)
@@ -99,11 +110,11 @@ print('daily_params = ',daily_params)
 print('daily_svi_dataset = ',daily_svi_dataset)
 print('dates = ', dates)
 
-with open(os.path.abspath('..')+'/intermediate_data/total_hedging_daily_params_calls_nobnd.pickle','wb') as f:
+with open(os.path.abspath('..')+'/intermediate_data/total_hedging_daily_params_calls.pickle','wb') as f:
     pickle.dump([daily_params],f)
-with open(os.path.abspath('..')+'/intermediate_data/total_hedging_dates_calls_nobnd.pickle','wb') as f:
+with open(os.path.abspath('..')+'/intermediate_data/total_hedging_dates_calls.pickle','wb') as f:
     pickle.dump([dates],f)
-with open(os.path.abspath('..')+'/intermediate_data/total_hedging_daily_svi_dataset_calls_nobnd.pickle','wb') as f:
+with open(os.path.abspath('..')+'/intermediate_data/total_hedging_daily_svi_dataset_calls.pickle','wb') as f:
     pickle.dump([daily_svi_dataset],f)
 
 

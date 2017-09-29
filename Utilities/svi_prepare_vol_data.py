@@ -179,8 +179,9 @@ def get_call_put_impliedVols_tbcurve(
         expiration_dates = [e_date0,e_date1,e_date2,e_date3]
         cal_vols = [call_volatilities_0,call_volatilities_1,call_volatilities_2,call_volatilities_3]
         put_vols = [put_volatilites_0,put_volatilites_1,put_volatilites_2,put_volatilites_3]
-    except:
+    except Exception as e:
         print('Error -- get_call_put_impliedVols failed')
+        print(e)
         return
     return cal_vols,put_vols,expiration_dates,spot,curve
 

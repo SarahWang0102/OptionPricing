@@ -235,23 +235,26 @@ def get_curve_treasury_bond(evalDate, daycounter):
 
 
 def get_contract_months(evalDate):
-    if evalDate.month() == 12:
+    month = evalDate.month()
+    if evalDate == ql.China().endOfMonth(evalDate):
+        month += 1
+    if month == 12:
         m2 = 1
     else:
-        m2 = evalDate.month() + 1
-    if evalDate.month() in [11,12,1]:
+        m2 = month + 1
+    if month in [11,12,1]:
         m3 = 3
         m4 = 6
-    elif evalDate.month() in [2,3,4]:
+    elif month in [2,3,4]:
         m3 = 6
         m4 = 9
-    elif evalDate.month() in [5,6,7]:
+    elif month in [5,6,7]:
         m3 = 9
         m4 = 12
     else:
         m3 = 12
         m4 = 3
-    month_indexs = [evalDate.month(), m2, m3, m4]
+    month_indexs = [month, m2, m3, m4]
     return month_indexs
 
 # w.start()

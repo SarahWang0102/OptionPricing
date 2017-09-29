@@ -83,11 +83,11 @@ while evalDate <= endDate:
         tv_svi2 = np.multiply(
                 a_star + b_star * (rho_star * (x_svi - m_star) + np.sqrt((x_svi - m_star) ** 2 + sigma_star ** 2)), ttm)
 
-        #plt.plot(logMoneynesses, totalvariance, 'ro')
-        #plt.plot(x_svi, tv_svi2, 'b--')
-        #plt.title(str(evalDate)+','+str(nbr_month))
+        plt.plot(logMoneynesses, totalvariance, 'ro')
+        plt.plot(x_svi, tv_svi2, 'b--')
+        plt.title(str(evalDate)+','+str(nbr_month))
         params_months.update({contractId:params})
-        #plt.show()
+        plt.show()
     count += 1
     daily_params.update({key_date:params_months})
     dates.append(key_date)
