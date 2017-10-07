@@ -63,7 +63,7 @@ while evalDate <= endDate:
     dividend_ts = ql.YieldTermStructureHandle(ql.FlatForward(evalDate, 0.0, daycounter))
     month_indexs = wind_data.get_contract_months(evalDate)
     params_months = []
-   # plt.figure(count)
+    plt.figure(count)
     for i in range(4):
         nbr_month = month_indexs[i]
         data = data_months.get(i)
@@ -79,21 +79,21 @@ while evalDate <= endDate:
         print(params)
         params_months.append(params)
 
-        #a_star, b_star, rho_star, m_star, sigma_star = params
-        #x_svi = np.arange(min(logMoneynesses) - 0.005, max(logMoneynesses) + 0.02, 0.1 / 100)  # log_forward_moneyness
-        #tv_svi2 = np.multiply(
-        #        a_star + b_star * (rho_star * (x_svi - m_star) + np.sqrt((x_svi - m_star) ** 2 + sigma_star ** 2)), ttm)
-        #vol_svi = np.sqrt(
-        #    a_star + b_star * (rho_star * (x_svi - m_star) + np.sqrt((x_svi - m_star) ** 2 + sigma_star ** 2)))
-        #plt.figure()
-        #plt.plot(logMoneynesses, vol, 'ro')
-        #plt.plot(x_svi, vol_svi, 'b--')
-        #plt.title('vol,' + str(evalDate) + ',' + str(i))
+        a_star, b_star, rho_star, m_star, sigma_star = params
+        x_svi = np.arange(min(logMoneynesses) - 0.005, max(logMoneynesses) + 0.02, 0.1 / 100)  # log_forward_moneyness
+        tv_svi2 = np.multiply(
+                a_star + b_star * (rho_star * (x_svi - m_star) + np.sqrt((x_svi - m_star) ** 2 + sigma_star ** 2)), ttm)
+        vol_svi = np.sqrt(
+            a_star + b_star * (rho_star * (x_svi - m_star) + np.sqrt((x_svi - m_star) ** 2 + sigma_star ** 2)))
+        plt.figure()
+        plt.plot(logMoneynesses, vol, 'ro')
+        plt.plot(x_svi, vol_svi, 'b--')
+        plt.title('vol,' + str(evalDate) + ',' + str(i))
         #plt.figure()
         #plt.plot(logMoneynesses, totalvariance, 'ro')
         #plt.plot(x_svi, tv_svi2, 'b--')
         #plt.title('tv, '+str(evalDate)+','+str(i))
-        #plt.show()
+        plt.show()
     count += 1
     daily_params.update({key_date:params_months})
     dates.append(key_date)
