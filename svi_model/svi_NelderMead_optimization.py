@@ -28,15 +28,15 @@ class SVI_NelderMeadOptimization:
         # Constraints: 0 <= c <=4sigma; |d| <= c and |d| <= 4sigma - c; 0 <= a <= max{vi}
         #print("m",m,";\tsigma",sigma)
         #bnds = ((1e-10,max(self.data[1])),(-4*sigma,4*sigma),(0, 4*sigma))
-        bnds = ((-1, max(self.data[1])), (-4 * sigma, 4 * sigma), (0, 4 * sigma))
-        #bnds = ((None, None), (-4 * sigma, 4 * sigma), (0, 4 * sigma))
+        #bnds = ((-1, max(self.data[1])), (-4 * sigma, 4 * sigma), (0, 4 * sigma))
+        bnds = ((None, None), (-4 * sigma, 4 * sigma), (0, 4 * sigma))
         b = np.array(bnds,float)
         cons = (
             {'type':'ineq','fun': lambda x: x[2] - abs(x[1])},
             {'type':'ineq','fun': lambda x: 4*sigma - x[2] - abs(x[1])}
         )
-        #inner_res = minimize(inner_fun,adc_0,method='SLSQP',bounds = bnds,constraints=cons, tol=1e-6)
-        inner_res = minimize(inner_fun, adc_0, method='SLSQP', tol=1e-6)
+        inner_res = minimize(inner_fun,adc_0,method='SLSQP',bounds = bnds,constraints=cons, tol=1e-6)
+        #inner_res = minimize(inner_fun, adc_0, method='SLSQP', tol=1e-6)
         a_star,d_star,c_star = inner_res.x
         #global _a_star,_d_star,_c_star
         self._a_star, self._d_star, self._c_star = inner_res.x
