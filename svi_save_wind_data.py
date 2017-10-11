@@ -4,7 +4,7 @@ import os
 import QuantLib as ql
 import numpy as np
 
-def save_optionsinfo():
+def save_optionsinfo(evalDate):
     # 50ETF currently trading contracts
     optioncontractbasicinfo = w.wset("optioncontractbasicinfo",
                                      "exchange=sse;windcode=510050.SH;status=all;field=wind_"
@@ -79,20 +79,17 @@ def save_ts_data(evalDate,endDate,daycounter,calendar):
         except:
             save_curve_treasury_bond(evalDate,daycounter)
 
-'''
+
 w.start()
-#save_underlying_ts(ql.Date(1,1,2015),ql.Date(30,9,2017))
+#save_underlying_ts(ql.Date(1,1,2015),ql.Date(20,7,2017))
 #spot = pd.read_pickle(os.getcwd()+'\marketdata\spotclose' +'.pkl')
 #print(spot)
-
 begDate = ql.Date(20, 7, 2017)
 #begDate = ql.Date(10, 7, 2017)
 endDate = ql.Date(30, 9, 2017)
 calendar = ql.China()
 daycounter = ql.ActualActual()
 evalDate = begDate
-
-save_optionsinfo()
 
 while evalDate <= endDate:
     evalDate = calendar.advance(evalDate, ql.Period(1, ql.Days))
@@ -101,28 +98,27 @@ while evalDate <= endDate:
     #print(os.getcwd())
 
     try:
-        optionmkt = pd.read_json(os.path.abspath('..') + '\marketdata\optionmkt_' + datestr + '.json')
+        optionmkt = pd.read_json(os.getcwd() + '\marketdata\optionmkt_' + datestr + '.json')
     except :
         save_optionmkt(evalDate)
-        optionmkt = pd.read_json(os.path.abspath('..') + '\marketdata\optionmkt_' + datestr + '.json')
+        optionmkt = pd.read_json(os.getcwd() + '\marketdata\optionmkt_' + datestr + '.json')
 
     #print(optionmkt.index)
     #print(optionmkt.values)
 
 
     try:
-        optioncontractbasicinfo = pd.read_json(os.path.abspath('..') +'\marketdata\optioncontractbasicinfo' + '.json')
+        optioncontractbasicinfo = pd.read_json(os.getcwd() +'\marketdata\optioncontractbasicinfo' + '.json')
     except:
         save_optionsinfo(evalDate)
-        optioncontractbasicinfo = pd.read_json(os.path.abspath('..') +'\marketdata\optioncontractbasicinfo' + '.json')
+        optioncontractbasicinfo = pd.read_json(os.getcwd() +'\marketdata\optioncontractbasicinfo' + '.json')
 
     try:
-        curvedata = pd.read_json(os.path.abspath('..') +'\marketdata\curvedata_tb_' + datestr + '.json')
+        curvedata = pd.read_json(os.getcwd() +'\marketdata\curvedata_tb_' + datestr + '.json')
     except :
         save_curve_treasury_bond(evalDate,daycounter)
-        curvedata = pd.read_json(os.path.abspath('..') +'\marketdata\curvedata_tb_' + datestr + '.json')
+        curvedata = pd.read_json(os.getcwd() +'\marketdata\curvedata_tb_' + datestr + '.json')
     #rates = curvedata.values[0]
     #print(rates)
     #krates = np.divide(rates, 100)
     #print(krates)
-    '''
