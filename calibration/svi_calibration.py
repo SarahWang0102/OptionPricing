@@ -10,8 +10,8 @@ import numpy as np
 import datetime
 
 
-evalDate = ql.Date(24, 3, 2017)
-endDate = ql.Date(20, 8, 2017)
+evalDate = ql.Date(24, 3, 2016)
+endDate = ql.Date(20, 8, 2016)
 calendar = ql.China()
 daycounter = ql.ActualActual()
 
@@ -29,6 +29,7 @@ while evalDate <= endDate:
     for optionid in optionids:
         optionDataIdx = optionData[optionFlds.index('wind_code')].index(optionid)
         if optionData[optionFlds.index('call_or_put')][optionDataIdx] == '认购':
+        #if optionData[optionFlds.index('call_or_put')][optionDataIdx] == '认沽':
             temp = pd.to_datetime(optionData[optionFlds.index('exercise_date')][optionDataIdx])
             mdate = datetime.date(temp.year,temp.month,temp.day)
             maturitydt = ql.Date(mdate.day, mdate.month, mdate.year)
