@@ -10,8 +10,9 @@ import numpy as np
 import datetime
 
 
-evalDate = ql.Date(24, 3, 2016)
-endDate = ql.Date(20, 8, 2016)
+
+evalDate = ql.Date(3, 8, 2017)
+endDate = ql.Date(20, 8, 2017)
 calendar = ql.China()
 daycounter = ql.ActualActual()
 
@@ -19,9 +20,11 @@ calibrered_params_ts = {}
 while evalDate <= endDate:
     evalDate = calendar.advance(evalDate, ql.Period(1, ql.Days))
     ql.Settings.instance().evaluationDate = evalDate
-
-    curve = get_curve_treasury_bond(evalDate, daycounter)
-    vols, spot, mktData, mktFlds, optionData, optionFlds, optionids = get_wind_data(evalDate)
+    try:
+        curve = get_curve_treasury_bond(evalDate, daycounter)
+        vols, spot, mktData, mktFlds, optionData, optionFlds, optionids = get_wind_data(evalDate)
+    except:
+        continue
     yield_ts = ql.YieldTermStructureHandle(curve)
     dividend_ts = ql.YieldTermStructureHandle(ql.FlatForward(evalDate, 0.0, daycounter))
 
