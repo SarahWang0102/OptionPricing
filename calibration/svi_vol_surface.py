@@ -13,7 +13,7 @@ from pricing_options.SviVolSurface import SviVolSurface
 from matplotlib import cm
 from mpl_toolkits.mplot3d import Axes3D
 
-evalDate = ql.Date(3, 8, 2017)
+evalDate = ql.Date(22, 8, 2017)
 endDate = ql.Date(20, 8, 2017)
 calendar = ql.China()
 daycounter = ql.ActualActual()
@@ -35,11 +35,13 @@ for optionid in optionids:
         maturitydt = ql.Date(mdate.day, mdate.month, mdate.year)
         mktindex = mktData[mktFlds.index('option_code')].index(optionid)
         strike = optionData[optionFlds.index('exercise_price')][optionDataIdx]
-        print(strike)
+        print(maturitydt)
         close = mktData[mktFlds.index('close')][mktindex]
         open = mktData[mktFlds.index('open')][mktindex]
         ttm = daycounter.yearFraction(evalDate, maturitydt)
+        print(ttm)
         rf = curve.zeroRate(maturitydt, daycounter, ql.Continuous).rate()
+        print(rf)
         Ft = spot * math.exp(rf * ttm)
         moneyness = math.log(strike / Ft, math.e)
         optiontype = ql.Option.Call
@@ -101,12 +103,7 @@ plot_strikes = np.arange(2.2, 2.85, 0.03)
 fig = plt.figure()
 ax = fig.gca(projection='3d')
 X, Y = np.meshgrid(plot_strikes, plot_years)
-'''
-Z = np.array([local_vol_surface.localVol(y, x)
-              for xr, yr in zip(X, Y)
-                  for x, y in zip(xr,yr) ]
-             ).reshape(len(X), len(X[0]))
-'''
+
 Z = np.array([black_var_surface.blackVol(y, x)
               for xr, yr in zip(X, Y)
                   for x, y in zip(xr,yr) ]

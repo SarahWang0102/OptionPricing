@@ -78,10 +78,10 @@ def save_ts_data(evalDate,endDate,daycounter,calendar):
             curvedata = pd.read_json(os.path.abspath('..') + '\marketdata\curvedata_tb_' + datestr + '.json')
         except:
             save_curve_treasury_bond(evalDate,daycounter)
-
 '''
+
 w.start()
-#save_underlying_ts(ql.Date(1,1,2015),ql.Date(30,9,2017))
+save_underlying_ts(ql.Date(1,1,2015),ql.Date(30,9,2017))
 #spot = pd.read_pickle(os.getcwd()+'\marketdata\spotclose' +'.pkl')
 #print(spot)
 
@@ -110,11 +110,11 @@ while evalDate <= endDate:
     #print(optionmkt.values)
 
 
-    try:
-        optioncontractbasicinfo = pd.read_json(os.path.abspath('..') +'\marketdata\optioncontractbasicinfo' + '.json')
-    except:
-        save_optionsinfo(evalDate)
-        optioncontractbasicinfo = pd.read_json(os.path.abspath('..') +'\marketdata\optioncontractbasicinfo' + '.json')
+    #try:
+    #    optioncontractbasicinfo = pd.read_json(os.path.abspath('..') +'\marketdata\optioncontractbasicinfo' + '.json')
+    #except:
+    save_optionsinfo()
+        #optioncontractbasicinfo = pd.read_json(os.path.abspath('..') +'\marketdata\optioncontractbasicinfo' + '.json')
 
     try:
         curvedata = pd.read_json(os.path.abspath('..') +'\marketdata\curvedata_tb_' + datestr + '.json')
@@ -125,4 +125,5 @@ while evalDate <= endDate:
     #print(rates)
     #krates = np.divide(rates, 100)
     #print(krates)
-    '''
+
+'''

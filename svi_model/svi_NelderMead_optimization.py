@@ -27,8 +27,8 @@ class SVI_NelderMeadOptimization:
         #print(m,sigma)
         # Constraints: 0 <= c <=4sigma; |d| <= c and |d| <= 4sigma - c; 0 <= a <= max{vi}
         #print("m",m,";\tsigma",sigma)
-        bnds = ((1e-10,max(self.data[1])),(-4*sigma,4*sigma),(0, 4*sigma))
-        #bnds = ((-1, max(self.data[1])), (-4 * sigma, 4 * sigma), (0, 4 * sigma))
+        #bnds = ((1e-10,max(self.data[1])),(-4*sigma,4*sigma),(0, 4*sigma))
+        bnds = ((-1, max(self.data[1])), (-4 * sigma, 4 * sigma), (0, 4 * sigma))
         #bnds = ((None, None), (-4 * sigma, 4 * sigma), (0, 4 * sigma))
         b = np.array(bnds,float)
         cons = (

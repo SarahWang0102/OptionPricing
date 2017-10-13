@@ -219,7 +219,7 @@ def get_curve_treasury_bond(evalDate, daycounter):
         curvedata = pd.read_json(os.path.abspath('..') + '\marketdata\curvedata_tb_' + datestr + '.json')
         rates = curvedata.values[0]
         calendar = ql.China()
-        dates = [calendar.advance(evalDate, ql.Period(1, ql.Days)),
+        dates = [evalDate,
                  calendar.advance(evalDate, ql.Period(1, ql.Months)),
                  calendar.advance(evalDate, ql.Period(3, ql.Months)),
                  calendar.advance(evalDate, ql.Period(6, ql.Months)),
