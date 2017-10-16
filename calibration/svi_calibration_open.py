@@ -1,4 +1,4 @@
-from Utilities.svi_read_data import get_wind_data
+from Utilities.svi_read_data import get_wind_data,get_wind_data2
 from Utilities.svi_prepare_vol_data import calculate_vol_BS
 from calibration.SviCalibrationInput import SviInputSet
 import Utilities.svi_calibration_utility as svi_util
@@ -28,12 +28,12 @@ while evalDate <= endDate:
     print(evalDate)
     try:
         curve = get_curve_treasury_bond(evalDate, daycounter)
-        vols, spot, mktData, mktFlds, optionData, optionFlds, optionids = get_wind_data(evalDate)
+        vols, spot_open,spot_close, mktData, mktFlds, optionData, optionFlds, optionids = get_wind_data2(evalDate)
     except:
         continue
     yield_ts = ql.YieldTermStructureHandle(curve)
     dividend_ts = ql.YieldTermStructureHandle(ql.FlatForward(evalDate, 0.0, daycounter))
-
+    spot = spot_open
     svi_data = SviInputSet(to_dt_date(evalDate),spot)
     for optionid in optionids:
         optionDataIdx = optionData[optionFlds.index('wind_code')].index(optionid)
@@ -91,16 +91,18 @@ while evalDate <= endDate:
             a_star + b_star*(rho_star*(x_svi-m_star)+np.sqrt((x_svi - m_star)**2 + sigma_star**2)), ttm)
         vol_svi = np.sqrt(
             a_star + b_star*(rho_star*(x_svi-m_star) + np.sqrt((x_svi - m_star)**2 + sigma_star**2)))
+        '''
         plt.figure()
         plt.plot(logMoneynesses, vol, 'ro')
         plt.plot(x_svi, vol_svi, 'b--')
         plt.title('vol, '+str(evalDate)+', '+str(mdate))
-        plt.figure(count)
+        plt.figure()
         count += 1
         plt.plot(logMoneynesses, totalvariance, 'ro')
         plt.plot(x_svi, tv_svi, 'b--')
         plt.title('tv, '+str(evalDate)+', '+str(mdate))
     plt.show()
+    '''
     print(calibrered_params)
     calibrered_params_ts.update({to_dt_date(evalDate):calibrered_params})
 print('calibrered_params_ts',calibrered_params_ts)
@@ -108,7 +110,7 @@ with open(os.path.abspath('..')+'/intermediate_data/svi_calibration_50etf_calls_
     pickle.dump([calibrered_params_ts],f)
 
 print('svi',svi_dataset)
-with open(os.path.abspath('..')+'/intermediate_data/svi_dataset_50etf_calls_noZeroVol.pickle','wb') as f:
+with open(os.path.abspath('..')+'/intermediate_data/svi_dataset_50etf_calls_noZeroVol_open.pickle','wb') as f:
     pickle.dump([svi_dataset],f)
 
 

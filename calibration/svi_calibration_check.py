@@ -11,13 +11,13 @@ import datetime
 import os
 import pickle
 
-with open(os.path.abspath('..')+'/intermediate_data/svi_calibration_50etf_calls_noZeroVol.pickle','rb') as f:
+with open(os.path.abspath('..')+'/intermediate_data/svi_calibration_50etf_calls_noZeroVol_open.pickle','rb') as f:
     calibrered_params_ts = pickle.load(f)[0]
-with open(os.path.abspath('..')+'/intermediate_data/svi_dataset_50etf_calls_noZeroVol.pickle','rb') as f:
+with open(os.path.abspath('..')+'/intermediate_data/svi_dataset_50etf_calls_noZeroVol_open.pickle','rb') as f:
     svi_dataset = pickle.load(f)[0]
 
 
-evalDate = ql.Date(31, 7, 2017)
+evalDate = ql.Date(25, 8, 2017)
 #evalDate = ql.Date(28, 9, 2017)
 endDate = ql.Date(29, 9, 2017)
 calendar = ql.China()

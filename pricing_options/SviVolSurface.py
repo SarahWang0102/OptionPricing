@@ -29,9 +29,9 @@ class SviVolSurface:
     def get_black_var_surface_50etf(self,spot, dS = 0.0,strikes=np.arange(1.0, 5.0, 0.1 / 100)):
         volset = []
         maturity_dates = self.calibrated_params.keys()
-        print(maturity_dates)
+        #print(maturity_dates)
         maturity_dates = sorted(maturity_dates)
-        print(maturity_dates)
+        #print(maturity_dates)
         for mdt in maturity_dates:
             params = self.calibrated_params.get(mdt)
             a_star, b_star, rho_star, m_star, sigma_star = params

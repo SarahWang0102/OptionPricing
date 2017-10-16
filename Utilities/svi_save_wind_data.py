@@ -62,6 +62,14 @@ def save_underlying_ts(evalDate,endDate):
     df.to_json(os.path.abspath('..') + '\marketdata\spotclose' + '.json')
     return underlyingdata.ErrorCode
 
+def save_underlying_open_ts(evalDate,endDate):
+    evalDate_str    = str(evalDate.year()) + "-" + str(evalDate.month()) + "-" + str(evalDate.dayOfMonth())
+    endDate_str     = str(endDate.year()) + "-" + str(endDate.month()) + "-" + str(endDate.dayOfMonth())
+    underlyingdata  = w.wsd("510050.SH", "open", evalDate_str, endDate_str, "Fill=Previous;PriceAdj=F")
+    df              = pd.DataFrame(data=underlyingdata.Data[0], index=underlyingdata.Times)
+    df.to_json(os.path.abspath('..') + '\marketdata\spotopen' + '.json')
+    return underlyingdata.ErrorCode
+
 def save_ts_data(evalDate,endDate,daycounter,calendar):
     while(evalDate < endDate):
         evalDate = calendar.advance(evalDate, ql.Period(1, ql.Days))
@@ -69,7 +77,7 @@ def save_ts_data(evalDate,endDate,daycounter,calendar):
         try:
             optioncontractbasicinfo = pd.read_json(os.path.abspath('..') + '\marketdata\optioncontractbasicinfo' + '.json')
         except:
-            save_optionsinfo(evalDate)
+            save_optionsinfo()
         try:
             optionmkt = pd.read_json(os.path.abspath('..')+ '\marketdata\optionmkt_' + datestr + '.json')
         except:
@@ -78,12 +86,12 @@ def save_ts_data(evalDate,endDate,daycounter,calendar):
             curvedata = pd.read_json(os.path.abspath('..') + '\marketdata\curvedata_tb_' + datestr + '.json')
         except:
             save_curve_treasury_bond(evalDate,daycounter)
-'''
 
+'''
 w.start()
-save_underlying_ts(ql.Date(1,1,2015),ql.Date(30,9,2017))
-#spot = pd.read_pickle(os.getcwd()+'\marketdata\spotclose' +'.pkl')
-#print(spot)
+save_underlying_open_ts(ql.Date(1,6,2017),ql.Date(30,9,2017))
+spot = pd.read_json(os.path.abspath('..')+'\marketdata\spotopen' +'.json')
+print(spot)
 
 begDate = ql.Date(20, 7, 2017)
 #begDate = ql.Date(10, 7, 2017)
