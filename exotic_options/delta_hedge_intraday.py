@@ -23,14 +23,14 @@ def get_vol_data(evalDate,daycounter,calendar,contractType):
     return spot, black_var_surface, const_vol
 
 
-with open(os.path.abspath('..')+'/intermediate_data/svi_calibration_50etf_calls_noZeroVol_open.pickle','rb') as f:
+with open(os.path.abspath('..')+'/intermediate_data/svi_calibration_50etf_calls_noZeroVol.pickle','rb') as f:
     calibrered_params_ts = pickle.load(f)[0]
-with open(os.path.abspath('..')+'/intermediate_data/svi_dataset_50etf_calls_noZeroVol_open.pickle','rb') as f:
+with open(os.path.abspath('..')+'/intermediate_data/svi_dataset_50etf_calls_noZeroVol.pickle','rb') as f:
     svi_dataset = pickle.load(f)[0]
 with open(os.path.abspath('..') +'/intermediate_data/total_hedging_bs_estimated_vols.pickle','rb') as f:
     estimated_vols = pickle.load(f)[0]
-intraday_etf = pd.read_json(os.path.abspath('..') + '\marketdata\sintraday_etf_2017-08-28' + '.json')
-print(intraday_etf)
+intraday_etf = pd.read_json(os.path.abspath('..') + '\marketdata\intraday_etf_2017-08-28' + '.json')
+#print(intraday_etf)
 timestamps = list(intraday_etf.index)
 
 evalDate = ql.Date(28,8,2017)
@@ -44,11 +44,18 @@ rf = 0.03
 #c, p, maturity_dates, S0, r = daily_svi_dataset.get(to_dt_date(begDate))
 maturitydt = ql.Date(27,9,2017)
 #print(maturitydt)
-strike = 2.3
+barrier =  2.81
+strike =  2.75
+cash_svi =  0.04621701830367859
+cash_bs =  0.03427679513349334
+price_svi =  0.0010942761186805224
+price_bs =  0.0007716880768042928
+delta_svi =  -0.016135143611148525
+delta_bs =  -0.01207675453899006
 #print(S0)
-barrier = 2.81
+
 optionType = ql.Option.Call
-barrierType = ql.Barrier.UpIn
+barrierType = ql.Barrier.UpOut
 contractType = '50etf'
 engineType = 'BinomialBarrierEngine'
 
@@ -76,8 +83,12 @@ cont_optionprice_bs = []
 cont_spot = []
 cont_pnl_svi = []
 cont_pnl_bs = []
+cont_cash_svi = []
+cont_cash_bs = []
 # Calibration
+# 开盘拟合曲线
 spot, black_var_surface, const_vol = get_vol_data(lastDate,daycounter,calendar,contractType)
+#s, x, const_vol = get_vol_data(lastDate,daycounter,calendar,contractType)
 ttm = daycounter.yearFraction(evalDate, maturitydt)
 Ft = spot * math.exp(rf*ttm)
 moneyness = math.log(strike/Ft, math.e)
@@ -90,21 +101,14 @@ underlying = ql.SimpleQuote(spot)
 # Contract Hedge Portfolio
 process_svi_h = evaluation.get_bsmprocess(daycounter, underlying, black_var_surface)
 process_bs_h = evaluation.get_bsmprocess_cnstvol(daycounter, calendar, underlying, const_vol)
-price_svi, delta_svi = exotic_util.calculate_barrier_price(evaluation, optionBarrierEuropean, hist_spots,
-                                                           process_svi_h, engineType)
-price_bs, delta_bs = exotic_util.calculate_barrier_price(evaluation, optionBarrierEuropean, hist_spots,
-                                                         process_bs_h, engineType)
+#price_svi, delta_svi = exotic_util.calculate_barrier_price(evaluation, optionBarrierEuropean, hist_spots,
+#                                                           process_svi_h, engineType)
+#price_bs, delta_bs = exotic_util.calculate_barrier_price(evaluation, optionBarrierEuropean, hist_spots,
+#                                                         process_bs_h, engineType)
 
 
-tradingcost_svi = delta_svi*spot*fee
-tradingcost_bs = delta_bs*spot*fee
-cash_svi = price_svi - delta_svi*spot - tradingcost_svi
-cash_bs = price_bs - delta_bs*spot - tradingcost_bs
-print('initial barrier option value : ',price_svi,price_bs)
-#cash_svi = - delta_svi*spot
-#cash_bs = - delta_bs*spot
-replicate_svi = delta_svi*spot + cash_svi
-replicate_bs = delta_bs*spot + cash_bs
+#print('initial barrier option value : ',price_svi,price_bs)
+
 
 last_delta_svi = delta_svi
 last_delta_bs = delta_bs
@@ -118,10 +122,10 @@ cont_delta_svi.append(delta_svi)
 cont_delta_bs.append(delta_bs)
 cont_dholding_svi.append(delta_svi)
 cont_dholding_bs.append(delta_bs)
-cont_tradingcost_svi.append(tradingcost_svi)
-cont_tradingcost_bs.append(tradingcost_bs)
-cont_replicate_svi.append(replicate_svi)
-cont_replicate_bs.append(replicate_bs)
+cont_tradingcost_svi.append(0.0)
+cont_tradingcost_bs.append(0.0)
+cont_replicate_svi.append(0.0)
+cont_replicate_bs.append(0.0)
 cont_optionprice_svi.append(price_svi)
 cont_optionprice_bs.append(price_bs)
 cont_hedgeerror_svi.append(0.0)
@@ -129,17 +133,23 @@ cont_hedgeerror_bs.append(0.0)
 cont_pnl_svi.append(last_pnl_svi)
 cont_pnl_bs.append(last_pnl_bs)
 eval_dates.append('2017-8-28 开盘')
+cont_cash_svi.append(cash_svi)
+cont_cash_bs.append(cash_bs)
 
 hist_spots.append(spot)
 cont_spot.append(spot)
 
-
+ttm = daycounter.yearFraction(evalDate,maturitydt)
+print(black_var_surface.blackVol(ttm,strike))
 # Rebalancing
-for idx,spotlist in enumerate(intraday_etf.values):
-    spot = spotlist[0]
+
+#for idx,spotlist in enumerate(intraday_etf.values):
+for idx in range(len(intraday_etf.values)):
+    spot = intraday_etf.values[idx][0]
     underlying.setValue(spot)
     process_svi_h = evaluation.get_bsmprocess(daycounter, underlying, black_var_surface)
     process_bs_h = evaluation.get_bsmprocess_cnstvol(daycounter, calendar, underlying, const_vol)
+
     barrier_option.setPricingEngine(ql.BinomialBarrierEngine(process_svi_h, 'crr', 801))
     barrier_option.setPricingEngine(ql.BinomialBarrierEngine(process_bs_h, 'crr', 801))
     try:
@@ -166,9 +176,8 @@ for idx,spotlist in enumerate(intraday_etf.values):
     replicate_bs = last_delta_bs * spot + cash_bs
     # hedgeerror_svi = replicate_svi - price_svi
     # hedgeerror_bs = replicate_bs - price_bs
-    hedgeerror_svi = last_delta_svi * (spot - last_spot) - (price_svi - last_price_svi)
-    hedgeerror_bs = last_delta_bs * (spot - last_spot) - (price_bs - last_price_bs)
-
+    #hedgeerror_svi = last_delta_svi * (spot - last_spot) - (price_svi - last_price_svi)
+    #hedgeerror_bs = last_delta_bs * (spot - last_spot) - (price_bs - last_price_bs)
     pnl_svi = replicate_svi - price_svi
     pnl_bs = replicate_bs - price_bs
     hedgeerror_svi2 = pnl_svi - last_pnl_svi
@@ -208,11 +217,36 @@ for idx,spotlist in enumerate(intraday_etf.values):
     cont_pnl_bs.append(pnl_bs)
     cont_spot.append(spot)
     eval_dates.append(intraday_etf.index[idx])
-    last_spot = spot
+    cont_cash_svi.append(cash_svi)
+    cont_cash_bs.append(cash_bs)
+    #last_spot = spot
+
     hist_spots.append(spot)
 
+results = {}
+results.update({'0-eval_dates':eval_dates})
+results.update({'1-underlying':cont_spot})
+results.update({'11-option_price_svi':cont_optionprice_svi})
+results.update({'12-delta_svi':cont_delta_svi})
+results.update({'13-replicate_svi':cont_replicate_svi})
+results.update({'14-holding_change_svi':cont_dholding_svi})
+results.update({'15-cash_svi':cont_cash_svi})
+results.update({'16-single_pnl_svi':cont_hedgeerror_svi})
+results.update({'17-accu_pnl_svi':cont_pnl_svi})
+
+results.update({'18-option_price_bd':cont_optionprice_bs})
+results.update({'19-delta_bd':cont_delta_bs})
+results.update({'20-replicate_bs':cont_replicate_bs})
+results.update({'21-holding_change_bs':cont_dholding_bs})
+results.update({'22-cash_bs':cont_cash_bs})
+results.update({'23-single_pnl_bs':cont_hedgeerror_bs})
+results.update({'24-accu_pnl_bs':cont_pnl_bs})
+df = pd.DataFrame(data=results)
+df.to_csv('UpOut_intradayhedge.csv')
+
+
 print("=" * 120)
-print("%15s %15s  %15s %15s %15s %15s %15s %15s %15s %15s" % ("evalDate","last close","hedgeerror_svi","hedgeerror_bs",
+print("%15s %15s  %15s %15s %15s %15s %15s %15s %15s %15s" % ("evalDate","close","hedgeerror_svi","hedgeerror_bs",
                                                                 "delta_svi","delta_bs",
                                                                 "optionprice","pnl_svi",
                                                            "pnl_bs",""))
@@ -229,4 +263,4 @@ for idx,s in enumerate(cont_spot):
                                                        ''))
 print("=" * 120)
 
-
+print(barrierType)

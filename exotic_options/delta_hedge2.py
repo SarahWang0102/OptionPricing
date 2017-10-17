@@ -13,6 +13,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import Utilities.plot_util as pu
 import math
+import pandas as pd
 
 with open(os.path.abspath('..')+'/intermediate_data/svi_calibration_50etf_calls_noZeroVol.pickle','rb') as f:
     calibrered_params_ts = pickle.load(f)[0]
@@ -35,8 +36,9 @@ def get_vol_data(evalDate,daycounter,calendar,contractType):
 
 
 # Evaluation Settings
-begDate = ql.Date(2,8,2017)
+begDate = ql.Date(1,8,2017)
 endDate1 = ql.Date(28,8,2017)
+#endDate1 = ql.Date(11,8,2017)
 calendar = ql.China()
 daycounter = ql.ActualActual()
 begDate = calendar.advance(begDate,ql.Period(1,ql.Days))
@@ -52,11 +54,10 @@ maturity_date = maturity_dates[1]
 print('maturity date : ',maturity_date)
 maturitydt = to_ql_date(maturity_date)
 #print(maturitydt)
-strike = 2.2
-#print(S0)
-barrier = 2.817
+barrier =  2.81
+strike =  2.75
 optionType = ql.Option.Call
-barrierType = ql.Barrier.UpIn
+barrierType = ql.Barrier.UpOut
 contractType = '50etf'
 engineType = 'BinomialBarrierEngine'
 
@@ -81,6 +82,8 @@ cont_optionprice_bs = []
 cont_spot = []
 cont_pnl_svi = []
 cont_pnl_bs = []
+cont_cash_svi = []
+cont_cash_bs = []
 # Calibration
 evalDate = begDate
 spot, black_var_surface, const_vol = get_vol_data(evalDate,daycounter,calendar,contractType)
@@ -124,6 +127,8 @@ cont_hedgeerror_bs.append(0.0)
 cont_pnl_svi.append(0.0)
 cont_pnl_bs.append(0.0)
 eval_dates.append(to_dt_date(evalDate))
+cont_cash_svi.append(cash_svi)
+cont_cash_bs.append(cash_bs)
 #cont_spot.append(spot)
 
 last_delta_svi = delta_svi
@@ -139,7 +144,7 @@ underlying.setValue(spot)
 cont_spot.append(spot)
 # Rebalancing
 while evalDate < endDate1:
-
+    eval_dates.append(to_dt_date(evalDate))
     evalDate = calendar.advance(evalDate, ql.Period(1, ql.Days))
     try:
         get_vol_data(evalDate,daycounter,calendar,contractType)
@@ -175,8 +180,8 @@ while evalDate < endDate1:
     replicate_bs = last_delta_bs*spot + cash_bs
     #hedgeerror_svi = replicate_svi - price_svi
     #hedgeerror_bs = replicate_bs - price_bs
-    hedgeerror_svi = last_delta_svi*(spot-last_spot) - (price_svi-last_price_svi)
-    hedgeerror_bs = last_delta_bs*(spot-last_spot) - (price_bs-last_price_bs)
+    #hedgeerror_svi = last_delta_svi*(spot-last_spot) - (price_svi-last_price_svi)
+    #hedgeerror_bs = last_delta_bs*(spot-last_spot) - (price_bs-last_price_bs)
 
     pnl_svi = replicate_svi - price_svi
     pnl_bs = replicate_bs - price_bs
@@ -216,15 +221,50 @@ while evalDate < endDate1:
     cont_optionprice_bs.append(price_bs)
     cont_pnl_svi.append(pnl_svi)
     cont_pnl_bs.append(pnl_bs)
+
+
+    cont_cash_svi.append(cash_svi)
+    cont_cash_bs.append(cash_bs)
     cont_spot.append(spot)
-    eval_dates.append(to_dt_date(evalDate))
-    last_spot = spot
+    #last_spot = spot
     spot, black_var_surface, const_vol = get_vol_data(evalDate,daycounter,calendar,contractType)
+
     hist_spots.append(spot)
+
     underlying.setValue(spot)
     #cont_spot.append(spot)
+print('barrier = ',barrier)
+print('strike = ',strike)
+print('cash_svi = ',cash_svi)
+print('cash_bs = ',cash_bs)
+print('price_svi = ', price_svi)
+print('price_bs = ',price_bs)
+print('delta_svi = ',delta_svi)
+print('delta_bs = ',delta_bs)
 print("=" * 120)
-print("%15s %15s  %15s %15s %15s %15s %15s %15s %15s %15s" % ("evalDate","last close","hedgeerror_svi","hedgeerror_bs",
+
+results = {}
+results.update({'0-eval_dates':eval_dates})
+results.update({'1-underlying':cont_spot})
+results.update({'11-option_price_svi':cont_optionprice_svi})
+results.update({'12-delta_svi':cont_delta_svi})
+results.update({'13-replicate_svi':cont_replicate_svi})
+results.update({'14-holding_change_svi':cont_dholding_svi})
+results.update({'15-cash_svi':cont_cash_svi})
+results.update({'16-single_pnl_svi':cont_hedgeerror_svi})
+results.update({'17-accu_pnl_svi':cont_pnl_svi})
+
+results.update({'18-option_price_bd':cont_optionprice_bs})
+results.update({'19-delta_bd':cont_delta_bs})
+results.update({'20-replicate_bs':cont_replicate_bs})
+results.update({'21-holding_change_bs':cont_dholding_bs})
+results.update({'22-cash_bs':cont_cash_bs})
+results.update({'23-single_pnl_bs':cont_hedgeerror_bs})
+results.update({'24-accu_pnl_bs':cont_pnl_bs})
+df = pd.DataFrame(data=results)
+df.to_csv('UpOut_dailyhedge.csv')
+
+print("%15s %15s  %15s %15s %15s %15s %15s %15s %15s %15s" % ("evalDate","close","hedgeerror_svi","hedgeerror_bs",
                                                                 "delta_svi","delta_bs",
                                                                 "optionprice","pnl_svi",
                                                            "pnl_bs",""))
@@ -242,7 +282,7 @@ for idx,s in enumerate(cont_spot):
 print("=" * 120)
 
 
-
+print(barrierType)
 
 
 

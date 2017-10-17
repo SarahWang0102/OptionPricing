@@ -87,6 +87,12 @@ def save_ts_data(evalDate,endDate,daycounter,calendar):
         except:
             save_curve_treasury_bond(evalDate,daycounter)
 
+def save_intraday_data(evalDate):
+    datestr = str(evalDate.year()) + "-" + str(evalDate.month()) + "-" + str(evalDate.dayOfMonth())
+    data = w.wsi("510050.SH", "close", "2017-08-11 08:00:00", "2017-08-11 15:05:00", "BarSize=5;Fill=Previous")
+    df = pd.DataFrame(data=data.Data[0], index=data.Times)
+    df.to_json(os.path.abspath('..') + '\marketdata\intraday_etf_' + datestr + '.json')
+
 '''
 w.start()
 save_underlying_open_ts(ql.Date(1,6,2017),ql.Date(30,9,2017))

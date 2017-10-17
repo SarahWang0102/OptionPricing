@@ -4,12 +4,9 @@ import os
 import pickle
 
 
+#w.start()
+df = pd.read_json(os.path.abspath('..') + '\marketdata\intraday_etf_2017-08-11' + '.json')
 
-intraday_etf = pd.read_json(os.path.abspath('..') + '\marketdata\sintraday_etf_2017-08-28' + '.json')
-print(intraday_etf.index)
 
-
-print(list(intraday_etf.index))
-cont = list(intraday_etf.index)
-print(intraday_etf[cont[0]])
+print(df)
 
