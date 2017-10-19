@@ -45,13 +45,13 @@ rf = 0.03
 maturitydt = ql.Date(27,9,2017)
 #print(maturitydt)
 barrier =  2.81
-strike =  2.75
-cash_svi =  0.04621701830367859
-cash_bs =  0.03427679513349334
-price_svi =  0.0010942761186805224
-price_bs =  0.0007716880768042928
-delta_svi =  -0.016135143611148525
-delta_bs =  -0.01207675453899006
+strike =  2.7
+cash_svi =  0.264694122296088
+cash_bs =  0.19949011357108734
+price_svi =  0.00614968110142733
+price_bs =  0.004437014060748414
+delta_svi =  -0.09271104597280411
+delta_bs =  -0.07034688916757746
 #print(S0)
 
 optionType = ql.Option.Call

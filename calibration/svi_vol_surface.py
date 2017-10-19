@@ -13,7 +13,7 @@ from pricing_options.SviVolSurface import SviVolSurface
 from matplotlib import cm
 from mpl_toolkits.mplot3d import Axes3D
 
-evalDate = ql.Date(22, 8, 2017)
+evalDate = ql.Date(2, 8, 2017)
 endDate = ql.Date(20, 8, 2017)
 calendar = ql.China()
 daycounter = ql.ActualActual()
@@ -25,8 +25,8 @@ curve = get_curve_treasury_bond(evalDate, daycounter)
 vols, spot, mktData, mktFlds, optionData, optionFlds, optionids = get_wind_data(evalDate)
 yield_ts = ql.YieldTermStructureHandle(curve)
 dividend_ts = ql.YieldTermStructureHandle(ql.FlatForward(evalDate, 0.0, daycounter))
-optionType = '认购'
-svi_dataset = SviInputSet(evalDate)
+optionType = '认沽'
+svi_dataset = SviInputSet(evalDate,spot)
 for optionid in optionids:
     optionDataIdx = optionData[optionFlds.index('wind_code')].index(optionid)
     if optionData[optionFlds.index('call_or_put')][optionDataIdx] == optionType:
@@ -35,16 +35,16 @@ for optionid in optionids:
         maturitydt = ql.Date(mdate.day, mdate.month, mdate.year)
         mktindex = mktData[mktFlds.index('option_code')].index(optionid)
         strike = optionData[optionFlds.index('exercise_price')][optionDataIdx]
-        print(maturitydt)
+        #print(maturitydt)
         close = mktData[mktFlds.index('close')][mktindex]
         open = mktData[mktFlds.index('open')][mktindex]
         ttm = daycounter.yearFraction(evalDate, maturitydt)
-        print(ttm)
+        #print(ttm)
         rf = curve.zeroRate(maturitydt, daycounter, ql.Continuous).rate()
-        print(rf)
+        #print(rf)
         Ft = spot * math.exp(rf * ttm)
         moneyness = math.log(strike / Ft, math.e)
-        optiontype = ql.Option.Call
+        optiontype = ql.Option.Put
         implied_vol, error = calculate_vol_BS(maturitydt, optiontype, strike, spot, dividend_ts, yield_ts,
                                               close, evalDate, calendar, daycounter, precision=0.05, maxVol=0.5,
                                               step=0.0001)
@@ -58,12 +58,12 @@ for mdate in svi_dataset.dataSet.keys():
     logMoneynesses = data_mdate.moneyness
     totalvariance = data_mdate.totalvariance
     vol = data_mdate.volatility
-    print('vols : ', vol)
+    #print('vols : ', vol)
     optimization_data.append(logMoneynesses)
     optimization_data.append(data_mdate.totalvariance)
     ttm = data_mdate.ttm
     params = svi_util.get_svi_optimal_params(optimization_data, ttm, 10)
-    print('params : ', params)
+    #print('params : ', params)
     calibrered_params.update({mdate: params})
     a_star, b_star, rho_star, m_star, sigma_star = params
     x_svi = np.arange(min(logMoneynesses) - 0.005, max(logMoneynesses) + 0.02, 0.1 / 100)  # log_forward_moneyness
@@ -72,23 +72,23 @@ for mdate in svi_dataset.dataSet.keys():
     vol_svi = np.sqrt(
         a_star + b_star * (rho_star * (x_svi - m_star) + np.sqrt((x_svi - m_star) ** 2 + sigma_star ** 2)))
 
-    plt.figure()
-    plt.plot(logMoneynesses, vol, 'ro')
-    plt.plot(x_svi, vol_svi, 'b--')
-    plt.title('vol, ' + str(evalDate) + ', ' + str(mdate))
-    plt.figure()
-    plt.plot(logMoneynesses, totalvariance, 'ro')
-    plt.plot(x_svi, tv_svi2, 'b--')
-    plt.title('tv, ' + str(evalDate) + ', ' + str(mdate))
-    plt.show()
+    #plt.figure()
+    #plt.plot(logMoneynesses, vol, 'ro')
+    #plt.plot(x_svi, vol_svi, 'b--')
+    #plt.title('vol, ' + str(evalDate) + ', ' + str(mdate))
+    #plt.figure()
+    #plt.plot(logMoneynesses, totalvariance, 'ro')
+    #plt.plot(x_svi, tv_svi2, 'b--')
+    #plt.title('tv, ' + str(evalDate) + ', ' + str(mdate))
+    #plt.show()
 
-print(calibrered_params)
+#print(calibrered_params)
 maturity_dates = sorted(calibrered_params.keys())
-print(maturity_dates)
+#print(maturity_dates)
 calibrered_params_ts.update({evalDate: calibrered_params})
 volSurface = SviVolSurface(evalDate, calibrered_params, daycounter, calendar)
 svi = SviPricingModel(volSurface, spot, daycounter, calendar,
-                            to_ql_dates(maturity_dates), ql.Option.Call, '50etf')
+                            to_ql_dates(maturity_dates), ql.Option.Put, '50etf')
 black_var_surface = svi.black_var_surface()
 local_vol_surface = ql.LocalVolSurface(ql.BlackVolTermStructureHandle(black_var_surface),
                                        yield_ts,dividend_ts,spot)
@@ -97,8 +97,8 @@ t = daycounter.yearFraction(evalDate,dt)
 # Plot
 plt.rcParams['font.sans-serif'] = ['STKaiti']
 plt.rcParams.update({'font.size': 13})
-plot_years = np.arange(0.05, t-0.05, 0.05)
-plot_strikes = np.arange(2.2, 2.85, 0.03)
+plot_years = np.arange(0.05, t-0.05, 0.01)
+plot_strikes = np.arange(2.2, 2.8, 0.01)
 
 fig = plt.figure()
 ax = fig.gca(projection='3d')
@@ -111,11 +111,11 @@ Z = np.array([black_var_surface.blackVol(y, x)
 print(Z)
 print(Z[np.argmin(Z[:,1]),0])
 surf = ax.plot_surface(X,Y,Z, rstride=1, cstride=1, cmap=cm.coolwarm,
-                linewidth=0.1)
+                linewidth=0.1,vmin = 0.15,vmax = 0.3)
 ax.set_xlabel('K')
 ax.set_ylabel('T')
 fig.colorbar(surf, shrink=0.5, aspect=5)
 
-
+print(evalDate)
 fig.savefig('svi_implied_vol_surface, ' + optionType + ' ' + str(evalDate) +'.png', dpi=300, format='png')
 plt.show()

@@ -20,9 +20,9 @@ daycounter = ql.ActualActual()
 date = calendar.advance(date,ql.Period(1,ql.Days))
 
 
-with open(os.path.abspath('..')+'/intermediate_data/sr_hedging_daily_params_puts_noZeroVol.pickle','rb') as f:
+with open(os.path.abspath('..')+'/intermediate_data/sr_hedging_daily_params_calls_noZeroVol.pickle','rb') as f:
     daily_params = pickle.load(f)[0]
-with open(os.path.abspath('..')+'/intermediate_data/sr_hedging_dates_puts_noZeroVol.pickle','rb') as f:
+with open(os.path.abspath('..')+'/intermediate_data/sr_hedging_dates_calls_noZeroVol.pickle','rb') as f:
     dates = pickle.load(f)[0]
 with open(os.path.abspath('..')+'/intermediate_data/sr_hedging_daily_svi_dataset_puts_noZeroVol.pickle','rb') as f:
     daily_svi_dataset = pickle.load(f)[0]
@@ -63,7 +63,7 @@ Z = np.array([black_var_surface.blackVol(y, x)
 #print(Z)
 #print(Z[np.argmin(Z[:,1]),0])
 surf = ax.plot_surface(X,Y,Z, rstride=1, cstride=1, cmap=cm.coolwarm,
-                linewidth=0.1,vmin = 0.1,vmax = 0.4)
+                linewidth=0.1,vmin = 0.1,vmax = 0.3)
 ax.set_xlabel('K')
 ax.set_ylabel('T')
 fig.colorbar(surf, shrink=0.5, aspect=5)
@@ -89,7 +89,7 @@ Z = np.array([black_var_surface.blackVol(y, x)
              ).reshape(len(X), len(X[0]))
 print(Z[np.argmin(Z[:,1]),0])
 surf = ax1.plot_surface(X,Y,Z, rstride=1, cstride=1, cmap=cm.coolwarm,
-                linewidth=0.1,vmin = 0.1,vmax = 0.4)
+                linewidth=0.1,vmin = 0.1,vmax = 0.3)
 ax1.set_xlabel('K')
 ax1.set_ylabel('T')
 fig1.colorbar(surf, shrink=0.5, aspect=5)
@@ -98,6 +98,6 @@ fig1.colorbar(surf, shrink=0.5, aspect=5)
 
 
 
-fig.savefig('svi_implied_vol_surface_sr1, put，'+ str(date) +'.png', dpi=300, format='png')
-fig1.savefig('svi_implied_vol_surface_sr2, put，'+ str(date) +'.png', dpi=300, format='png')
+fig.savefig('svi_implied_vol_surface_sr1, call，'+ str(date) +'.png', dpi=300, format='png')
+fig1.savefig('svi_implied_vol_surface_sr2, call，'+ str(date) +'.png', dpi=300, format='png')
 plt.show()

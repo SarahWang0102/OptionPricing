@@ -55,7 +55,7 @@ print('maturity date : ',maturity_date)
 maturitydt = to_ql_date(maturity_date)
 #print(maturitydt)
 barrier =  2.81
-strike =  2.75
+strike =  2.7
 optionType = ql.Option.Call
 barrierType = ql.Barrier.UpOut
 contractType = '50etf'

@@ -14,7 +14,7 @@ import pickle
 
 start = timeit.default_timer()
 
-date = ql.Date(17,4,2017)
+date = ql.Date(17,7,2017)
 calendar = ql.China()
 daycounter = ql.ActualActual()
 date = calendar.advance(date,ql.Period(1,ql.Days))
@@ -84,7 +84,8 @@ calibrated_params = paramset
 # Local Vol Surface
 cal_vols, put_vols, maturitydates, underlying_prices, rfs = daily_svi_dataset.get(to_dt_date(date))
 print(put_vols)
-black_var_surface = localVol.get_black_variance_surface_cmd(calibrated_params, date, daycounter, calendar, underlying_prices,'m',strikes)
+black_var_surface = localVol.get_black_variance_surface_cmd(calibrated_params, date, daycounter,
+                                                            calendar, underlying_prices,'m',strikes)
 curve = get_curve_treasury_bond(date,daycounter)
 yield_ts = get_yield_ts(date,curve,to_ql_date(max(maturitydates)),daycounter)
 dividend_ts = ql.YieldTermStructureHandle(ql.FlatForward(date, 0.0, daycounter))

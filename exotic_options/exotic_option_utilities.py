@@ -219,13 +219,13 @@ def calculate_barrier_price(evaluation,barrier_option,hist_spots,process,engineT
         option_delta = barrier_ql.delta()
     else:
         if barrierType == ql.Barrier.DownOut:
-            if min(hist_spots) < barrier :
+            if min(hist_spots) <= barrier :
                 return 0.0,0.0
             else:
                 option_price = barrier_ql.NPV()
                 option_delta = barrier_ql.delta()
         elif barrierType == ql.Barrier.UpOut:
-            if max(hist_spots) > barrier:
+            if max(hist_spots) >= barrier:
                 return 0.0,0.0
             else:
                 option_price = barrier_ql.NPV()
