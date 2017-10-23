@@ -74,17 +74,16 @@ class SviVolSurface:
 
     def get_black_var_surface_m(self,underlying_prices, dS = 0.0,strikes=np.arange(2400.0, 3200.0, 1.0)):
         volset = []
-        maturity_dates = []
-        contract_ids = sorted(self.calibrated_params.keys())
-        for contractId in contract_ids:
-            params = self.calibrated_params.get(contractId)
+        maturity_dates = sorted(self.calibrated_params.keys())
+        for mdt in maturity_dates:
+            params = self.calibrated_params.get(mdt)
             a_star, b_star, rho_star, m_star, sigma_star = params
-            mdt = util.get_mdate_by_contractid('m', contractId, self.calendar)
             maturity_dates.append(mdt)
-            ttm = self.daycounter.yearFraction(self.evalDate, mdt)
-            rf = util.get_rf_tbcurve(self.evalDate, self.daycounter, mdt)
-            spot = underlying_prices.get(contractId) + dS
-            Ft = spot * math.exp(rf * ttm)
+            #ttm = self.daycounter.yearFraction(self.evalDate, mdt)
+            #rf = util.get_rf_tbcurve(self.evalDate, self.daycounter, mdt)
+            spot = underlying_prices.get(mdt) + dS
+            #Ft = spot * math.exp(rf * ttm)
+            Ft = spot
             x_svi = np.log(strikes / Ft)
             vol = np.sqrt(np.maximum(0, a_star + b_star * (
                 rho_star * (x_svi - m_star) + np.sqrt((x_svi - m_star) ** 2 + sigma_star ** 2))))
@@ -93,24 +92,22 @@ class SviVolSurface:
         for i in range(implied_vols.rows()):
             for j in range(implied_vols.columns()):
                 implied_vols[i][j] = volset[j][i]
-        black_var_surface = ql.BlackVarianceSurface(self.evalDate, self.calendar, maturity_dates,
+        black_var_surface = ql.BlackVarianceSurface(self.evalDate, self.calendar, util.to_ql_dates(maturity_dates),
                                                     strikes, implied_vols, self.daycounter)
         return black_var_surface
 
 
     def get_black_var_surface_sr(self,underlying_prices, dS = 0.0,strikes=np.arange(5500.0, 7400.0, 1.0)):
         volset = []
-        maturity_dates = []
-        contract_ids = sorted(self.calibrated_params.keys())
-        for contractId in contract_ids:
-            params = self.calibrated_params.get(contractId)
+        maturity_dates = sorted(self.calibrated_params.keys())
+        for mdt in maturity_dates:
+            params = self.calibrated_params.get(mdt)
             a_star, b_star, rho_star, m_star, sigma_star = params
-            mdt = util.get_mdate_by_contractid('sr', contractId, self.calendar)
-            maturity_dates.append(mdt)
-            ttm = self.daycounter.yearFraction(self.evalDate, mdt)
-            rf = util.get_rf_tbcurve(self.evalDate, self.daycounter, mdt)
-            spot = underlying_prices.get(contractId) + dS
-            Ft = spot * math.exp(rf * ttm)
+            #ttm = self.daycounter.yearFraction(self.evalDate, mdt)
+            #rf = util.get_rf_tbcurve(self.evalDate, self.daycounter, mdt)
+            spot = underlying_prices.get(mdt) + dS
+            #Ft = spot * math.exp(rf * ttm)
+            Ft = spot
             x_svi = np.log(strikes / Ft)
             vol = np.sqrt(np.maximum(0, a_star + b_star * (
                 rho_star * (x_svi - m_star) + np.sqrt((x_svi - m_star) ** 2 + sigma_star ** 2))))
@@ -119,6 +116,6 @@ class SviVolSurface:
         for i in range(implied_vols.rows()):
             for j in range(implied_vols.columns()):
                 implied_vols[i][j] = volset[j][i]
-        black_var_surface = ql.BlackVarianceSurface(self.evalDate, self.calendar, maturity_dates,
+        black_var_surface = ql.BlackVarianceSurface(self.evalDate, self.calendar, util.to_ql_dates(maturity_dates),
                                                     strikes, implied_vols, self.daycounter)
         return black_var_surface

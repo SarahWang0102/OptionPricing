@@ -37,7 +37,7 @@ barrierType = ql.Barrier.UpOut
 #contractType = '50etf'
 #engineType = 'BinomialBarrierEngine'
 
-option_call = OptionPlainEuropean(strike,maturitydt,ql.Option.Call)
+option_call = OptionPlainEuropean(strike,maturitydt,optionType)
 optionql_call = option_call.option_ql
 
 underlying = ql.SimpleQuote(S0)
