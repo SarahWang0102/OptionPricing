@@ -36,11 +36,12 @@ svi_data = SviInputSet(to_dt_date(evalDate))
 min_k = 10000
 max_k = 0
 ##################################
-optionType = '认沽'
-optiontype = ql.Option.Put
-dataset = results_put
+optionType = '认购'
+optiontype = ql.Option.Call
+dataset = results_call
 ##################################
 for maturitydt in dataset.keys():
+    print(maturitydt)
     mktdata = dataset.get(maturitydt)
     contractid = mktdata[0][-1]
     if contractid[-3:] not in core_contracts:
@@ -76,7 +77,9 @@ for maturitydt in dataset.keys():
 
 calibrered_params = {}
 underlyings = {}
+print('calibration')
 for mdate in svi_data.dataSet.keys():
+    print(mdate)
     optimization_data = []
     data_mdate = svi_data.dataSet.get(mdate)
     underlyings.update({mdate:data_mdate.spot})
@@ -120,10 +123,11 @@ black_var_surface = svi.black_var_surface()
 dt = black_var_surface.maxDate()
 t = daycounter.yearFraction(evalDate,dt)
 # Plot
+print('plot')
 plt.rcParams['font.sans-serif'] = ['STKaiti']
 plt.rcParams.update({'font.size': 13})
 plot_years = np.arange(0.05, t-0.05, 0.01)
-plot_strikes = np.arange(float(min_k), float(max_k), 1.0)
+plot_strikes = np.arange(float(min_k), float(max_k), 10.0)
 
 fig = plt.figure()
 ax = fig.gca(projection='3d')
