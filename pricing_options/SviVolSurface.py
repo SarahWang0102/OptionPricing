@@ -78,7 +78,7 @@ class SviVolSurface:
         for mdt in maturity_dates:
             params = self.calibrated_params.get(mdt)
             a_star, b_star, rho_star, m_star, sigma_star = params
-            maturity_dates.append(mdt)
+            #maturity_dates.append(mdt)
             #ttm = self.daycounter.yearFraction(self.evalDate, mdt)
             #rf = util.get_rf_tbcurve(self.evalDate, self.daycounter, mdt)
             spot = underlying_prices.get(mdt) + dS

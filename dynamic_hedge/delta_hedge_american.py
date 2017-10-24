@@ -1,4 +1,4 @@
-from pricing_options.Options import OptionBarrierEuropean,OptionPlainEuropean
+from pricing_options.Options import OptionBarrierEuropean,OptionPlainEuropean,OptionPlainAmerican
 from pricing_options.Evaluation import Evaluation
 from pricing_options.SviPricingModel import SviPricingModel
 from pricing_options.SviVolSurface import SviVolSurface
@@ -15,11 +15,27 @@ import Utilities.plot_util as pu
 import math
 import pandas as pd
 
+def get_vol_data(evalDate,daycounter,calendar,contractType):
+    svidata = svi_dataset.get(to_dt_date(evalDate))
+    paramset = calibrered_params_ts.get(to_dt_date(evalDate))
+    volSurface = SviVolSurface(evalDate, paramset, daycounter, calendar)
+    spot = svidata.spot
+    maturity_dates = sorted(svidata.dataSet.keys())
+    svi = SviPricingModel(volSurface, spot, daycounter, calendar,
+                            to_ql_dates(maturity_dates), ql.Option.Call, contractType)
+    black_var_surface = svi.black_var_surface()
+    return spot, black_var_surface
+
+
+with open(os.path.abspath('..')+'/intermediate_data/svi_calibration_m_calls.pickle','rb') as f:
+    calibrered_params_ts = pickle.load(f)[0]
+with open(os.path.abspath('..')+'/intermediate_data/svi_dataset_m_calls.pickle','rb') as f:
+    svi_dataset = pickle.load(f)[0]
 
 # Evaluation Settings
-begDate = ql.Date(1,8,2017)
-endDate1 = ql.Date(28,8,2017)
-maturitydt = endDate1
+begDate = ql.Date(26, 7, 2017)
+endDate = ql.Date(27, 8, 2017)
+maturitydt = endDate
 
 calendar = ql.China()
 daycounter = ql.ActualActual()
@@ -29,17 +45,20 @@ fee = 0.6/100
 dt = 1.0/365
 rf = 0.03
 
-
-
 strike =  2.7
 optionType = ql.Option.Call
-barrierType = ql.Barrier.UpOut
-#contractType = '50etf'
-#engineType = 'BinomialBarrierEngine'
+contractType = 'm'
 
-option_call = OptionPlainEuropean(strike,maturitydt,optionType)
-optionql_call = option_call.option_ql
+euro_option = OptionPlainEuropean(strike,maturitydt,optionType)
+ame_option = OptionPlainAmerican(strike,begDate, maturitydt, optionType)
+optionql_euro = euro_option.option_ql
 
+svidata = svi_dataset.get(to_dt_date(begDate))
+S0 = svidata.spot
+maturity_dates = sorted(svidata.dataSet.keys())
+maturity_date = maturity_dates[1]
+print('maturity date : ',maturity_date)
+maturitydt = to_ql_date(maturity_date)
 underlying = ql.SimpleQuote(S0)
 
 eval_dates = []
@@ -63,7 +82,7 @@ cont_cash_svi = []
 cont_cash_bs = []
 # Calibration
 evalDate = begDate
-spot, black_var_surface, const_vol = get_vol_data(evalDate,daycounter,calendar,contractType)
+spot, black_var_surface = get_vol_data(evalDate,daycounter,calendar,contractType)
 hist_spots.append(spot)
 underlying.setValue(spot)
 
@@ -71,13 +90,11 @@ underlying.setValue(spot)
 evalDate = calendar.advance(evalDate,ql.Period(1,ql.Days))
 evaluation = Evaluation(evalDate, daycounter, calendar)
 
-process_svi_h = evaluation.get_bsmprocess(daycounter, underlying, black_var_surface)
-process_bs_h = evaluation.get_bsmprocess_cnstvol(daycounter, calendar, underlying, const_vol)
-price_svi, delta_svi = exotic_util.calculate_barrier_price(evaluation, optionBarrierEuropean, hist_spots,
-                                                           process_svi_h, engineType)
-price_bs, delta_bs = exotic_util.calculate_barrier_price(evaluation, optionBarrierEuropean, hist_spots,
-                                                         process_bs_h, engineType)
-
+process = evaluation.get_bsmprocess(daycounter, underlying, black_var_surface)
+engine = ql.BinomialVanillaEngine(process, 'crr', 801)
+optionql_euro.setPricingEngine(engine)
+price_euro = optionql_euro.NPV()
+delta_euro = optionql_euro.delta()
 
 tradingcost_svi = delta_svi*spot*fee
 tradingcost_bs = delta_bs*spot*fee

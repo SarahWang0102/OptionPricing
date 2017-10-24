@@ -34,7 +34,8 @@ class OptionPlainAmerican:
         self.optionType = optionType
         exercise = ql.AmericanExercise(effectivedt,maturitydt)
         payoff = ql.PlainVanillaPayoff(optionType, strike)
-        option = ql.EuropeanOption(payoff, exercise)
+        option = ql.VanillaOption(payoff, exercise)
+        #option = ql.EuropeanOption(payoff, exercise)
         self.option_ql = option
 
 class OptionPlainAsian:

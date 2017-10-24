@@ -82,7 +82,7 @@ while evalDate <= endDate:
         optimization_data.append(logMoneynesses)
         optimization_data.append(data_mdate.totalvariance)
         ttm = data_mdate.ttm
-        params = svi_util.get_svi_optimal_params(optimization_data, ttm, 10)
+        params = svi_util.get_svi_optimal_params(optimization_data, ttm, 1)
         print('params : ',params)
         calibrered_params.update({mdate:params})
         a_star, b_star, rho_star, m_star, sigma_star = params

@@ -1,4 +1,4 @@
-from Utilities.svi_read_data import get_commodity_sr_data
+from Utilities.svi_read_data import get_commodity_m_data
 from Utilities.svi_prepare_vol_data import calculate_vol_BS
 from calibration.SviCalibrationInput import SviInputSet
 import Utilities.svi_calibration_utility as svi_util
@@ -27,7 +27,7 @@ ql.Settings.instance().evaluationDate = evalDate
 print(evalDate)
 
 curve = get_curve_treasury_bond(evalDate, daycounter)
-results_call, results_put, underlying_prices = get_commodity_sr_data(evalDate, calendar)
+results_call, results_put, underlying_prices = get_commodity_m_data(evalDate, calendar)
 
 yield_ts = ql.YieldTermStructureHandle(curve)
 dividend_ts = ql.YieldTermStructureHandle(ql.FlatForward(evalDate, 0.0, daycounter))
@@ -36,9 +36,9 @@ svi_data = SviInputSet(to_dt_date(evalDate))
 min_k = 10000
 max_k = 0
 ##################################
-optionType = '认购'
-optiontype = ql.Option.Call
-dataset = results_call
+optionType = '认沽'
+optiontype = ql.Option.Put
+dataset = results_put
 ##################################
 for maturitydt in dataset.keys():
     print(maturitydt)
