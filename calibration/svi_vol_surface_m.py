@@ -36,9 +36,9 @@ svi_data = SviInputSet(to_dt_date(evalDate))
 min_k = 10000
 max_k = 0
 ##################################
-optionType = '认沽'
-optiontype = ql.Option.Put
-dataset = results_put
+optionType = '认购'
+optiontype = ql.Option.Call
+dataset = results_call
 ##################################
 for maturitydt in dataset.keys():
     print(maturitydt)

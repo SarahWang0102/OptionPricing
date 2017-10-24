@@ -18,6 +18,10 @@ endDate = ql.Date(20, 8, 2017)
 calendar = ql.China()
 daycounter = ql.ActualActual()
 
+
+optionType = '认购'
+optiontype = ql.Option.Call
+
 calibrered_params_ts = {}
 evalDate = calendar.advance(evalDate, ql.Period(1, ql.Days))
 ql.Settings.instance().evaluationDate = evalDate
@@ -25,7 +29,7 @@ curve = get_curve_treasury_bond(evalDate, daycounter)
 vols, spot, mktData, mktFlds, optionData, optionFlds, optionids = get_wind_data(evalDate)
 yield_ts = ql.YieldTermStructureHandle(curve)
 dividend_ts = ql.YieldTermStructureHandle(ql.FlatForward(evalDate, 0.0, daycounter))
-optionType = '认沽'
+
 svi_dataset = SviInputSet(evalDate,spot)
 for optionid in optionids:
     optionDataIdx = optionData[optionFlds.index('wind_code')].index(optionid)
@@ -44,7 +48,7 @@ for optionid in optionids:
         #print(rf)
         Ft = spot * math.exp(rf * ttm)
         moneyness = math.log(strike / Ft, math.e)
-        optiontype = ql.Option.Put
+
         implied_vol, error = calculate_vol_BS(maturitydt, optiontype, strike, spot, dividend_ts, yield_ts,
                                               close, evalDate, calendar, daycounter, precision=0.05, maxVol=0.5,
                                               step=0.0001)
@@ -88,7 +92,7 @@ maturity_dates = sorted(calibrered_params.keys())
 calibrered_params_ts.update({evalDate: calibrered_params})
 volSurface = SviVolSurface(evalDate, calibrered_params, daycounter, calendar)
 svi = SviPricingModel(volSurface, spot, daycounter, calendar,
-                            to_ql_dates(maturity_dates), ql.Option.Put, '50etf')
+                            to_ql_dates(maturity_dates), optiontype, '50etf')
 black_var_surface = svi.black_var_surface()
 local_vol_surface = ql.LocalVolSurface(ql.BlackVolTermStructureHandle(black_var_surface),
                                        yield_ts,dividend_ts,spot)
@@ -111,7 +115,7 @@ Z = np.array([black_var_surface.blackVol(y, x)
 print(Z)
 print(Z[np.argmin(Z[:,1]),0])
 surf = ax.plot_surface(X,Y,Z, rstride=1, cstride=1, cmap=cm.coolwarm,
-                linewidth=0.1,vmin = 0.15,vmax = 0.3)
+                linewidth=0.1)
 ax.set_xlabel('K')
 ax.set_ylabel('T')
 fig.colorbar(surf, shrink=0.5, aspect=5)

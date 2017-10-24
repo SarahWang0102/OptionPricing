@@ -15,22 +15,28 @@ import Utilities.plot_util as pu
 import math
 import pandas as pd
 
+
 def get_vol_data(evalDate,daycounter,calendar,contractType):
     svidata = svi_dataset.get(to_dt_date(evalDate))
     paramset = calibrered_params_ts.get(to_dt_date(evalDate))
     volSurface = SviVolSurface(evalDate, paramset, daycounter, calendar)
-    spot = svidata.spot
+    underlyings = {}
+    dataset = svidata.dataSet
+    for mdate in svidata.dataSet.keys():
+        underlyings.update({mdate:dataset.get(mdate).spot})
     maturity_dates = sorted(svidata.dataSet.keys())
-    svi = SviPricingModel(volSurface, spot, daycounter, calendar,
+    svi = SviPricingModel(volSurface, underlyings, daycounter, calendar,
                             to_ql_dates(maturity_dates), ql.Option.Call, contractType)
     black_var_surface = svi.black_var_surface()
-    return spot, black_var_surface
-
+    const_vol = estimated_vols.get(to_dt_date(evalDate))
+    return underlyings, black_var_surface, const_vol
 
 with open(os.path.abspath('..')+'/intermediate_data/svi_calibration_m_calls.pickle','rb') as f:
     calibrered_params_ts = pickle.load(f)[0]
 with open(os.path.abspath('..')+'/intermediate_data/svi_dataset_m_calls.pickle','rb') as f:
     svi_dataset = pickle.load(f)[0]
+with open(os.path.abspath('..')+'/intermediate_data/bs_estimite_vols_m_calls.pickle','rb') as f:
+    estimated_vols = pickle.load(f)[0]
 
 # Evaluation Settings
 begDate = ql.Date(26, 7, 2017)
@@ -45,13 +51,17 @@ fee = 0.6/100
 dt = 1.0/365
 rf = 0.03
 
-strike =  2.7
+##############################################################################
+strike =  2920
 optionType = ql.Option.Call
 contractType = 'm'
-
+underlyingid = '1801'
+spot_maturity = datetime.date(2017,12,7)
 euro_option = OptionPlainEuropean(strike,maturitydt,optionType)
 ame_option = OptionPlainAmerican(strike,begDate, maturitydt, optionType)
-optionql_euro = euro_option.option_ql
+optionql = euro_option.option_ql
+###############################################################################
+
 
 svidata = svi_dataset.get(to_dt_date(begDate))
 S0 = svidata.spot
@@ -62,7 +72,6 @@ maturitydt = to_ql_date(maturity_date)
 underlying = ql.SimpleQuote(S0)
 
 eval_dates = []
-hist_spots = []
 cont_dholding_svi = []
 cont_dholding_bs = []
 cont_delta_svi = []
@@ -82,19 +91,25 @@ cont_cash_svi = []
 cont_cash_bs = []
 # Calibration
 evalDate = begDate
-spot, black_var_surface = get_vol_data(evalDate,daycounter,calendar,contractType)
-hist_spots.append(spot)
+underlyings, black_var_surface,const_vol = get_vol_data(evalDate,daycounter,calendar,contractType)
+
+spot = underlyings.get(spot_maturity)
 underlying.setValue(spot)
 
 # Contract Hedge Portfolio
 evalDate = calendar.advance(evalDate,ql.Period(1,ql.Days))
 evaluation = Evaluation(evalDate, daycounter, calendar)
 
-process = evaluation.get_bsmprocess(daycounter, underlying, black_var_surface)
-engine = ql.BinomialVanillaEngine(process, 'crr', 801)
-optionql_euro.setPricingEngine(engine)
-price_euro = optionql_euro.NPV()
-delta_euro = optionql_euro.delta()
+process_svi = evaluation.get_bsmprocess(daycounter, underlying, black_var_surface)
+process_bs = evaluation.get_bsmprocess_cnstvol(daycounter, calendar, underlying, const_vol)
+engine_svi = ql.BinomialVanillaEngine(process_svi, 'crr', 801)
+engine_bs = ql.BinomialVanillaEngine(process_bs, 'crr', 801)
+optionql.setPricingEngine(engine_svi)
+price_svi = optionql.NPV()
+delta_svi = optionql.delta()
+optionql.setPricingEngine(engine_bs)
+price_bs = optionql.NPV()
+delta_bs = optionql.delta()
 
 tradingcost_svi = delta_svi*spot*fee
 tradingcost_bs = delta_bs*spot*fee
@@ -132,12 +147,12 @@ last_price_bs = price_bs
 last_pnl_svi = 0.0
 last_pnl_bs = 0.0
 last_spot = spot
-spot, black_var_surface, const_vol = get_vol_data(evalDate,daycounter,calendar,contractType) # 收盘价
-hist_spots.append(spot)
+underlyings, black_var_surface,const_vol = get_vol_data(evalDate,daycounter,calendar,contractType)
+spot = underlyings.get(spot_maturity)
 underlying.setValue(spot)
 cont_spot.append(spot)
 # Rebalancing
-while evalDate < endDate1:
+while evalDate < endDate:
     eval_dates.append(to_dt_date(evalDate))
     evalDate = calendar.advance(evalDate, ql.Period(1, ql.Days))
     try:
@@ -146,15 +161,18 @@ while evalDate < endDate1:
         continue
     #print(evalDate, spot)
     evaluation = Evaluation(evalDate, daycounter, calendar)
-    process_svi_h = evaluation.get_bsmprocess(daycounter, underlying, black_var_surface)
-    process_bs_h = evaluation.get_bsmprocess_cnstvol(daycounter, calendar, underlying, const_vol)
-    barrier_option.setPricingEngine(ql.BinomialBarrierEngine(process_svi_h, 'crr', 801))
-    barrier_option.setPricingEngine(ql.BinomialBarrierEngine(process_bs_h, 'crr', 801))
+    process_svi = evaluation.get_bsmprocess(daycounter, underlying, black_var_surface)
+    process_bs = evaluation.get_bsmprocess_cnstvol(daycounter, calendar, underlying, const_vol)
+    engine_svi = ql.BinomialVanillaEngine(process_svi, 'crr', 801)
+    engine_bs = ql.BinomialVanillaEngine(process_bs, 'crr', 801)
+
     try:
-        price_svi,delta_svi = exotic_util.calculate_barrier_price(evaluation, optionBarrierEuropean, hist_spots,
-                                                                process_svi_h, engineType)
-        price_bs,delta_bs = exotic_util.calculate_barrier_price(evaluation, optionBarrierEuropean, hist_spots,
-                                                               process_bs_h, engineType)
+        optionql.setPricingEngine(engine_svi)
+        price_svi = optionql.NPV()
+        delta_svi = optionql.delta()
+        optionql.setPricingEngine(engine_bs)
+        price_bs = optionql.NPV()
+        delta_bs = optionql.delta()
     except Exception as e:
         #p(e)
         price_svi = last_price_svi
@@ -221,13 +239,11 @@ while evalDate < endDate1:
     cont_cash_bs.append(cash_bs)
     cont_spot.append(spot)
     #last_spot = spot
-    spot, black_var_surface, const_vol = get_vol_data(evalDate,daycounter,calendar,contractType)
-
-    hist_spots.append(spot)
+    underlyings, black_var_surface, const_vol = get_vol_data(evalDate, daycounter, calendar, contractType)
+    spot = underlyings.get(spot_maturity)
 
     underlying.setValue(spot)
     #cont_spot.append(spot)
-print('barrier = ',barrier)
 print('strike = ',strike)
 print('cash_svi = ',cash_svi)
 print('cash_bs = ',cash_bs)
@@ -256,7 +272,7 @@ results.update({'22-cash_bs':cont_cash_bs})
 results.update({'23-single_pnl_bs':cont_hedgeerror_bs})
 results.update({'24-accu_pnl_bs':cont_pnl_bs})
 df = pd.DataFrame(data=results)
-df.to_csv('UpOut_dailyhedge.csv')
+#df.to_csv('UpOut_dailyhedge.csv')
 
 print("%15s %15s  %15s %15s %15s %15s %15s %15s %15s %15s" % ("evalDate","close","hedgeerror_svi","hedgeerror_bs",
                                                                 "delta_svi","delta_bs",
@@ -274,66 +290,6 @@ for idx,s in enumerate(cont_spot):
                                                        round(cont_pnl_bs[idx], 4),
                                                        ''))
 print("=" * 120)
-
-
-print(barrierType)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
