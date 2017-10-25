@@ -67,7 +67,7 @@ def save_ts_data(evalDate,endDate,daycounter,calendar):
         try:
             optioncontractbasicinfo = pd.read_json(os.path.abspath('..') + '\marketdata\optioncontractbasicinfo' + '.json')
         except:
-            save_optionsinfo(evalDate)
+            get_optionsinfo()
         try:
             optionmkt = pd.read_json(os.path.abspath('..')+ '\marketdata\optionmkt_' + datestr + '.json')
         except:

@@ -31,11 +31,11 @@ def get_vol_data(evalDate,daycounter,calendar,contractType):
     const_vol = estimated_vols.get(to_dt_date(evalDate))
     return underlyings, black_var_surface, const_vol
 
-with open(os.path.abspath('..')+'/intermediate_data/svi_calibration_m_calls.pickle','rb') as f:
+with open(os.path.abspath('..')+'/intermediate_data/svi_calibration_sr_calls.pickle','rb') as f:
     calibrered_params_ts = pickle.load(f)[0]
-with open(os.path.abspath('..')+'/intermediate_data/svi_dataset_m_calls.pickle','rb') as f:
+with open(os.path.abspath('..')+'/intermediate_data/svi_dataset_sr_calls.pickle','rb') as f:
     svi_dataset = pickle.load(f)[0]
-with open(os.path.abspath('..')+'/intermediate_data/bs_estimite_vols_m_calls.pickle','rb') as f:
+with open(os.path.abspath('..')+'/intermediate_data/bs_estimite_vols_sr_calls.pickle','rb') as f:
     estimated_vols = pickle.load(f)[0]
 
 # Evaluation Settings
@@ -53,12 +53,13 @@ rf = 0.03
 
 ##############################################################################
 results = {}
-for strike in range(2525,2975,50):
+for strike in range(5650,6950,100):
     print('strike = ',strike)
     optionType = ql.Option.Call
-    contractType = 'm'
+    contractType = 'sr'
     underlyingid = '1801'
-    spot_maturity = datetime.date(2017,12,7)
+    #spot_maturity = datetime.date(2017,12,7)
+    spot_maturity = datetime.date(2017, 11, 24)
     euro_option = OptionPlainEuropean(strike,maturitydt,optionType)
     ame_option = OptionPlainAmerican(strike,begDate, maturitydt, optionType)
     optionql = euro_option.option_ql
@@ -270,10 +271,11 @@ for strike in range(2525,2975,50):
 
 
 
-    results.update({'1-'+str(strike)+' svi':cont_pnl_svi})
+    results.update({str(strike)+' svi':cont_pnl_svi})
 
-    results.update({'2-'+str(strike)+' bs':cont_pnl_bs})
-
+    results.update({str(strike)+' bs':cont_pnl_bs})
+    results.update({str(strike) + ' option price svi': cont_optionprice_svi})
+    results.update({str(strike) + ' option price bs': cont_optionprice_bs})
 
     print("%15s %15s  %15s %15s %15s %15s %15s %15s %15s %15s" % ("evalDate","close","hedgeerror_svi","hedgeerror_bs",
                                                                     "delta_svi","delta_bs",
