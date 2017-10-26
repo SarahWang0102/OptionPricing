@@ -128,15 +128,15 @@ def spider2(codename, firstdate):
 def spider(codename, firstdate):
 
     pos_condition = pd.DataFrame()
-    date_range = w.tdays(firstdate, "2017-08-28", "").Data[0]
+    date_range = w.tdays(firstdate, "2017-09-10", "").Data[0]
     for i in range(len(date_range)):
         time.sleep(3)
         date = date_range[i]
         year, month, day = date.year, date.month, date.day
-        #url = 'http://www.dce.com.cn/publicweb/quotesdata/exportDayQuotesChData.html?dayQuotes.variety='\
-        #      + codename+'&dayQuotes.trade_type=1&year='+str(year)+'&month='+str(month-1)+'&day='+str(day)
-        url = 'http://www.dce.com.cn/publicweb/quotesdata/exportDayQuotesChData.html?dayQuotes.variety=' \
-              + codename + '&dayQuotes.trade_type=0&year=' + str(year) + '&month=' + str(month - 1) + '&day=' + str(day)
+        url = 'http://www.dce.com.cn/publicweb/quotesdata/exportDayQuotesChData.html?dayQuotes.variety='\
+              + codename+'&dayQuotes.trade_type=1&year='+str(year)+'&month='+str(month-1)+'&day='+str(day)
+        #url = 'http://www.dce.com.cn/publicweb/quotesdata/exportDayQuotesChData.html?dayQuotes.variety=' \
+        #      + codename + '&dayQuotes.trade_type=0&year=' + str(year) + '&month=' + str(month - 1) + '&day=' + str(day)
         result = geturl(url, header=randheader())
         rows = result.text.split('\n')
 
@@ -164,7 +164,8 @@ def spider(codename, firstdate):
                 #data['date'] = date
                 #print(data)
             datestr = str(date.year) + "-" + str(date.month) + "-" + str(date.day)
-            data.to_json('marketdata\\' + codename + '_future_mkt_' + datestr + '.json')
+            #data.to_json('marketdata\\' + codename + '_future_mkt_' + datestr + '.json')
+            data.to_json('marketdata\\' + codename + '_mkt_' + datestr + '.json')
             #print(data)
                 #with open(, 'wb') as f:
                  #   pickle.dump([data], f, pickle.HIGHEST_PROTOCOL)
@@ -173,7 +174,7 @@ def spider(codename, firstdate):
 def get_data():
 
     # fd = {'i': '2013/10/18', 'jm': '2013/03/22', 'j': '2011/04/15'}
-    fd = { 'm': '2017/03/01'}
+    fd = { 'm': '2017/08/28'}
 
     # fd = {'v': '2009/05/25', 'b': '2004/12/22', 'm': '	2000/07/17', 'a': '1999/01/04', 'y': '2006/01/09',
     #       'jd': '2013/11/08', 'bb': '2013/12/06', 'jm': '2013/03/22', 'j': '2011/04/15', 'pp': '2014/02/28',

@@ -34,14 +34,12 @@ def calculate_hist_vol(evalDate,calendar,underlyings):
 
 
 
-with open(os.path.abspath('..')+'/intermediate_data/spotclose_i.pickle','rb') as f:
+with open(os.path.abspath('..')+'/intermediate_data/spotclose_sr.pickle','rb') as f:
     underlyings = pickle.load(f)[0]
 
 # Evaluation Settings
-#begDate = ql.Date(26, 7, 2017)
-#endDate = ql.Date(25, 8, 2017)
-begDate = ql.Date(31, 7, 2017)
-endDate = ql.Date(31, 8, 2017)
+begDate = ql.Date(27, 7, 2017)
+endDate = ql.Date(28, 8, 2017)
 maturitydt = endDate
 
 calendar = ql.China()
@@ -55,7 +53,7 @@ optionType = ql.Option.Call
 
 ##############################################################################
 results = {}
-for strike in range(500,660,20):
+for strike in [6175,6275,6325,6375,6475,6575]:
     print('strike = ',strike)
 
     euro_option = OptionPlainEuropean(strike,maturitydt,optionType)
@@ -205,7 +203,7 @@ for strike in range(500,660,20):
 results.update({'eval_dates': eval_dates})
 results.update({'underlying': cont_spot})
 df = pd.DataFrame(data=results)
-df.to_csv('i dailyhedge_european.csv')
+df.to_csv('sr2 dailyhedge_european.csv')
 
 
 

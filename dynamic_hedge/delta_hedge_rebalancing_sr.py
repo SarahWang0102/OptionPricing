@@ -39,13 +39,13 @@ with open(os.path.abspath('..')+'/intermediate_data/bs_estimite_vols_sr_calls.pi
     estimated_vols = pickle.load(f)[0]
 
 # Evaluation Settings
-begDate = ql.Date(26, 7, 2017)
-endDate = ql.Date(25, 8, 2017)
+begDate = ql.Date(27, 7, 2017)
+endDate = ql.Date(28, 8, 2017)
 maturitydt = endDate
 
 calendar = ql.China()
 daycounter = ql.ActualActual()
-begDate = calendar.advance(begDate,ql.Period(1,ql.Days))
+#begDate = calendar.advance(begDate,ql.Period(1,ql.Days))
 
 fee = 0.2/1000
 dt = 1.0/365
@@ -53,7 +53,8 @@ rf = 0.03
 
 ##############################################################################
 results = {}
-for strike in range(5650,6950,100):
+for strike in [6175,6275,6325,6375,6475]:
+#for strike in range(5800,6600,50):
     print('strike = ',strike)
     optionType = ql.Option.Call
     contractType = 'sr'
@@ -62,7 +63,7 @@ for strike in range(5650,6950,100):
     spot_maturity = datetime.date(2017, 11, 24)
     euro_option = OptionPlainEuropean(strike,maturitydt,optionType)
     ame_option = OptionPlainAmerican(strike,begDate, maturitydt, optionType)
-    optionql = euro_option.option_ql
+    optionql = ame_option.option_ql
     ###############################################################################
 
 
@@ -113,7 +114,8 @@ for strike in range(5650,6950,100):
     optionql.setPricingEngine(engine_bs)
     price_bs = optionql.NPV()
     delta_bs = optionql.delta()
-
+    initialprice_svi = price_svi
+    initialprice_bs = price_bs
     tradingcost_svi = delta_svi*spot*fee
     tradingcost_bs = delta_bs*spot*fee
     cash_svi = price_svi - delta_svi*spot - tradingcost_svi
@@ -271,11 +273,14 @@ for strike in range(5650,6950,100):
 
 
 
-    results.update({str(strike)+' svi':cont_pnl_svi})
+    results.update({str(strike)+' 1svi':cont_pnl_svi})
 
-    results.update({str(strike)+' bs':cont_pnl_bs})
-    results.update({str(strike) + ' option price svi': cont_optionprice_svi})
-    results.update({str(strike) + ' option price bs': cont_optionprice_bs})
+    results.update({str(strike)+' 2bs':cont_pnl_bs})
+    results.update({'pct'+str(strike)+' 1svi':np.divide(cont_pnl_svi,initialprice_svi)})
+
+    results.update({'pct'+str(strike)+' 2bs':np.divide(cont_pnl_bs,initialprice_bs)})
+    results.update({str(strike) + ' option price 1svi': cont_optionprice_svi})
+    results.update({str(strike) + ' option price 2bs': cont_optionprice_bs})
 
     print("%15s %15s  %15s %15s %15s %15s %15s %15s %15s %15s" % ("evalDate","close","hedgeerror_svi","hedgeerror_bs",
                                                                     "delta_svi","delta_bs",
@@ -292,11 +297,14 @@ for strike in range(5650,6950,100):
                                                            round(cont_pnl_svi[idx],4),
                                                            round(cont_pnl_bs[idx], 4),
                                                            ''))
+    print("-" * 120)
+    print(cont_pnl_bs[-1] / cont_optionprice_bs[0])
     print("=" * 120)
 results.update({'eval_dates': eval_dates})
 results.update({'underlying': cont_spot})
 df = pd.DataFrame(data=results)
-df.to_csv(contractType+' dailyhedge_european.csv')
+#df.to_csv(contractType+' dailyhedge_european.csv')
+df.to_csv(contractType+' dailyhedge_american.csv')
 
 
 

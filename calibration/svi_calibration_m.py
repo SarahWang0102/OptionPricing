@@ -13,9 +13,9 @@ import pickle
 
 
 
-evalDate = ql.Date(26, 7, 2017)
+evalDate = ql.Date(20, 7, 2017)
 #evalDate = ql.Date(28, 9, 2017)
-endDate = ql.Date(27, 8, 2017)
+endDate = ql.Date(9, 9, 2017)
 core_contracts = ['801','805']
 calendar = ql.China()
 daycounter = ql.ActualActual()
@@ -78,12 +78,12 @@ while evalDate <= endDate:
         logMoneynesses = data_mdate.moneyness
         totalvariance = data_mdate.totalvariance
         vol = data_mdate.volatility
-        print('vols : ',vol)
+        #print('vols : ',vol)
         optimization_data.append(logMoneynesses)
         optimization_data.append(data_mdate.totalvariance)
         ttm = data_mdate.ttm
         params = svi_util.get_svi_optimal_params(optimization_data, ttm, 1)
-        print('params : ',params)
+        #print('params : ',params)
         calibrered_params.update({mdate:params})
         a_star, b_star, rho_star, m_star, sigma_star = params
         x_svi = np.arange(min(logMoneynesses)-0.005, max(logMoneynesses)+0.02, 0.1/100)  # log_forward_moneyness
@@ -101,7 +101,7 @@ while evalDate <= endDate:
         #plt.plot(x_svi, tv_svi, 'b--')
         #plt.title('tv, '+str(evalDate)+', '+str(mdate))
     #plt.show()
-    print(calibrered_params)
+    #print(calibrered_params)
     calibrered_params_ts.update({to_dt_date(evalDate):calibrered_params})
 print('calibrered_params_ts',calibrered_params_ts)
 with open(os.path.abspath('..')+'/intermediate_data/svi_calibration_m_calls.pickle','wb') as f:

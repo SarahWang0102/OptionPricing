@@ -172,19 +172,22 @@ for idx in range(len(intraday_etf.values)):
     #cash_svi = cash_svi * math.exp(rf * dt)
     #cash_bs = cash_bs * math.exp(rf * dt)
     # 计算对冲误差
-    replicate_svi = last_delta_svi * spot + cash_svi
-    replicate_bs = last_delta_bs * spot + cash_bs
+
     # hedgeerror_svi = replicate_svi - price_svi
     # hedgeerror_bs = replicate_bs - price_bs
     #hedgeerror_svi = last_delta_svi * (spot - last_spot) - (price_svi - last_price_svi)
     #hedgeerror_bs = last_delta_bs * (spot - last_spot) - (price_bs - last_price_bs)
+    '''
+    replicate_svi = last_delta_svi * spot + cash_svi
+    replicate_bs = last_delta_bs * spot + cash_bs
     pnl_svi = replicate_svi - price_svi
     pnl_bs = replicate_bs - price_bs
     hedgeerror_svi2 = pnl_svi - last_pnl_svi
     hedgeerror_bs2 = pnl_bs - last_pnl_bs
-
+    
     last_pnl_svi = pnl_svi
     last_pnl_bs = pnl_bs
+    '''
     # 调仓
     dholding_svi = delta_svi - last_delta_svi
     dholding_bs = delta_bs - last_delta_bs
@@ -195,7 +198,13 @@ for idx in range(len(intraday_etf.values)):
     cash_bs = cash_bs - dholding_bs * spot - tradingcost_bs
     replicate_svi = delta_svi * spot + cash_svi
     replicate_bs = delta_bs * spot + cash_bs
+    pnl_svi = replicate_svi - price_svi
+    pnl_bs = replicate_bs - price_bs
+    hedgeerror_svi2 = pnl_svi - last_pnl_svi
+    hedgeerror_bs2 = pnl_bs - last_pnl_bs
 
+    last_pnl_svi = pnl_svi
+    last_pnl_bs = pnl_bs
     last_delta_svi = delta_svi
     last_delta_bs = delta_bs
     last_price_svi = price_svi
