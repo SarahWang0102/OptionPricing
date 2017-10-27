@@ -60,7 +60,7 @@ for strike in range(500,660,20):
 
     euro_option = OptionPlainEuropean(strike,maturitydt,optionType)
     ame_option = OptionPlainAmerican(strike,begDate, maturitydt, optionType)
-    optionql = euro_option.option_ql
+    optionql = ame_option.option_ql
 
     S0 = underlyings.get(to_dt_date(begDate))
     underlying = ql.SimpleQuote(S0)
@@ -205,7 +205,7 @@ for strike in range(500,660,20):
 results.update({'eval_dates': eval_dates})
 results.update({'underlying': cont_spot})
 df = pd.DataFrame(data=results)
-df.to_csv('i dailyhedge_european.csv')
+df.to_csv('i dailyhedge_american.csv')
 
 
 

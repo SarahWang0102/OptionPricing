@@ -17,8 +17,8 @@ import pandas as pd
 
 def calculate_hist_vol(evalDate,calendar,underlyings):
     #start = calendar.advance(evalDate,ql.Period(-1,ql.Months))
-    #start = calendar.advance(evalDate, ql.Period(-2, ql.Weeks))
-    start = calendar.advance(evalDate, ql.Period(-4, ql.Days))
+    start = calendar.advance(evalDate, ql.Period(-2, ql.Weeks))
+    #start = calendar.advance(evalDate, ql.Period(-4, ql.Days))
     #print(start,evalDate)
     yields = []
     while start < evalDate:
@@ -58,7 +58,7 @@ for strike in [6175,6275,6325,6375,6475,6575]:
 
     euro_option = OptionPlainEuropean(strike,maturitydt,optionType)
     ame_option = OptionPlainAmerican(strike,begDate, maturitydt, optionType)
-    optionql = euro_option.option_ql
+    optionql = ame_option.option_ql
 
     S0 = underlyings.get(to_dt_date(begDate))
     underlying = ql.SimpleQuote(S0)
@@ -203,7 +203,7 @@ for strike in [6175,6275,6325,6375,6475,6575]:
 results.update({'eval_dates': eval_dates})
 results.update({'underlying': cont_spot})
 df = pd.DataFrame(data=results)
-df.to_csv('sr2 dailyhedge_european.csv')
+df.to_csv('sr2 dailyhedge_american.csv')
 
 
 
