@@ -13,7 +13,7 @@ evalDate = ql.Date(1, 8, 2017)
 endDate = ql.Date(20, 10, 2017)
 calendar = ql.China()
 daycounter = ql.ActualActual()
-'''
+
 while evalDate < endDate:
 
     datestr = str(evalDate.year()) + "-" + str(evalDate.month()) + "-" + str(evalDate.dayOfMonth())
@@ -26,7 +26,7 @@ while evalDate < endDate:
 
     evalDate = calendar.advance(evalDate,ql.Period(1,ql.Days))
 
-'''
+
 while evalDate < endDate:
     datestr = str(evalDate.year()) + "-" + str(evalDate.month()) + "-" + str(evalDate.dayOfMonth())
     df = pd.read_json(os.path.abspath('..') + '\marketdata\intraday_etf_'+datestr + '.json')
