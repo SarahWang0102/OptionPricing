@@ -15,10 +15,9 @@ calendar = ql.China()
 daycounter = ql.ActualActual()
 
 
-begDate = ql.Date(19, 7, 2017)
-#begDate = ql.Date(18, 7, 2017)
+evalDate = ql.Date(28, 4, 2017)
+#evalDate = ql.Date(28, 9, 2017)
 endDate = ql.Date(29, 9, 2017)
-evalDate = begDate
 
 #estimatied_vols = {}
 while evalDate < endDate:

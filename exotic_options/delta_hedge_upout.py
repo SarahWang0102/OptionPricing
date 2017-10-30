@@ -33,40 +33,44 @@ with open(os.path.abspath('..') +'/intermediate_data/total_hedging_bs_estimated_
     estimated_vols = pickle.load(f)[0]
 
 #barrier = 2.615
+
+results = {}
+barrier_cont = np.arange(0.05,0.051,0.005)
+barriers = []
+rebalancings = []
+pnls_svi = []
+pnls_bs = []
+begin_date = ql.Date(14,8,2017)
+svidata = svi_dataset.get(to_dt_date(begin_date))
+strike = svidata.spot
+#strike = 2.65
+print('strike = ',strike)
 print('='*100)
-#print("%15s %20s %20s %20s %20s" % ("barrier", "rebalencing cont", "svi hedge pnl",
-#                                          "bs hedge pnl","replicate svi"))
+#print("%15s %20s %20s %20s " % ("barrier", "rebalencing cont", "svi hedge pnl","bs hedge pnl"))
 print("%20s %20s %20s %20s %20s %20s %20s %20s" % ("eval date","spot","delta","cash", "option svi", "svi hedge pnl",
                                           "bs hedge pnl","replicate svi"))
 print('-'*100)
-results = {}
-#barrier_cont = np.arange(2.61,2.65,0.005)
-barrier_cont = np.arange(2.720,2.721,0.005)
-barriers = []
-rebalancings = []
-pnl_svi = []
-pnl_bs = []
-for barrier in barrier_cont:
+for pct in barrier_cont:
+    barrier = strike*(1+pct)
     # Evaluation Settings
-    begDate = ql.Date(31,8,2017)
+    begDate = begin_date
 
     calendar = ql.China()
     daycounter = ql.ActualActual()
     fee = 0.2/1000
+    #fee = 0.0
     dt = 1.0/365
     rf = 0.03
-    rf1 = 0.1
+    rf1 = 0.03
     svidata = svi_dataset.get(to_dt_date(begDate))
     maturity_dates = sorted(svidata.dataSet.keys())
-    maturity_date = maturity_dates[0]
+    maturity_date = maturity_dates[1]
     maturitydt = to_ql_date(maturity_date)
-    endDate = calendar.advance(maturitydt,ql.Period(-1,ql.Days))
+    endDate = calendar.advance(maturitydt,ql.Period(-3,ql.Days))
     ################Barrier Option Info#####################
-
-    strike = svidata.spot
-    print('maturity = ',maturitydt)
+    #print('barrier/strike',barrier/strike)
     optionType = ql.Option.Call
-    barrierType = ql.Barrier.DownIn
+    barrierType = ql.Barrier.UpOut
     contractType = '50etf'
     engineType = 'BinomialBarrierEngine'
     optionBarrierEuropean = OptionBarrierEuropean(strike,maturitydt,optionType,barrier,barrierType)
@@ -86,21 +90,29 @@ for barrier in barrier_cont:
                                                              process_bs_h, engineType)
     init_svi = price_svi
     init_bs = price_bs
-    tradingcost_svi = delta_svi*daily_close*fee
-    tradingcost_bs = delta_bs*daily_close*fee
+    tradingcost_svi = abs(delta_svi)*daily_close*fee
+    tradingcost_bs = abs(delta_bs)*daily_close*fee
     cash_svi = price_svi - delta_svi*daily_close - tradingcost_svi
     cash_bs = price_bs - delta_bs*daily_close - tradingcost_bs
     replicate_svi = delta_svi*daily_close + cash_svi
     replicate_bs = delta_bs*daily_close + cash_bs
+    init_replicate_svi = replicate_svi
+    init_replicate_bs = replicate_bs
+    #pnl_svi = replicate_svi - price_svi
+    #pnl_bs = replicate_bs - price_bs
+    pnl_svi = 0.0
+    pnl_bs = 0.0
     last_delta_svi = delta_svi
     last_delta_bs = delta_bs
+    last_price_svi = price_svi
+    last_price_bs = price_bs
     hist_spots.append(daily_close)
     rebalance_cont = 0
 
     while begDate < endDate:
         # Contruct vol surfave at previous date
         daily_close, black_var_surface, const_vol = get_vol_data(begDate, daycounter, calendar, contractType)
-        #if daily_close <= barrier:break
+        if daily_close >= barrier:break
         hist_spots.append(daily_close)
         begDate = calendar.advance(begDate, ql.Period(1, ql.Days))
         evaluation = Evaluation(begDate, daycounter, calendar)
@@ -108,10 +120,14 @@ for barrier in barrier_cont:
         balanced = False
         datestr = str(begDate.year()) + "-" + str(begDate.month()) + "-" + str(begDate.dayOfMonth())
         intraday_etf = pd.read_json(os.path.abspath('..') + '\marketdata\intraday_etf_' + datestr + '.json')
-
+        #barrier_close = False
         for t in intraday_etf.index:
             s = intraday_etf.loc[t].values[0]
-            if abs(marked-s)>0.02: # rebalancing
+            #if abs(barrier-s)<0.005:
+            #    barrier_close = True
+            #if abs(marked-s)>0.02 or abs(barrier-s)<0.01: # rebalancing
+            if abs(marked - s) > 0.02 :  # rebalancing
+            #    barrier_close = False
                 #print(t,s)
                 marked = s
                 #balanced = True
@@ -126,14 +142,20 @@ for barrier in barrier_cont:
                 dholding_svi = delta_svi - last_delta_svi
                 dholding_bs = delta_bs - last_delta_bs
                 #print('dholding',dholding_svi,dholding_bs)
-                tradingcost_svi = dholding_svi * s * fee
-                tradingcost_bs = dholding_bs * s * fee
+                tradingcost_svi = abs(dholding_svi) * s * fee
+                tradingcost_bs = abs(dholding_bs) * s * fee
                 cash_svi = cash_svi - dholding_svi * s - tradingcost_svi
                 cash_bs = cash_bs - dholding_bs * s - tradingcost_bs
                 replicate_svi = delta_svi * s + cash_svi
                 replicate_bs = delta_bs * s + cash_bs
+                #pnl_svi = replicate_svi - price_svi
+                #pnl_bs = replicate_bs - price_bs
+                pnl_svi += last_delta_svi * (price_svi - last_price_svi) - tradingcost_svi
+                pnl_bs += last_delta_bs * (price_bs - last_price_bs) - tradingcost_bs
                 last_delta_svi = delta_svi
                 last_delta_bs = delta_bs
+                last_price_svi = price_svi
+                last_price_bs = price_bs
                 rebalance_cont += 1
         if not balanced: # rebalancing at close price
             daily_close, black_var_surface, const_vol = get_vol_data(begDate, daycounter, calendar, contractType)
@@ -146,21 +168,30 @@ for barrier in barrier_cont:
                 evaluation, optionBarrierEuropean, hist_spots, process_svi_h, engineType)
             price_bs, delta_bs = exotic_util.calculate_barrier_price(
                 evaluation, optionBarrierEuropean, hist_spots, process_bs_h, engineType)
-            eurooption = OptionPlainEuropean(strike,maturitydt,optionType)
-            eql = eurooption.option_ql
-            eql.setPricingEngine(ql.AnalyticEuropeanEngine(process_svi_h))
-            eql_npv = eql.NPV()
             #print('delta : ', delta_svi, delta_bs)
             dholding_svi = delta_svi - last_delta_svi
             dholding_bs = delta_bs - last_delta_bs
-            tradingcost_svi = dholding_svi * s * fee
-            tradingcost_bs = dholding_bs * s * fee
-            cash_svi = cash_svi - dholding_svi * s - tradingcost_svi
-            cash_bs = cash_bs - dholding_bs * s - tradingcost_bs
+            if cash_svi < 0: r = rf1
+            else: r = rf
+            interest_svi = cash_svi*(math.exp(r * dt)-1)
+            interest_bs = cash_bs*(math.exp(r * dt)-1)
+            tradingcost_svi = abs(dholding_svi)*s*fee
+            tradingcost_bs = abs(dholding_bs)*s*fee
+            cash_svi = cash_svi-dholding_svi*s-tradingcost_svi
+            cash_bs = cash_bs-dholding_bs*s-tradingcost_bs
             replicate_svi = delta_svi * s + cash_svi
             replicate_bs = delta_bs * s + cash_bs
+            #pnl_svi = replicate_svi - price_svi
+            #pnl_bs = replicate_bs - price_bs
+
+            pnl_svi += last_delta_svi*(price_svi-last_price_svi)-tradingcost_svi+interest_svi
+            pnl_bs += last_delta_bs*(price_bs-last_price_bs)-tradingcost_bs+interest_bs
+            #pnl_svi = replicate_svi - init_replicate_svi - price_svi + init_svi
+            #pnl_bs = replicate_bs - init_replicate_bs - price_bs + init_bs
             last_delta_svi = delta_svi
             last_delta_bs = delta_bs
+            last_price_svi = price_svi
+            last_price_bs = price_bs
             rebalance_cont += 1
         if cash_svi > 0:
             cash_svi = cash_svi * math.exp(rf * dt)
@@ -168,24 +199,24 @@ for barrier in barrier_cont:
         else:
             cash_svi = cash_svi * math.exp(rf1 * dt)
             cash_bs = cash_bs * math.exp(rf1 * dt)
+        print("%20s %20s %20s %20s %20s %20s %20s %20s" % (
+            begDate, daily_close, delta_svi, cash_svi, price_svi, (pnl_svi- (price_svi - init_svi)) / init_svi,
+            (pnl_bs-(price_bs - init_bs)) / init_bs, replicate_svi))
+    pnl_svi += - (price_svi - init_svi)
+    pnl_bs += -(price_bs - init_bs)
+    total_return_svi = pnl_svi/init_svi
+    total_return_bs = pnl_bs/init_bs
+    print("%15s %20s %20s %20s " % (pct, rebalance_cont, total_return_svi,total_return_bs))
 
-        print("%20s %20s %20s %20s %20s %20s %20s %20s %20s" % (begDate,daily_close,delta_svi,cash_svi, price_svi, replicate_svi / init_svi,
-                                            replicate_bs / init_bs, replicate_svi,eql_npv))
-    #print("%15s %20s %20s %20s %20s" % (barrier, rebalance_cont, replicate_svi/init_svi,
-    #                                          replicate_bs/init_bs,replicate_svi))
-    #results.update({str(barrier)+'barrierType':'DownOut'})
     barriers.append(barrier)
     rebalancings.append(rebalance_cont)
-    pnl_svi.append(replicate_svi/init_svi)
-    pnl_bs.append(replicate_bs/init_bs)
-print('hist spot : ',hist_spots)
-results.update({'barrier':barriers})
-results.update({'rebalance cont':rebalancings})
-results.update({'pnl svi':pnl_svi})
-results.update({'pnl bs':pnl_bs})
-
+    pnls_svi.append(total_return_svi)
+    pnls_bs.append(total_return_bs)
+results.update({'barrier': barriers})
+results.update({'rebalance cont': rebalancings})
+results.update({'pnl svi': pnls_svi})
+results.update({'pnl bs': pnls_bs})
 print('='*100)
-#df = pd.DataFrame(data=results,index=np.arange(0,len(barrier_cont),1))
-#df = pd.DataFrame(data=results)
-#print(df)
-#df.to_csv(os.path.abspath('..')+'/results/delta_hedge_downin.csv')
+df = pd.DataFrame(data=results,index=np.arange(0,len(barrier_cont),1))
+print(df)
+df.to_csv(os.path.abspath('..')+'/results/delta_hedge_upout.csv')

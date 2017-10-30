@@ -46,7 +46,7 @@ pnl_bs = []
 for barrier in barrier_cont:
     # Evaluation Settings
     begDate = ql.Date(1,8,2017)
-    endDate = ql.Date(29,9,2017)
+    #endDate = ql.Date(29,9,2017)
     calendar = ql.China()
     daycounter = ql.ActualActual()
     fee = 0.2/1000
@@ -56,6 +56,7 @@ for barrier in barrier_cont:
     maturity_dates = sorted(svidata.dataSet.keys())
     maturity_date = maturity_dates[1]
     maturitydt = to_ql_date(maturity_date)
+    endDate = calendar.advance(maturitydt, ql.Period(-1, ql.Days))
     ################Barrier Option Info#####################
 
     strike = 2.75

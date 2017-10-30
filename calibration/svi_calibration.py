@@ -11,19 +11,24 @@ import datetime
 import os
 import pickle
 
+with open(os.path.abspath('..')+'/intermediate_data/svi_calibration_50etf_calls_noZeroVol.pickle','rb') as f:
+    calibrered_params_ts = pickle.load(f)[0]
+with open(os.path.abspath('..')+'/intermediate_data/svi_dataset_50etf_calls_noZeroVol.pickle','rb') as f:
+    svi_dataset = pickle.load(f)[0]
 
-
-evalDate = ql.Date(31, 7, 2017)
+evalDate = ql.Date(28, 4, 2017)
 #evalDate = ql.Date(28, 9, 2017)
 endDate = ql.Date(29, 9, 2017)
 calendar = ql.China()
 daycounter = ql.ActualActual()
 
-svi_dataset = {}
-calibrered_params_ts = {}
+#svi_dataset = {}
+#calibrered_params_ts = {}
 count = 0
 while evalDate <= endDate:
+
     evalDate = calendar.advance(evalDate, ql.Period(1, ql.Days))
+    if to_dt_date(evalDate) in svi_dataset.keys(): continue
     ql.Settings.instance().evaluationDate = evalDate
     print(evalDate)
     try:
@@ -61,7 +66,7 @@ while evalDate <= endDate:
             option.setPricingEngine(ql.AnalyticEuropeanEngine(process))
             #error = 0.0
             try:
-                implied_vol = option.impliedVolatility(open_price, process, 1.0e-4, 300, 0.0, 4.0)
+                implied_vol = option.impliedVolatility(close, process, 1.0e-4, 300, 0.0, 4.0)
             except RuntimeError:
                 continue
             #implied_vol2, error = calculate_vol_BS(maturitydt, optiontype, strike, spot, dividend_ts, yield_ts,
@@ -78,12 +83,12 @@ while evalDate <= endDate:
         logMoneynesses = data_mdate.moneyness
         totalvariance = data_mdate.totalvariance
         vol = data_mdate.volatility
-        print('vols : ',vol)
+        #print('vols : ',vol)
         optimization_data.append(logMoneynesses)
         optimization_data.append(data_mdate.totalvariance)
         ttm = data_mdate.ttm
         params = svi_util.get_svi_optimal_params(optimization_data, ttm, 10)
-        print('params : ',params)
+        #print('params : ',params)
         calibrered_params.update({mdate:params})
         a_star, b_star, rho_star, m_star, sigma_star = params
         x_svi = np.arange(min(logMoneynesses)-0.005, max(logMoneynesses)+0.02, 0.1/100)  # log_forward_moneyness
@@ -91,20 +96,20 @@ while evalDate <= endDate:
             a_star + b_star*(rho_star*(x_svi-m_star)+np.sqrt((x_svi - m_star)**2 + sigma_star**2)), ttm)
         vol_svi = np.sqrt(
             a_star + b_star*(rho_star*(x_svi-m_star) + np.sqrt((x_svi - m_star)**2 + sigma_star**2)))
-        plt.figure()
-        plt.plot(logMoneynesses, vol, 'ro')
-        plt.plot(x_svi, vol_svi, 'b--')
-        plt.title('vol, '+str(evalDate)+', '+str(mdate))
-        plt.figure(count)
-        count += 1
-        plt.plot(logMoneynesses, totalvariance, 'ro')
-        plt.plot(x_svi, tv_svi, 'b--')
-        plt.title('tv, '+str(evalDate)+', '+str(mdate))
-    plt.show()
-    print(calibrered_params)
+        #plt.figure()
+        #plt.plot(logMoneynesses, vol, 'ro')
+        #plt.plot(x_svi, vol_svi, 'b--')
+        #plt.title('vol, '+str(evalDate)+', '+str(mdate))
+        #plt.figure(count)
+        #count += 1
+        #plt.plot(logMoneynesses, totalvariance, 'ro')
+        #plt.plot(x_svi, tv_svi, 'b--')
+        #plt.title('tv, '+str(evalDate)+', '+str(mdate))
+    #plt.show()
+    #print(calibrered_params)
     calibrered_params_ts.update({to_dt_date(evalDate):calibrered_params})
 print('calibrered_params_ts',calibrered_params_ts)
-with open(os.path.abspath('..')+'/intermediate_data/svi_calibration_50etf_calls_noZeroVol_open.pickle','wb') as f:
+with open(os.path.abspath('..')+'/intermediate_data/svi_calibration_50etf_calls_noZeroVol.pickle','wb') as f:
     pickle.dump([calibrered_params_ts],f)
 
 print('svi',svi_dataset)

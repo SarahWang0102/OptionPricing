@@ -209,7 +209,8 @@ def calculate_barrier_price(evaluation,barrier_option,hist_spots,process,engineT
     exercise = barrier_option.exercise
     payoff = barrier_option.payoff
     barrier_engine = ql.BinomialBarrierEngine(process, 'crr', 801)
-    european_engine = ql.BinomialVanillaEngine(process, 'crr', 801)
+    #european_engine = ql.BinomialVanillaEngine(process, 'crr', 801)
+    european_engine = ql.AnalyticEuropeanEngine(process)
     barrier_ql.setPricingEngine(barrier_engine)
     option_ql = ql.EuropeanOption(payoff, exercise)
     option_ql.setPricingEngine(european_engine)
