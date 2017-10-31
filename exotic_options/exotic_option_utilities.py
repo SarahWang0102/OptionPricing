@@ -209,8 +209,8 @@ def calculate_barrier_price(evaluation,barrier_option,hist_spots,process,engineT
     exercise = barrier_option.exercise
     payoff = barrier_option.payoff
     barrier_engine = ql.BinomialBarrierEngine(process, 'crr', 801)
-    #european_engine = ql.BinomialVanillaEngine(process, 'crr', 801)
-    european_engine = ql.AnalyticEuropeanEngine(process)
+    european_engine = ql.BinomialVanillaEngine(process, 'crr', 801)
+    #european_engine = ql.AnalyticEuropeanEngine(process)
     barrier_ql.setPricingEngine(barrier_engine)
     option_ql = ql.EuropeanOption(payoff, exercise)
     option_ql.setPricingEngine(european_engine)
@@ -221,12 +221,16 @@ def calculate_barrier_price(evaluation,barrier_option,hist_spots,process,engineT
     else:
         if barrierType == ql.Barrier.DownOut:
             if min(hist_spots) <= barrier :
+                barrier_engine = None
+                european_engine = None
                 return 0.0,0.0
             else:
                 option_price = barrier_ql.NPV()
                 option_delta = barrier_ql.delta()
         elif barrierType == ql.Barrier.UpOut:
             if max(hist_spots) >= barrier:
+                barrier_engine = None
+                european_engine = None
                 return 0.0,0.0
             else:
                 option_price = barrier_ql.NPV()
@@ -245,6 +249,10 @@ def calculate_barrier_price(evaluation,barrier_option,hist_spots,process,engineT
             else:
                 option_price = option_ql.NPV()
                 option_delta = option_ql.delta()
+    barrier_engine = None
+    european_engine = None
+    barrier_ql = None
+    option_ql = None
     if math.isnan(option_price):
         return 0.0,0.0
     else:
