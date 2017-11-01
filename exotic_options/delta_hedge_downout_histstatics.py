@@ -201,7 +201,6 @@ for pct in pct_cont:
                 replicate_bs = delta_bs * s + cash_bs
                 #pnl_svi = replicate_svi - price_svi
                 #pnl_bs = replicate_bs - price_bs
-
                 pnl_svi += last_delta_svi*(price_svi-last_price_svi)-tradingcost_svi+interest_svi
                 pnl_bs += last_delta_bs*(price_bs-last_price_bs)-tradingcost_bs+interest_bs
                 #pnl_svi = replicate_svi - init_replicate_svi - price_svi + init_svi

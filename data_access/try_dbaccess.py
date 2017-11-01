@@ -8,23 +8,25 @@ from datetime import date,datetime
 import pickle
 w.start()
 
-evalDate = ql.Date(28, 4, 2017)
-#endDate = ql.Date(2, 8, 2017)
-endDate = ql.Date(1, 8, 2017)
+evalDate = ql.Date(26, 4, 2017)
+#evalDate = ql.Date(28, 7, 2017)
+endDate = ql.Date(20, 10, 2017)
 calendar = ql.China()
 daycounter = ql.ActualActual()
 
+
 while evalDate < endDate:
-
+    evalDate = calendar.advance(evalDate, ql.Period(1, ql.Days))
     datestr = str(evalDate.year()) + "-" + str(evalDate.month()) + "-" + str(evalDate.dayOfMonth())
-
-    data = w.wsi("510050.SH", "close", datestr+" 09:30:00", datestr+" 15:01:00", "Fill=Previous")
-    print(data.Times)
-    print(len(data.Data))
+    ids = w.wsd("M.DCE", "trade_hiscode",datestr, datestr, "")
+    #print(ids.Data)
+    data = w.wsi(ids.Data[0][0], "close", datestr+" 09:00:00", datestr+" 23:31:00", "Fill=Previous")
+    #print(data.Times[-1])
+    #print(data.Data[-1])
     df = pd.DataFrame(data=data.Data[0], index=data.Times)
-    df.to_json(os.path.abspath('..') + '\marketdata\intraday_etf_'+datestr + '.json')
+    df.to_json(os.path.abspath('..') + '\marketdata\intraday_m_'+datestr + '.json')
 
-    evalDate = calendar.advance(evalDate,ql.Period(1,ql.Days))
+
 
 '''
 while evalDate < endDate:

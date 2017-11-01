@@ -34,7 +34,8 @@ with open(os.path.abspath('..') +'/intermediate_data/total_hedging_bs_estimated_
 
 #barrier = 2.615
 #pct = 0.16
-pct_cont = [0.13,0.14,0.15,0.16,0.17]
+#pct_cont = [0.13,0.14,0.15,0.16,0.17]
+pct_cont = [0.08,0.09,0.10,0.11,0.12]
 #pct_cont = [0.03,0.04,0.05,0.06,0.07]
 optionType = ql.Option.Call
 barrierType = ql.Barrier.UpIn
@@ -237,4 +238,4 @@ results.update({'pnl bs': pnls_bs})
 
 df = pd.DataFrame(data=results)
 #print(df)
-df.to_csv(os.path.abspath('..')+'/results/delta_hedge_upin.csv')
+df.to_csv(os.path.abspath('..')+'/results/delta_hedge_upin_8-12.csv')
