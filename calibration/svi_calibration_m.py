@@ -11,20 +11,27 @@ import datetime
 import os
 import pickle
 
+with open(os.path.abspath('..')+'/intermediate_data/svi_calibration_m_calls.pickle','rb') as f:
+    calibrered_params_ts = pickle.load(f)[0]
+with open(os.path.abspath('..')+'/intermediate_data/svi_dataset_m_calls.pickle','rb') as f:
+    svi_dataset = pickle.load(f)[0]
+df = pd.read_json(os.path.abspath('..') + '\marketdata\hiscodes_m' + '.json')
 
 
-evalDate = ql.Date(20, 7, 2017)
+evalDate = ql.Date(29, 4, 2017)
 #evalDate = ql.Date(28, 9, 2017)
-endDate = ql.Date(9, 9, 2017)
-core_contracts = ['801','805']
+endDate = ql.Date(9, 10, 2017)
+
+core_contracts1 = ['801','709']
+core_contracts2 = ['801','805']
+
 calendar = ql.China()
 daycounter = ql.ActualActual()
 
-svi_dataset = {}
-calibrered_params_ts = {}
 count = 0
-while evalDate <= endDate:
+while evalDate < endDate:
     evalDate = calendar.advance(evalDate, ql.Period(1, ql.Days))
+    if to_dt_date(evalDate) in calibrered_params_ts.keys():continue
     ql.Settings.instance().evaluationDate = evalDate
     print(evalDate)
     try:
@@ -36,6 +43,11 @@ while evalDate <= endDate:
     dividend_ts = ql.YieldTermStructureHandle(ql.FlatForward(evalDate, 0.0, daycounter))
 
     svi_data = SviInputSet(to_dt_date(evalDate))
+    if df.loc[to_dt_date(evalDate),0] == 'M1709.DCE':
+        core_contracts = core_contracts1
+    else:
+        core_contracts = core_contracts2
+
     for maturitydt in results_call.keys():
         mktdata = results_call.get(maturitydt)
         contractid = mktdata[0][-1]
