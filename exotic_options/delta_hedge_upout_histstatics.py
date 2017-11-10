@@ -34,7 +34,8 @@ with open(os.path.abspath('..') +'/intermediate_data/total_hedging_bs_estimated_
 
 #barrier = 2.615
 pct = 0.16
-pct_cont = [0.13,0.14,0.15,0.16,0.17]
+#pct_cont = [0.13,0.14,0.15,0.16,0.17]
+pct_cont = [0.15]
 #pct_cont = [0.08,0.09,0.10,0.11,0.12]
 optionType = ql.Option.Call
 barrierType = ql.Barrier.UpOut
@@ -55,14 +56,14 @@ pnls_svi = []
 pnls_bs = []
 results = {}
 for pct in pct_cont:
-    begin_date = ql.Date(29, 4, 2017)
+    begin_date = ql.Date(4, 1, 2016)
     begin_date2 = ql.Date(30, 6, 2017)
     print('barrier pct : ',pct)
     #strike = 2.65
     print('='*100)
     print("%15s %20s %20s %20s " % ("begin_date", "rebalencing cont", "svi hedge pnl","bs hedge pnl"))
-    #print("%20s %20s %20s %20s %20s %20s %20s %20s" % ("eval date","spot","delta","cash", "option svi", "svi hedge pnl",
-    #                                          "bs hedge pnl","replicate svi"))
+    # print("%20s %20s %20s %20s %20s %20s %20s %20s" % ("eval date","spot","delta","cash", "option svi", "svi hedge pnl",
+    #                                           "bs hedge pnl","replicate svi"))
     print('-'*100)
     #for pct in barrier_cont:
     while begin_date < begin_date2:
@@ -88,10 +89,14 @@ for pct in pct_cont:
         underlying = ql.SimpleQuote(daily_close)
         process_svi_h = evaluation.get_bsmprocess(daycounter, underlying, black_var_surface)
         process_bs_h = evaluation.get_bsmprocess_cnstvol(daycounter, calendar, underlying, const_vol)
-        price_svi, delta_svi = exotic_util.calculate_barrier_price(evaluation, optionBarrierEuropean, hist_spots,
-                                                                   process_svi_h, engineType)
+
         price_bs, delta_bs = exotic_util.calculate_barrier_price(evaluation, optionBarrierEuropean, hist_spots,
                                                                  process_bs_h, engineType)
+        try:
+            price_svi, delta_svi = exotic_util.calculate_barrier_price(evaluation, optionBarrierEuropean, hist_spots,
+                                                                       process_svi_h, engineType)
+        except:
+            continue
         init_svi = price_svi
         init_bs = price_bs
         init_spot = daily_close
@@ -134,19 +139,25 @@ for pct in pct_cont:
                 #if abs(barrier-s)<0.005:
                 #    barrier_close = True
                 #if abs(marked-s)>0.02 or abs(barrier-s)<0.01: # rebalancing
-                condition1 = abs(barrier-s)<0.01 and abs(marked-s)>0.01
-                condition2 = abs(barrier-s)>=0.01 and abs(marked-s)>0.015
+                condition1 = abs(barrier-s)<0.02 and abs(marked-s)>0.01
+                condition2 = abs(barrier-s)>=0.02 and abs(marked-s)>0.05
                 #if abs(barrier-s)<0.01 and abs(marked-s)>0.01:
                 if condition1 or condition2 :  # rebalancing
-                #    barrier_close = False
+                    barrier_close = False
                     #print(t,s)
                     marked = s
                     #balanced = True
                     underlying.setValue(s)
                     process_svi_h = evaluation.get_bsmprocess(daycounter, underlying, black_var_surface)
                     process_bs_h = evaluation.get_bsmprocess_cnstvol(daycounter, calendar, underlying, const_vol)
-                    price_svi, delta_svi = exotic_util.calculate_barrier_price(
-                        evaluation, optionBarrierEuropean, hist_spots,process_svi_h, engineType)
+                    try:
+                        price_svi, delta_svi = exotic_util.calculate_barrier_price(
+                            evaluation, optionBarrierEuropean, hist_spots, process_svi_h, engineType)
+                    except:
+                        price_svi = last_price_svi
+                        delta_svi = last_delta_svi
+                    # price_svi, delta_svi = exotic_util.calculate_barrier_price(
+                    #     evaluation, optionBarrierEuropean, hist_spots,process_svi_h, engineType)
                     price_bs, delta_bs = exotic_util.calculate_barrier_price(
                         evaluation, optionBarrierEuropean, hist_spots,process_bs_h, engineType)
                     #print('delta : ',delta_svi,delta_bs)
@@ -175,8 +186,12 @@ for pct in pct_cont:
                 underlying.setValue(s)
                 process_svi_h = evaluation.get_bsmprocess(daycounter, underlying, black_var_surface)
                 process_bs_h = evaluation.get_bsmprocess_cnstvol(daycounter, calendar, underlying, const_vol)
-                price_svi, delta_svi = exotic_util.calculate_barrier_price(
-                    evaluation, optionBarrierEuropean, hist_spots, process_svi_h, engineType)
+                try:
+                    price_svi, delta_svi = exotic_util.calculate_barrier_price(
+                        evaluation, optionBarrierEuropean, hist_spots, process_svi_h, engineType)
+                except:
+                    price_svi = last_price_svi
+                    delta_svi = last_delta_svi
                 price_bs, delta_bs = exotic_util.calculate_barrier_price(
                     evaluation, optionBarrierEuropean, hist_spots, process_bs_h, engineType)
                 #print('delta : ', delta_svi, delta_bs)
@@ -210,13 +225,13 @@ for pct in pct_cont:
             else:
                 cash_svi = cash_svi * math.exp(rf1 * dt)
                 cash_bs = cash_bs * math.exp(rf1 * dt)
-            #print("%20s %20s %20s %20s %20s %20s %20s %20s" % (
+            # print("%20s %20s %20s %20s %20s %20s %20s %20s" % (
             #    begDate, daily_close, delta_svi, cash_svi, price_svi, (pnl_svi- (price_svi - init_svi)) / init_spot,
             #    (pnl_bs-(price_bs - init_bs)) / init_spot, replicate_svi))
         pnl_svi += - (price_svi - init_svi)
         pnl_bs += -(price_bs - init_bs)
-        total_return_svi = pnl_svi/init_spot
-        total_return_bs = pnl_bs/init_spot
+        total_return_svi = pnl_svi/init_svi
+        total_return_bs = pnl_bs/init_bs
         print("%15s %20s %20s %20s " % (begin_date, rebalance_cont, total_return_svi,total_return_bs))
 
         barriers.append(pct)
@@ -237,4 +252,4 @@ results.update({'pnl bs': pnls_bs})
 
 df = pd.DataFrame(data=results)
 #print(df)
-df.to_csv(os.path.abspath('..')+'/results/delta_hedge_upout_13-17.csv')
+df.to_csv(os.path.abspath('..')+'/results/delta_hedge_upout_v2.csv')

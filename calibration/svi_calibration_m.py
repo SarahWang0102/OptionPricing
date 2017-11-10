@@ -18,9 +18,9 @@ with open(os.path.abspath('..')+'/intermediate_data/svi_dataset_m_calls.pickle',
 df = pd.read_json(os.path.abspath('..') + '\marketdata\hiscodes_m' + '.json')
 
 
-evalDate = ql.Date(29, 4, 2017)
+evalDate = ql.Date(1, 1, 2016)
 #evalDate = ql.Date(28, 9, 2017)
-endDate = ql.Date(9, 10, 2017)
+endDate = ql.Date(28, 4, 2017)
 
 core_contracts1 = ['801','709']
 core_contracts2 = ['801','805']

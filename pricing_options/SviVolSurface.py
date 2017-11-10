@@ -41,7 +41,7 @@ class SviVolSurface:
             Ft = (spot+dS) * math.exp(rf * ttm)
             x_svi = np.log(strikes / Ft)
             vol = np.sqrt(np.maximum(0, a_star + b_star * (
-                rho_star * (x_svi - m_star) + np.sqrt((x_svi - m_star) ** 2 + sigma_star ** 2))))
+            rho_star * (x_svi - m_star) + np.sqrt((x_svi - m_star) ** 2 + sigma_star ** 2))))
             volset.append(vol)
         implied_vols = ql.Matrix(len(strikes), len(maturity_dates))
         for i in range(implied_vols.rows()):

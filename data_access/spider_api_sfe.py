@@ -1,13 +1,14 @@
 #!/usr/bin/env python
 # encoding: utf-8
 
-
 from bs4 import BeautifulSoup
 from WindPy import *
+from data_access import db_utilities as du
 import requests
 import random
 import pandas as pd
 import time
+import json
 
 w.start()
 
@@ -70,113 +71,53 @@ def geturl(url, header, tries_num=20, sleep_time=0.1, time_out=10, max_retry=20)
     return res
 
 
-def spider_mktdata_day(firstdate, enddate,tradetype):
+def spider_mktdata(firstdate, enddate):
     date_range = w.tdays(firstdate, enddate, "").Data[0]
     dataset = {}
     for i in range(len(date_range)):
         time.sleep(3)
         date = date_range[i]
         year, month, day = date.year, date.month, date.day
-        url = 'http://www.dce.com.cn/publicweb/quotesdata/exportDayQuotesChData.html?dayQuotes.variety=all' \
-              '&dayQuotes.trade_type='+str(tradetype)+'&year='+str(year)+'&month='+str(month-1)+'&day='+str(day)
-        result = geturl(url, header=randheader())
-        rows = result.text.split('\n')
-        if len(rows) == 0:
-            pass
-        else:
-            index = rows[0].split()
-            data = pd.DataFrame(index=index)
-            index_length = len(index)
-            for nbrRow in range(1, len(rows)):
-                row = rows[nbrRow]
-                colums_of_row = row.split()
-                if len(colums_of_row) != index_length:
-                    continue
-                data[nbrRow] = colums_of_row
-                dt_date = datetime.date(date)
-                dataset.update({dt_date:data})
-                # datestr = str(date.year) + "-" + str(date.month) + "-" + str(date.day)
-                # data.to_json(os.path.abspath('..')+ '\marketdata\\' + codename + '_mkt_' + datestr + '.json')
+        if month < 10: str_month = '0'+str(month)
+        else: str_month = str(month)
+        if day < 10: str_day = '0' + str(day)
+        else: str_day = str(day)
+        url = 'http://www.shfe.com.cn/data/dailydata/kx/kx'+str(year)+str_month+str_day+'.dat'
+        dailydata_res = requests.get(url)
+        dailydata_kx = dailydata_res.text
+        dailydata_kx_dict = json.loads(dailydata_kx)
+        #print(dailydata_kx_dict['o_curinstrument'][0][du.key_map_sfe()['amt_close']])
+        dt_date = datetime.date(date)
+        dataset.update({dt_date:dailydata_kx_dict})
     return dataset
 
-def spider_mktdata_night(firstdate, enddate,tradetype):
+def spider_positions(firstdate, enddate):
     date_range = w.tdays(firstdate, enddate, "").Data[0]
     dataset = {}
     for i in range(len(date_range)):
         time.sleep(3)
         date = date_range[i]
         year, month, day = date.year, date.month, date.day
-        url = 'http://www.dce.com.cn/publicweb/quotesdata/exportTiNight.html?tiNightQuotes.variety=all' \
-              '&tiNightQuotes.trade_type='+str(tradetype)+'&year='+str(year)+'&month='+str(month-1)+'&day='+str(day)
-        result = geturl(url, header=randheader())
-        rows = result.text.split('\n')
-        if len(rows) == 0:
-            pass
-        else:
-            index = rows[0].split()
-            data = pd.DataFrame(index=index)
-            index_length = len(index)
-            for nbrRow in range(1, len(rows)):
-                row = rows[nbrRow]
-                colums_of_row = row.split()
-                if len(colums_of_row) != index_length:
-                    continue
-                data[nbrRow] = colums_of_row
-                dt_date = datetime.date(date)
-                dataset.update({dt_date:data})
-                # datestr = str(date.year) + "-" + str(date.month) + "-" + str(date.day)
-                # data.to_json(os.path.abspath('..')+ '\marketdata\\' + codename + '_mkt_' + datestr + '.json')
-    return dataset
-
-def spider_positions(codename,firstdate, enddate,tradetype):
-    date_range = w.tdays(firstdate, enddate, "").Data[0]
-    dataset = {}
-    for i in range(len(date_range)):
-        time.sleep(3)
-        date = date_range[i]
-        year, month, day = date.year, date.month, date.day
-        url = 'http://www.dce.com.cn/publicweb/quotesdata/exportMemberDealPosiQuotesData.html?' \
-            'memberDealPosiQuotes.variety='+str(codename)+\
-            '&memberDealPosiQuotes.trade_type='+str(tradetype)+'&year='+str(year)+'&month='+str(month-1)+'&day='+str(day)+\
-            '&contract.contract_id=all&contract.variety_id='+str(codename)+'&exportFlag=txt'
-
-        result = geturl(url, header=randheader())
-        rows = result.text.split('\n')
-        result_final = []
-        df = pd.DataFrame()
-        flag_first = True
-        if len(rows) == 0:
-            pass
-        else:
-            index_length = 100
-            for nbrRow in range(1,len(rows)):
-                row = rows[nbrRow]
-                if row.startswith(u'名次'):
-                    if not flag_first:
-                        result_final.append(df)
-                        #print(df)
-                    columns = row.split()
-                    index_length = len(columns)
-                    #print(columns)
-                    df = pd.DataFrame(index=columns)
-                    flag_first = False
-                    #print(df)
-                else:
-                    colums_of_row = row.split()
-                    if len(colums_of_row) != index_length: continue
-                    df[nbrRow] = colums_of_row
-        result_final.append(df)
-        #print( [r for r in result_final ] )
-        dataset.update({date:result_final})
+        if month < 10: str_month = '0'+str(month)
+        else: str_month = str(month)
+        if day < 10: str_day = '0' + str(day)
+        else: str_day = str(day)
+        url = 'http://www.shfe.com.cn/data/dailydata/kx/pm'+str(year)+str_month+str_day+'.dat'
+        pm_res = requests.get(url)
+        pm_kx = pm_res.text
+        pm_kx_dict = json.loads(pm_kx)
+        dt_date = datetime.date(date)
+        dataset.update({dt_date:pm_kx_dict})
     return dataset
 
 
 '''
-codename = 'm'
+#codename = 'm'
 begdate=date(2017,11,1)
 enddate=date(2017,11,1)
 
-tradetype = 1 # 0:期货，1：期权
-ds = spider_positions(codename, begdate, enddate,0)
-print(ds[begdate])
+tradetype = 0 # 0:期货，1：期权
+ds = spider_mktdata(begdate, enddate)
+#print(ds[begdate])
+
 '''

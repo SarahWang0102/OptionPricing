@@ -11,12 +11,12 @@ import pickle
 
 w.start()
 
-evalDate = ql.Date(1, 5, 2017)
+evalDate = ql.Date(1, 1, 2016)
 # evalDate = ql.Date(28, 7, 2017)
-endDate = ql.Date(20, 8, 2017)
+endDate = ql.Date(1, 5, 2017)
 calendar = ql.China()
 daycounter = ql.ActualActual()
-'''
+
 evalDate = calendar.advance(evalDate, ql.Period(1, ql.Days))
 
 begstr = str(evalDate.year()) + "-" + str(evalDate.month()) + "-" + str(evalDate.dayOfMonth())
@@ -59,7 +59,7 @@ print(diffs)
 print(sum(diffs)/len(diffs))
 print(sum(stds)/len(stds))
 
-'''
+
 
 evalDate = calendar.advance(evalDate, ql.Period(1, ql.Days))
 

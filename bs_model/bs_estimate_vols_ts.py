@@ -15,7 +15,7 @@ calendar = ql.China()
 daycounter = ql.ActualActual()
 
 
-evalDate = ql.Date(28, 4, 2017)
+evalDate = ql.Date(1, 1, 2016)
 #evalDate = ql.Date(28, 9, 2017)
 endDate = ql.Date(29, 9, 2017)
 
@@ -24,6 +24,7 @@ while evalDate < endDate:
     print('Start : ', evalDate)
 
     evalDate = calendar.advance(evalDate, ql.Period(1, ql.Days))
+    if to_dt_date(evalDate) in estimated_vols.keys(): continue
     ql.Settings.instance().evaluationDate = evalDate
     try:
         print(evalDate)

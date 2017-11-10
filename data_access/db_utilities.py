@@ -1,5 +1,5 @@
 
-def get_codename(name):
+def code_map_dce():
     map = {'豆一':'a',
            '豆二':'b',
            '胶合板':'bb',
@@ -17,12 +17,17 @@ def get_codename(name):
            '聚氯乙烯': 'v',
            '豆油': 'y',
     }
+    return map
+
+def get_codename(name):
+    map = code_map_dce()
+
     return map.get(name)
 
-def get_sh_key():
-    sh_daily_key_map = {
-        'product':u'PRODUCTID',
-        'delivery':u'DELIVERYMONTH',
+def key_map_sfe():
+    map = {
+        'codename':u'PRODUCTID',
+        'contractmonth':u'DELIVERYMONTH',
         'amt_last_close':u'CLOSEPRICE',
         'amt_last_settlement':u'PRESETTLEMENTPRICE',
         'amt_open':u'OPENPRICE',
@@ -33,3 +38,4 @@ def get_sh_key():
         'amt_trading_volume': u'VOLUME',
         'amt_holding_volume':  u'OPENINTEREST',
     }
+    return map
