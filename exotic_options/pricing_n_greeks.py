@@ -40,7 +40,7 @@ def get_vol_data(evalDate,daycounter,calendar,contractType):
 
 # Evaluation Settings
 evalDate = ql.Date(3,8,2017)
-endDate1 = ql.Date(28,8,2017)
+# endDate1 = ql.Date(28,8,2017)
 #endDate1 = ql.Date(11,8,2017)
 calendar = ql.China()
 daycounter = ql.ActualActual()
@@ -51,9 +51,9 @@ rf = 0.03
 svidata = svi_dataset.get(to_dt_date(evalDate))
 S0 = svidata.spot
 maturity_dates = sorted(svidata.dataSet.keys())
-maturity_date = maturity_dates[1]
-print('maturity date : ',maturity_date)
-maturitydt = to_ql_date(maturity_date)
+maturitydt = calendar.advance(evalDate,ql.Period(1,ql.Days))
+print('maturity date : ',maturitydt)
+# maturitydt = to_ql_date(maturity_date)
 #print(maturitydt)
 barrier =  2.8
 strike =  2.6
@@ -101,11 +101,11 @@ for spot in spot_range:
 
 pu = PlotUtil()
 f_delta = pu.get_figure(list(spot_range),[barrier_deltas,plain_deltas],[barrier_type+' barrier call','plain vanilla call'],'spot','Delta')
-f_delta.savefig(barrier_type+'-'+str(evalDate)+' delta.png',dpi = 300,format='png')
+f_delta.savefig('ctm'+barrier_type+'-'+str(evalDate)+' delta.png',dpi = 300,format='png')
 f_gamma = pu.get_figure(list(spot_range),[barrier_gammas,plain_gammas],[barrier_type+' barrier call','plain vanilla call'],'spot','Gamma')
-f_gamma.savefig(barrier_type+'-'+str(evalDate)+' gamma.png',dpi = 300,format='png')
+f_gamma.savefig('ctm'+barrier_type+'-'+str(evalDate)+' gamma.png',dpi = 300,format='png')
 f_price = pu.get_figure(list(spot_range),[barrier_prices,plain_prices],[barrier_type+' barrier call','plain vanilla call'],'spot','Price')
-f_price.savefig(barrier_type+'-'+str(evalDate)+' price.png',dpi = 300,format='png')
+f_price.savefig('ctm'+barrier_type+'-'+str(evalDate)+' price.png',dpi = 300,format='png')
 
 
 plt.show()
