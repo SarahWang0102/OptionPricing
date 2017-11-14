@@ -42,9 +42,9 @@ class PlotUtil:
             axarr.spines['top'].set_visible(False)
             axarr.yaxis.set_ticks_position('left')
             axarr.xaxis.set_ticks_position('bottom')
+        return axarrs
 
-
-    def plot_line(self,ax,count,x,y,lgd):
+    def plot_line(self,ax,count,x,y,lgd,x_label='', y_label=''):
         c = self.colors[count]
         l = self.lines[count]
         if count == 3:
@@ -54,7 +54,10 @@ class PlotUtil:
             ax.plot(x, y, color=c, linestyle=l, linewidth=2.3, label=lgd)
         else:
             ax.plot(x, y, color=c, linestyle=l, linewidth=2, label=lgd)
-
+        ax.legend()
+        ax.set_xlabel(x_label)
+        ax.set_ylabel(y_label)
+        self.set_frame([ax])
 
     def get_figure(self,x,Y,legends,x_label='',y_label=''):
         f, ax = plt.subplots()
