@@ -11,9 +11,9 @@ import pickle
 
 w.start()
 
-evalDate = ql.Date(1, 1, 2016)
+evalDate = ql.Date(25, 8, 2015)
 #evalDate = ql.Date(20, 4, 2017)
-endDate = ql.Date(1, 5, 2017)
+endDate = ql.Date(2, 1, 2016)
 calendar = ql.China()
 daycounter = ql.ActualActual()
 
@@ -23,7 +23,7 @@ evalDate = calendar.advance(evalDate, ql.Period(1, ql.Days))
 while evalDate < endDate:
     evalDate = calendar.advance(evalDate, ql.Period(1, ql.Days))
     datestr = str(evalDate.year()) + "-" + str(evalDate.month()) + "-" + str(evalDate.dayOfMonth())
-    ids = w.wsd("SR.CZC", "trade_hiscode",datestr, datestr, "")
+    # ids = w.wsd("SR.CZC", "trade_hiscode",datestr, datestr, "")
 
     #w.wsi("510050.SH", "close", "2017-11-09 09:00:00", "2017-11-09 12:17:54", "Fill=Previous")
     #print(ids.Data)

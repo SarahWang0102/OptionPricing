@@ -384,7 +384,7 @@ def calculate_barrier_price_vol_binomial(evaluation,daycounter,calendar,barrier_
         return option_price,option_delta
 
 def calculate_effective_delta(evaluation,daycounter,calendar,barrier_option,
-                                spot,vol, dS=0.0001):
+                                spot,vol, dS=0.001):
 
     barrier_ql = barrier_option.option_ql
     process1 = evaluation.get_bsmprocess_cnstvol(daycounter, calendar, ql.SimpleQuote(spot+dS), vol)

@@ -53,13 +53,15 @@ def calculate_matrics(evaluation, daycounter, calendar, optionBarrierEuropean, h
                       black_var_surface,const_vol, engineType,barrier,strike):
     ttm = daycounter.yearFraction(begDate, maturitydt)
     svi_vol = black_var_surface.blackVol(ttm, daily_close)
-    price_svi, delta_svi = exotic_util.calculate_barrier_price_vol_binomial(
+    # print(svi_vol,const_vol)
+    price_svi, delta_svi = exotic_util.calculate_barrier_price_vol(
             evaluation, daycounter, calendar, optionBarrierEuropean, hist_spots, daily_close,
             svi_vol, engineType)
-    price_bs, delta_bs = exotic_util.calculate_barrier_price_vol_binomial(
+    price_bs, delta_bs = exotic_util.calculate_barrier_price_vol(
             evaluation, daycounter, calendar, optionBarrierEuropean, hist_spots, daily_close,
             const_vol, engineType)
-    delta_svi = max(delta_svi,0.3)
+    # delta_svi = max(delta_svi,0.3)
+    # delta_svi = max(delta_svi,0.25)
     if abs(barrier - spot) < 0.1 * spot and ttm < 15.0 / 365:
         # print('m')
         delta_svi = max(0.0,delta_svi)
@@ -81,8 +83,8 @@ def calculate_hedging_positions(spot, option_price, delta, cash, fee,
 
 #######################################################################################################
 
-begin_date = ql.Date(1, 3, 2016)
-end_date = ql.Date(1, 6, 2017)
+begin_date = ql.Date(1, 9, 2015)
+end_date = ql.Date(30, 6, 2017)
 fee = 0.2 / 1000
 # dt = 1.0 / 365
 rf = 0.03
@@ -97,18 +99,20 @@ calendar = ql.China()
 daycounter = ql.ActualActual()
 
 dates = []
+option_init_svi = []
+option_init_bs = []
 svi_pnl = []
 bs_pnl = []
 transaction_svi = []
 transaction_bs = []
-
+rebalancings = []
 print('=' * 200)
 print("%20s %20s %20s %20s %20s %20s" % (
     "eval date", 'price_svi', 'price_bs', 'portfolio_svi', 'portfolio_bs',
     'transaction'))
 print('=' * 200)
 while begin_date < end_date:
-    begin_date = calendar.advance(begin_date, ql.Period(2, ql.Days))  # contract effective date
+    begin_date = calendar.advance(begin_date, ql.Period(1, ql.Weeks))  # contract effective date
     maturitydt = calendar.advance(begin_date, ql.Period(3, ql.Months))  # contract maturity
     endDate = calendar.advance(maturitydt, ql.Period(-1, ql.Days))  # last hedging date
     svidata = svi_dataset.get(to_dt_date(begin_date))
@@ -161,6 +165,7 @@ while begin_date < end_date:
         hist_spots.append(daily_close)
         begDate = calendar.advance(begDate, ql.Period(1, ql.Days))
         daily_close, black_var_surface, const_vol = get_vol_data(begDate, daycounter, calendar, contractType)
+
         evaluation = Evaluation(begDate, daycounter, calendar)
         marked = daily_close
         datestr = str(begDate.year()) + "-" + str(begDate.month()) + "-" + str(begDate.dayOfMonth())
@@ -168,7 +173,7 @@ while begin_date < end_date:
         for t in intraday_etf.index:
             s = intraday_etf.loc[t].values[0]
 
-            condition2 =  abs(marked - s) > 0.02*daily_close
+            condition2 =  abs(marked - s) > 0.03*daily_close
             if condition2:  # rebalancing
                 if begDate == maturitydt:
                     if s>barrier: price_svi = price_bs = 0.0
@@ -176,7 +181,6 @@ while begin_date < end_date:
                     delta_svi = delta_bs = 0.0
                 else:
                     try:
-
                         price_svi, delta_svi, price_bs, delta_bs, svi_vol = calculate_matrics(
                             evaluation, daycounter, calendar, optionBarrierEuropean, hist_spots, s,
                             black_var_surface, const_vol, engineType, barrier, strike)
@@ -245,8 +249,11 @@ while begin_date < end_date:
     dates.append(begin_date)
     svi_pnl.append(portfolio_net_svi / init_svi)
     bs_pnl.append(portfolio_net_bs / init_bs)
-    transaction_svi.append(totalfees_svi)
-    transaction_bs.append(totalfees_bs)
+    transaction_svi.append(totalfees_svi/ init_svi)
+    transaction_bs.append(totalfees_bs/ init_bs)
+    rebalancings.append(rebalance_cont)
+    option_init_bs.append(init_bs)
+    option_init_svi.append(init_svi)
     print("%20s %20s %20s %20s %20s %20s" % (
             begin_date, round(init_svi, 4),round(init_bs, 4),
             round(portfolio_net_svi / init_svi, 4), round(portfolio_net_bs / init_bs, 4),
@@ -257,3 +264,16 @@ print("%20s %20s %20s %20s %20s %20s %20s %20s" % (
             'transaction'))
 print('svi_pnl',sum(svi_pnl)/len(svi_pnl))
 print('bs_pnl',sum(bs_pnl)/len(bs_pnl))
+results = {}
+results.update({'date': dates})
+results.update({'rebalance cont': rebalancings})
+results.update({'pnl svi': svi_pnl})
+results.update({'pnl bs': bs_pnl})
+results.update({'option init svi': option_init_svi})
+results.update({'option init bs': option_init_bs})
+results.update({'transaction svi': transaction_svi})
+results.update({'transaction bs': transaction_bs})
+
+df = pd.DataFrame(data=results)
+#print(df)
+df.to_csv(os.path.abspath('..')+'/results/delta_hedge_upout_new.csv')

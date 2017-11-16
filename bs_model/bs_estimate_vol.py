@@ -36,6 +36,7 @@ def calulate_market_model_price_sse(
     return sse
 
 def estimiate_bs_constant_vol(evalDate, calendar, daycounter):
+    estimate_vol = 0.0
     try:
         vols, spot, mktData, mktFlds, optionData, optionFlds, optionids = wind_data.get_wind_data(evalDate)
         ql.Settings.instance().evaluationDate = evalDate
@@ -45,7 +46,7 @@ def estimiate_bs_constant_vol(evalDate, calendar, daycounter):
         vol = 1.0
         step = 0.005
         min_sse = 10000
-        estimate_vol = 0.0
+        # estimate_vol = 0.0
         while vol > step:
             flat_vol_ts = ql.BlackVolTermStructureHandle(ql.BlackConstantVol(evalDate, calendar, vol, daycounter))
             sse = calulate_market_model_price_sse(
@@ -56,7 +57,6 @@ def estimiate_bs_constant_vol(evalDate, calendar, daycounter):
             vol -= step
     except:
         print('Error -- estimiate_bs_constant_vol failed')
-        return
     return estimate_vol,min_sse
 
 def calulate_market_model_price_sse_single_optiontype(

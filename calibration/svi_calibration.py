@@ -11,24 +11,24 @@ import datetime
 import os
 import pickle
 
-with open(os.path.abspath('..')+'/intermediate_data/svi_calibration_50etf_calls_noZeroVol.pickle','rb') as f:
-    calibrered_params_ts = pickle.load(f)[0]
-with open(os.path.abspath('..')+'/intermediate_data/svi_dataset_50etf_calls_noZeroVol.pickle','rb') as f:
-    svi_dataset = pickle.load(f)[0]
+# with open(os.path.abspath('..')+'/intermediate_data/svi_calibration_50etf_puts_noZeroVol.pickle','rb') as f:
+#     calibrered_params_ts = pickle.load(f)[0]
+# with open(os.path.abspath('..')+'/intermediate_data/svi_dataset_50etf_puts_noZeroVol.pickle','rb') as f:
+#     svi_dataset = pickle.load(f)[0]
 
 evalDate = ql.Date(1, 9, 2015)
-#evalDate = ql.Date(28, 9, 2017)
-endDate = ql.Date(1, 1, 2016)
+# endDate = ql.Date(28, 9, 2017)
+endDate = ql.Date(31, 10, 2017)
 calendar = ql.China()
 daycounter = ql.ActualActual()
 
-#svi_dataset = {}
-#calibrered_params_ts = {}
+svi_dataset = {}
+calibrered_params_ts = {}
 count = 0
 while evalDate <= endDate:
 
     evalDate = calendar.advance(evalDate, ql.Period(1, ql.Days))
-    if to_dt_date(evalDate) in svi_dataset.keys(): continue
+    # if to_dt_date(evalDate) in svi_dataset.keys(): continue
     ql.Settings.instance().evaluationDate = evalDate
     print(evalDate)
     try:
@@ -42,8 +42,8 @@ while evalDate <= endDate:
     svi_data = SviInputSet(to_dt_date(evalDate),spot)
     for optionid in optionids:
         optionDataIdx = optionData[optionFlds.index('wind_code')].index(optionid)
-        if optionData[optionFlds.index('call_or_put')][optionDataIdx] == '认购':
-        #if optionData[optionFlds.index('call_or_put')][optionDataIdx] == '认沽':
+        # if optionData[optionFlds.index('call_or_put')][optionDataIdx] == '认购':
+        if optionData[optionFlds.index('call_or_put')][optionDataIdx] == '认沽':
             temp = pd.to_datetime(optionData[optionFlds.index('exercise_date')][optionDataIdx])
             mdate = datetime.date(temp.year,temp.month,temp.day)
             maturitydt = ql.Date(mdate.day, mdate.month, mdate.year)
@@ -55,7 +55,7 @@ while evalDate <= endDate:
             rf = curve.zeroRate(maturitydt, daycounter, ql.Continuous).rate()
             Ft = spot * math.exp(rf*ttm)
             moneyness = math.log(strike/Ft, math.e)
-            optiontype = ql.Option.Call
+            optiontype = ql.Option.Put
             exercise = ql.EuropeanExercise(maturitydt)
             payoff = ql.PlainVanillaPayoff(optiontype, strike)
             option = ql.EuropeanOption(payoff, exercise)
@@ -96,24 +96,24 @@ while evalDate <= endDate:
             a_star + b_star*(rho_star*(x_svi-m_star)+np.sqrt((x_svi - m_star)**2 + sigma_star**2)), ttm)
         vol_svi = np.sqrt(
             a_star + b_star*(rho_star*(x_svi-m_star) + np.sqrt((x_svi - m_star)**2 + sigma_star**2)))
-        #plt.figure()
-        #plt.plot(logMoneynesses, vol, 'ro')
-        #plt.plot(x_svi, vol_svi, 'b--')
-        #plt.title('vol, '+str(evalDate)+', '+str(mdate))
+        # plt.figure()
+        # plt.plot(logMoneynesses, vol, 'ro')
+        # plt.plot(x_svi, vol_svi, 'b--')
+        # plt.title('vol, '+str(evalDate)+', '+str(mdate))
         #plt.figure(count)
         #count += 1
         #plt.plot(logMoneynesses, totalvariance, 'ro')
         #plt.plot(x_svi, tv_svi, 'b--')
         #plt.title('tv, '+str(evalDate)+', '+str(mdate))
-    #plt.show()
+    # plt.show()
     #print(calibrered_params)
     calibrered_params_ts.update({to_dt_date(evalDate):calibrered_params})
 print('calibrered_params_ts',calibrered_params_ts)
-with open(os.path.abspath('..')+'/intermediate_data/svi_calibration_50etf_calls_noZeroVol.pickle','wb') as f:
+with open(os.path.abspath('..')+'/intermediate_data/svi_calibration_50etf_puts_noZeroVol.pickle','wb') as f:
     pickle.dump([calibrered_params_ts],f)
 
 print('svi',svi_dataset)
-with open(os.path.abspath('..')+'/intermediate_data/svi_dataset_50etf_calls_noZeroVol.pickle','wb') as f:
+with open(os.path.abspath('..')+'/intermediate_data/svi_dataset_50etf_puts_noZeroVol.pickle','wb') as f:
     pickle.dump([svi_dataset],f)
 
 
