@@ -16,9 +16,9 @@ with open(os.path.abspath('..')+'/intermediate_data/svi_calibration_50etf_calls_
 with open(os.path.abspath('..')+'/intermediate_data/svi_dataset_50etf_calls_noZeroVol.pickle','rb') as f:
     svi_dataset = pickle.load(f)[0]
 
-evalDate = ql.Date(1, 1, 2016)
+evalDate = ql.Date(1, 9, 2015)
 #evalDate = ql.Date(28, 9, 2017)
-endDate = ql.Date(1, 6, 2017)
+endDate = ql.Date(1, 1, 2016)
 calendar = ql.China()
 daycounter = ql.ActualActual()
 

@@ -291,7 +291,7 @@ def calculate_barrier_price_vol(evaluation,daycounter,calendar,barrier_option,hi
                 option_price = barrier_ql.NPV()
                 option_delta = barrier_ql.delta()
         elif barrierType == ql.Barrier.UpOut:
-            if max(hist_spots) >= barrier:
+            if max(hist_spots) >= barrier or spot >= barrier:
                 barrier_engine = None
                 european_engine = None
                 return 0.0,0.0
@@ -322,15 +322,71 @@ def calculate_barrier_price_vol(evaluation,daycounter,calendar,barrier_option,hi
         return 0.0,0.0
     else:
         return option_price,option_delta
-
-def calculate_effective_delta(evaluation,daycounter,calendar,barrier_option,
-                                spot,vol, dS=0.0001):
-
+def calculate_barrier_price_vol_binomial(evaluation,daycounter,calendar,barrier_option,hist_spots,
+                                spot,vol,engineType):
+    ql.Settings.instance().evaluationDate = evaluation.evalDate
+    underlying = ql.SimpleQuote(spot)
     barrier = barrier_option.barrier
     barrierType = barrier_option.barrierType
     barrier_ql = barrier_option.option_ql
     exercise = barrier_option.exercise
     payoff = barrier_option.payoff
+    process = evaluation.get_bsmprocess_cnstvol(daycounter, calendar, underlying, vol)
+    barrier_engine = ql.BinomialBarrierEngine(process, 'crr', 400)
+    european_engine = ql.BinomialVanillaEngine(process, 'crr', 400)
+    # european_engine = ql.AnalyticEuropeanEngine(process)
+    # barrier_engine = ql.AnalyticBarrierEngine(process)
+    barrier_ql.setPricingEngine(barrier_engine)
+    option_ql = ql.EuropeanOption(payoff, exercise)
+    option_ql.setPricingEngine(european_engine)
+    # check if hist_spots hit the barrier
+    if len(hist_spots) == 0:
+        option_price = barrier_ql.NPV()
+        option_delta = barrier_ql.delta()
+    else:
+        if barrierType == ql.Barrier.DownOut:
+            if min(hist_spots) <= barrier :
+                barrier_engine = None
+                european_engine = None
+                return 0.0,0.0
+            else:
+                option_price = barrier_ql.NPV()
+                option_delta = barrier_ql.delta()
+        elif barrierType == ql.Barrier.UpOut:
+            if max(hist_spots) >= barrier:
+                barrier_engine = None
+                european_engine = None
+                return 0.0,0.0
+            else:
+                option_price = barrier_ql.NPV()
+                option_delta = barrier_ql.delta()
+        elif barrierType == ql.Barrier.DownIn:
+            if min(hist_spots) > barrier:
+                option_price = barrier_ql.NPV()
+                option_delta = barrier_ql.delta()
+            else:
+                option_price =  option_ql.NPV()
+                option_delta = option_ql.delta()
+        else:
+            if max(hist_spots) < barrier:
+                option_price = barrier_ql.NPV()
+                option_delta = barrier_ql.delta()
+            else:
+                option_price = option_ql.NPV()
+                option_delta = option_ql.delta()
+    barrier_engine = None
+    european_engine = None
+    barrier_ql = None
+    option_ql = None
+    if math.isnan(option_price):
+        return 0.0,0.0
+    else:
+        return option_price,option_delta
+
+def calculate_effective_delta(evaluation,daycounter,calendar,barrier_option,
+                                spot,vol, dS=0.0001):
+
+    barrier_ql = barrier_option.option_ql
     process1 = evaluation.get_bsmprocess_cnstvol(daycounter, calendar, ql.SimpleQuote(spot+dS), vol)
     process2 = evaluation.get_bsmprocess_cnstvol(daycounter, calendar, ql.SimpleQuote(spot-dS), vol)
 

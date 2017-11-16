@@ -30,8 +30,29 @@ def get_vol_data(evalDate, daycounter, calendar, contractType):
                           to_ql_dates(maturity_dates), ql.Option.Call, contractType)
     black_var_surface = svi.black_var_surface()
     const_vol = estimated_vols.get(to_dt_date(evalDate))
+
     return spot, black_var_surface, const_vol
 
+def calculate_matrics(evaluation, daycounter, calendar, optionBarrierEuropean, hist_spots, spot,
+                      black_var_surface,const_vol, engineType,barrier,strike):
+    ttm = daycounter.yearFraction(begDate, maturitydt)
+    # if abs(barrier - spot) < 0.02*spot or abs(strike - spot) < 0.02*spot:
+
+
+    # svi_vol = black_var_surface.blackVol(ttm, daily_close)*math.sqrt(daycounter.yearFraction(begDate, maturitydt))
+    svi_vol = black_var_surface.blackVol(ttm, daily_close)
+    price_svi, delta_svi = exotic_util.calculate_barrier_price_vol(
+            evaluation, daycounter, calendar, optionBarrierEuropean, hist_spots, daily_close,
+            svi_vol, engineType)
+    price_bs, delta_bs = exotic_util.calculate_barrier_price_vol(
+            evaluation, daycounter, calendar, optionBarrierEuropean, hist_spots, daily_close,
+            const_vol, engineType)
+
+    if abs(barrier - spot) < 0.1 * spot and ttm < 15.0 / 365:
+        print('m')
+        delta_svi = max(0.0,delta_svi)
+
+    return price_svi, delta_svi,price_bs,delta_bs,svi_vol
 
 def calculate_hedging_positions(spot, option_price, delta, cash, fee,
                                 last_delta=0.0, rebalance_cont=0, total_fees=0.0,
@@ -51,7 +72,7 @@ def calculate_hedging_positions(spot, option_price, delta, cash, fee,
 
 #######################################################################################################
 
-begin_date = ql.Date(1, 10, 2016)
+begin_date = ql.Date(13, 6, 2016)
 fee = 0.2 / 1000
 # dt = 1.0 / 365
 rf = 0.03
@@ -76,13 +97,13 @@ barrier_option = optionBarrierEuropean.option_ql
 
 print('barrier : ', barrier)
 print('strike  : ', strike)
-print('maturity date : ',maturitydt)
-print('=' * 100)
+print('eval date : ',begin_date)
+print('=' * 200)
 # print("%15s %20s %20s %20s " % ("begin_date", "rebalencing cont", "svi hedge pnl", "bs hedge pnl"))
-print("%20s %20s %20s %20s %20s %20s %20s %20s" % (
-    "eval date", "spot", "delta", 'price_svi', 'price_bs', 'portfolio_svi', 'portfolio_bs',
+print("%15s %15s %15s %15s %15s %15s %15s %15s %15s %15s %15s" % (
+    "eval date", "spot","svi vol","bs vol", "delta svi", "delta bs", 'price_svi', 'price_bs', 'portfolio_svi', 'portfolio_bs',
      'transaction'))
-print('-' * 100)
+print('-' * 200)
 
 hist_spots = []
 barriers = []
@@ -97,17 +118,23 @@ results = {}
 begDate = begin_date
 evaluation = Evaluation(begDate, daycounter, calendar)
 daily_close, black_var_surface, const_vol = get_vol_data(begDate, daycounter, calendar, contractType)
+# ttm = max(7.0/365,daycounter.yearFraction(begDate, maturitydt))
+# ttm = daycounter.yearFraction(begDate, maturitydt)
+# svi_vol = black_var_surface.blackVol(ttm, daily_close)*math.sqrt(daycounter.yearFraction(begDate, maturitydt))
 # svi_vol = min(black_var_surface.blackVol(daycounter.yearFraction(begDate, maturitydt), daily_close),0.3)
-svi_vol = min(black_var_surface.blackVol(daycounter.yearFraction(begDate, maturitydt), daily_close),0.4)
+# svi_vol = min(black_var_surface.blackVol(daycounter.yearFraction(begDate, maturitydt), daily_close),0.4)
 price_svi, price_bs, delta_svi, delta_bs = 0.0, 0.0, 0.0, 0.0
 # underlying = ql.SimpleQuote(daily_close)
 try:
-    price_svi, delta_svi = exotic_util.calculate_barrier_price_vol(
+    # price_svi, delta_svi = exotic_util.calculate_barrier_price_vol(
+    #     evaluation, daycounter, calendar, optionBarrierEuropean, hist_spots, daily_close,
+    #     svi_vol, engineType)
+    # price_bs, delta_bs = exotic_util.calculate_barrier_price_vol(
+    #     evaluation, daycounter, calendar, optionBarrierEuropean, hist_spots, daily_close,
+    #     const_vol, engineType)
+    price_svi, delta_svi, price_bs, delta_bs, svi_vol = calculate_matrics(
         evaluation, daycounter, calendar, optionBarrierEuropean, hist_spots, daily_close,
-        svi_vol, engineType)
-    price_bs, delta_bs = exotic_util.calculate_barrier_price_vol(
-        evaluation, daycounter, calendar, optionBarrierEuropean, hist_spots, daily_close,
-        const_vol, engineType)
+                      black_var_surface,const_vol, engineType,barrier,strike)
 except Exception as e:
     print(e)
     print('initial price unavailable')
@@ -128,30 +155,38 @@ last_s = daily_close
 hist_spots.append(daily_close)
 
 print('init option price, ', 'svi: ', price_svi, 'bs: ', price_bs)
-print('-' * 100)
-print("%20s %20s %20s %20s %20s %20s %20s %20s" % (
-    begDate, round(daily_close, 4), round(delta_svi, 4), round(price_svi, 4),round(price_bs, 4),
-    round(portfolio_net_svi / init_svi, 4), round(portfolio_net_bs / init_svi, 4),
+print('-' * 200)
+print("%15s %15s %15s %15s %15s %15s %15s %15s %15s %15s %15s" % (
+    begDate, round(daily_close, 4), round(svi_vol, 4),round(const_vol, 4), round(delta_svi, 4),round(delta_bs, 4), round(price_svi, 4),round(price_bs, 4),
+    round(portfolio_net_svi / init_svi, 4), round(portfolio_net_bs / init_bs, 4),
     round(totalfees_svi / init_svi, 4)))
 
 #######################################################################################################
 # Rebalancing portfolio
 while begDate < endDate:
     # Contruct vol surfave at previous date
-    daily_close, black_var_surface, const_vol = get_vol_data(begDate, daycounter, calendar, contractType)
+    daily_close, x, xx = get_vol_data(begDate, daycounter, calendar, contractType)
     if daily_close >= barrier:
         print('barrier reached.', barrier, daily_close)
         break
     hist_spots.append(daily_close)
     begDate = calendar.advance(begDate, ql.Period(1, ql.Days))
     evaluation = Evaluation(begDate, daycounter, calendar)
+    daily_close, black_var_surface, const_vol = get_vol_data(begDate, daycounter, calendar, contractType)
+    # ttm = max(7.0/365,daycounter.yearFraction(begDate, maturitydt))
+    # ttm = daycounter.yearFraction(begDate, maturitydt)
+    # svi_vol = black_var_surface.blackVol(ttm, daily_close)*math.sqrt(daycounter.yearFraction(begDate, maturitydt))
+
+    # svi_vol = min(black_var_surface.blackVol(daycounter.yearFraction(begDate, maturitydt), daily_close), 0.3)
+    # print('svivol : ',svi_vol, ' bsvol : ',const_vol, ttm)
     marked = daily_close
     datestr = str(begDate.year()) + "-" + str(begDate.month()) + "-" + str(begDate.dayOfMonth())
     intraday_etf = pd.read_json(os.path.abspath('..') + '\marketdata\intraday_etf_' + datestr + '.json')
     for t in intraday_etf.index:
         s = intraday_etf.loc[t].values[0]
         # condition1 = abs(barrier - s) < 0.02 and abs(marked - s) > 0.01
-        condition2 = abs(marked - s) > 0.05
+        # condition2 = abs(barrier - s) > 0.02 and abs(marked - s) > 0.5
+        condition2 = abs(marked - s) > 0.03*daily_close
         if condition2:  # rebalancing
             if begDate == maturitydt:
                 if s>barrier: price_svi = price_bs = 0.0
@@ -160,12 +195,15 @@ while begDate < endDate:
             else:
                 try:
                     # underlying.setValue(s)
-                    price_svi, delta_svi = exotic_util.calculate_barrier_price_vol(
+                    # price_svi, delta_svi = exotic_util.calculate_barrier_price_vol(
+                    #     evaluation, daycounter, calendar, optionBarrierEuropean, hist_spots, s,
+                    #     svi_vol, engineType)
+                    # price_bs, delta_bs = exotic_util.calculate_barrier_price_vol(
+                    #     evaluation, daycounter, calendar, optionBarrierEuropean, hist_spots, s,
+                    #     const_vol, engineType)
+                    price_svi, delta_svi, price_bs, delta_bs, svi_vol = calculate_matrics(
                         evaluation, daycounter, calendar, optionBarrierEuropean, hist_spots, s,
-                        svi_vol, engineType)
-                    price_bs, delta_bs = exotic_util.calculate_barrier_price_vol(
-                        evaluation, daycounter, calendar, optionBarrierEuropean, hist_spots, s,
-                        const_vol, engineType)
+                        black_var_surface, const_vol, engineType, barrier,strike)
                 except Exception as e:
                     print(e)
                     print('no npv at ', t)
@@ -189,9 +227,10 @@ while begDate < endDate:
             last_s = s
             marked = s
 
-            print("%20s %20s %20s %20s %20s %20s %20s %20s" % (
-                t, round(s, 4), round(delta_svi, 4), round(price_svi, 4),round(price_bs, 4),
-                round(portfolio_net_svi / init_svi, 4), round(portfolio_net_bs / init_svi, 4),
+            print("%15s %15s %15s %15s %15s %15s %15s %15s %15s %15s %15s" % (
+                t, round(s, 4), round(svi_vol, 4), round(const_vol, 4), round(delta_svi, 4),
+                round(delta_bs, 4), round(price_svi, 4), round(price_bs, 4),
+                round(portfolio_net_svi / init_svi, 4), round(portfolio_net_bs / init_bs, 4),
                 round(totalfees_svi / init_svi, 4)))
 
     # Rebalancing on close price
@@ -199,17 +238,20 @@ while begDate < endDate:
         if daily_close > barrier:
             price_svi = price_bs = 0.0
         else:
-            price_svi = price_bs = max(0, s - strike)
+            price_svi = price_bs = max(0, daily_close - strike)
         delta_svi = delta_bs = 0.0
     else:
         try:
             # underlying.setValue(s)
-            price_svi, delta_svi = exotic_util.calculate_barrier_price_vol(
+            # price_svi, delta_svi = exotic_util.calculate_barrier_price_vol(
+            #     evaluation, daycounter, calendar, optionBarrierEuropean, hist_spots, daily_close,
+            #     svi_vol, engineType)
+            # price_bs, delta_bs = exotic_util.calculate_barrier_price_vol(
+            #     evaluation, daycounter, calendar, optionBarrierEuropean, hist_spots, daily_close,
+            #     const_vol, engineType)
+            price_svi, delta_svi, price_bs, delta_bs, svi_vol = calculate_matrics(
                 evaluation, daycounter, calendar, optionBarrierEuropean, hist_spots, daily_close,
-                svi_vol, engineType)
-            price_bs, delta_bs = exotic_util.calculate_barrier_price_vol(
-                evaluation, daycounter, calendar, optionBarrierEuropean, hist_spots, daily_close,
-                const_vol, engineType)
+                black_var_surface, const_vol, engineType, barrier,strike)
         except Exception as e:
             print(e)
             print('no npv at ', begDate)
@@ -236,12 +278,13 @@ while begDate < endDate:
     last_price_bs = price_bs
     last_s = daily_close
 
-    print("%20s %20s %20s %20s %20s %20s %20s %20s" % (
-        begDate, round(daily_close, 4), round(delta_svi, 4), round(price_svi, 4),round(price_bs, 4),
-        round(portfolio_net_svi / init_svi, 4), round(portfolio_net_bs / init_svi, 4),
+    print("%15s %15s %15s %15s %15s %15s %15s %15s %15s %15s %15s" % (
+        begDate, round(daily_close, 4), round(svi_vol, 4), round(const_vol, 4), round(delta_svi, 4), round(delta_bs, 4),
+        round(price_svi, 4), round(price_bs, 4),
+        round(portfolio_net_svi / init_svi, 4), round(portfolio_net_bs / init_bs, 4),
         round(totalfees_svi / init_svi, 4)))
     # print("%15s %20s %20s %20s " % (begin_date, rebalance_cont, total_return_svi, total_return_bs))
-print('=' * 100)
-print("%20s %20s %20s %20s %20s %20s %20s %20s" % (
-        "eval date", "spot", "delta", 'price_svi','price_bs', 'portfolio_svi', 'portfolio_bs',
-        'transaction'))
+print('=' * 200)
+print("%15s %15s %15s %15s %15s %15s %15s %15s %15s %15s %15s" % (
+    "eval date", "spot","svi vol","bs vol", "delta svi", "delta bs", 'price_svi', 'price_bs', 'portfolio_svi', 'portfolio_bs',
+     'transaction'))

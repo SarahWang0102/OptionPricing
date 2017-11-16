@@ -118,23 +118,46 @@ maturities.append(calendar.advance(evalDate,ql.Period(1,ql.Days)))
 lgds = ['1月到期','1周到期','2天到期','1天到期']
 # delta_maturities = {}
 ff, axx = plt.subplots()
+ff1, axx1 = plt.subplots()
+ff2, axx2 = plt.subplots()
+ff3, axx3 = plt.subplots()
 for cont in range(len(maturities)):
     maturitydt = maturities[cont]
     optionBarrierEuropean = OptionBarrierEuropean(strike, maturitydt, optionType, barrier, barrierType)
     barrier_option = optionBarrierEuropean.option_ql
     deltas = []
+    gammas = []
+    vegas = []
+    tdeltas = []
     for spot in spot_range:
         underlying.setValue(spot)
-        process = evaluation.get_bsmprocess(daycounter, underlying, black_var_surface)
-        barrier_option.setPricingEngine(ql.BinomialBarrierEngine(process, 'crr', 200))
-        barrierdelta = barrier_option.delta()
-        deltas.append(barrierdelta)
+        vol = black_var_surface.blackVol(daycounter.yearFraction(evalDate, maturitydt),spot)
+        # process = evaluation.get_bsmprocess(daycounter, underlying, black_var_surface)
+        process = evaluation.get_bsmprocess_cnstvol(daycounter,calendar,underlying,vol)
+        barrier_option.setPricingEngine(ql.BinomialBarrierEngine(process, 'crr', 800))
+        delta = barrier_option.delta()
+        gamma = barrier_option.gamma()
+        deltas.append(delta)
+        gammas.append(gamma)
+        # price = barrier_option.NPV()
+        # vol2 = black_var_surface.blackVol(daycounter.yearFraction(evalDate, maturitydt),spot+0.1)
+        # process2 = evaluation.get_bsmprocess_cnstvol(daycounter,calendar,underlying,vol2)
+        # barrier_option.setPricingEngine(ql.BinomialBarrierEngine(process2, 'crr', 800))
+        # price2 = barrier_option.NPV()
+        # vega = (price2-price)/(vol2-vol)
+        # dsigma_ds = (vol2-vol)/0.1
+        # print(vol,vol2,vega,dsigma_ds)
+        # vegas.append(vega)
+        # tdeltas.append(delta+vega*dsigma_ds)
     # delta_maturities.update({maturitydt:deltas})
     t = daycounter.yearFraction(evalDate,maturitydt)
     pu.plot_line(axx,cont,list(spot_range),deltas,lgds[cont],'spot','Delta')
-
+    pu.plot_line(axx1,cont,list(spot_range),gammas,lgds[cont],'spot','Gamma')
+    # pu.plot_line(axx2,cont,list(spot_range),vegas,lgds[cont],'spot','Vega')
+    # pu.plot_line(axx3,cont,list(spot_range),tdeltas,lgds[cont],'spot','Total Delta')
 # axx = pu.set_frame([axx])[0]
 
 
 plt.show()
-axx.savefig('barrier_type-'+'maturities delta.png',dpi = 300,format='png')
+axx.savefig(barrier_type+'-'+'maturities deltas.png',dpi = 300,format='png')
+axx1.savefig(barrier_type+'-'+'maturities gammas.png',dpi = 300,format='png')
