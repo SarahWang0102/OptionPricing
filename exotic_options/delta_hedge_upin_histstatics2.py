@@ -17,7 +17,7 @@ with open(os.path.abspath('..') + '/intermediate_data/svi_calibration_50etf_call
     calibrered_params_ts = pickle.load(f)[0]
 with open(os.path.abspath('..') + '/intermediate_data/svi_dataset_50etf_calls_noZeroVol.pickle', 'rb') as f:
     svi_dataset = pickle.load(f)[0]
-with open(os.path.abspath('..') + '/intermediate_data/total_hedging_bs_estimated_vols.pickle', 'rb') as f:
+with open(os.path.abspath('..') + '/intermediate_data/total_hedging_bs_estimated_vols_call.pickle', 'rb') as f:
     estimated_vols = pickle.load(f)[0]
 
 def get_vol_data(evalDate, daycounter, calendar, contractType):
@@ -36,7 +36,7 @@ def get_vol_data(evalDate, daycounter, calendar, contractType):
 
 #######################################################################################################
 
-begin_date = ql.Date(1, 9, 2015)
+begin_date = ql.Date(3, 9, 2016)
 end_date = ql.Date(30, 6, 2017)
 fee = 0.2 / 1000
 # dt = 1.0 / 365
@@ -45,7 +45,8 @@ rf1 = 0.03
 barrier_pct = 0.15
 
 optionType = ql.Option.Call
-barrierType = ql.Barrier.UpOut
+barrierType = ql.Barrier.UpIn
+barrier_type = 'upin'
 contractType = '50etf'
 engineType = 'BinomialBarrierEngine'
 calendar = ql.China()
@@ -94,7 +95,9 @@ while begin_date < end_date:
     init_svi = price_svi
     init_bs = price_bs
     init_spot = daily_close
-    if init_bs == 0.0 or init_svi == 0.0: continue
+    if init_svi <= 0.02 or init_bs <= 0.02 :
+        init_svi = init_bs = 0.02
+    # if init_bs == 0.0 or init_svi == 0.0: continue
     # rebalancing positions
     tradingcost_svi, cash_svi, portfolio_net_svi, totalfees_svi, rebalance_cont = exotic_util.calculate_hedging_positions(
         daily_close, price_svi, delta_svi, init_svi, fee)
@@ -113,9 +116,9 @@ while begin_date < end_date:
     while begDate < endDate:
         # Contruct vol surfave at previous date
         daily_close, black_var_surface, const_vol = get_vol_data(begDate, daycounter, calendar, contractType)
-        if daily_close >= barrier:
-            print('barrier reached.', barrier, daily_close)
-            break
+        # if daily_close >= barrier:
+        #     print('barrier reached.', barrier, daily_close)
+        #     break
         hist_spots.append(daily_close)
         begDate = calendar.advance(begDate, ql.Period(1, ql.Days))
         daily_close, black_var_surface, const_vol = get_vol_data(begDate, daycounter, calendar, contractType)
@@ -127,24 +130,24 @@ while begin_date < end_date:
         for t in intraday_etf.index:
             s = intraday_etf.loc[t].values[0]
 
-            condition2 = abs(marked - s) > 0.03 * daily_close
+            condition2 = abs(marked - s) > 0.03*daily_close
             if condition2:  # rebalancing
-                if begDate == maturitydt:
-                    if s > barrier:
-                        price_svi = price_bs = 0.0
-                    else:
-                        price_svi = price_bs = max(0, s - strike)
-                    delta_svi = delta_bs = 0.0
-                else:
-                    try:
+                # if begDate == maturitydt:
+                #     if s > barrier:
+                #         price_svi = price_bs = 0.0
+                #     else:
+                #         price_svi = price_bs = max(0, s - strike)
+                #     delta_svi = delta_bs = 0.0
+                # else:
+                try:
 
-                        price_svi, delta_svi, price_bs, delta_bs, svi_vol = exotic_util.calculate_matrics(
+                    price_svi, delta_svi, price_bs, delta_bs, svi_vol = exotic_util.calculate_matrics(
                             evaluation, daycounter, calendar, optionBarrierEuropean, hist_spots, s,
                             black_var_surface, const_vol, engineType,ttm)
-                    except Exception as e:
-                        print(e)
-                        print('no npv at ', t)
-                        continue
+                except Exception as e:
+                    print(e)
+                    print('no npv at ', t)
+                    continue
 
                 # rebalancing positions
                 tradingcost_svi, cash_svi, portfolio_net_svi, totalfees_svi, rebalance_cont = \
@@ -165,22 +168,22 @@ while begin_date < end_date:
                 marked = s
 
         # Rebalancing on close price
-        if begDate == maturitydt:
-            if daily_close > barrier:
-                price_svi = price_bs = 0.0
-            else:
-                price_svi = price_bs = max(0, daily_close - strike)
-            delta_svi = delta_bs = 0.0
-        else:
-            try:
+        # if begDate == maturitydt:
+        #     if daily_close > barrier:
+        #         price_svi = price_bs = 0.0
+        #     else:
+        #         price_svi = price_bs = max(0, daily_close - strike)
+        #     delta_svi = delta_bs = 0.0
+        # else:
+        try:
 
-                price_svi, delta_svi, price_bs, delta_bs, svi_vol = exotic_util.calculate_matrics(
+            price_svi, delta_svi, price_bs, delta_bs, svi_vol = exotic_util.calculate_matrics(
                     evaluation, daycounter, calendar, optionBarrierEuropean, hist_spots, daily_close,
                     black_var_surface, const_vol, engineType,ttm)
-            except Exception as e:
-                print(e)
-                print('no npv at ', begDate)
-                continue
+        except Exception as e:
+            print(e)
+            print('no npv at ', begDate)
+            continue
         if cash_svi < 0:
             r = rf1
         else:
@@ -202,6 +205,7 @@ while begin_date < end_date:
         last_price_svi = price_svi
         last_price_bs = price_bs
         last_s = daily_close
+        marked = daily_close
 
     dates.append(begin_date)
     svi_pnl.append(portfolio_net_svi / init_svi)
@@ -233,7 +237,7 @@ results.update({'transaction bs': transaction_bs})
 
 df = pd.DataFrame(data=results)
 # print(df)
-df.to_csv(os.path.abspath('..') + '/results/delta_hedge_upout_new.csv')
+df.to_csv(os.path.abspath('..') + '/results/delta_hedge_'+barrier_type+'.csv')
 
 t,p = stats.ttest_ind(svi_pnl,bs_pnl)
 print(t,p)

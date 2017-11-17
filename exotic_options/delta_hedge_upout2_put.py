@@ -12,9 +12,9 @@ from pricing_options.SviPricingModel import SviPricingModel
 from pricing_options.SviVolSurface import SviVolSurface
 import exotic_options.exotic_option_utilities as exotic_util
 
-with open(os.path.abspath('..') + '/intermediate_data/svi_calibration_50etf_calls_noZeroVol.pickle', 'rb') as f:
+with open(os.path.abspath('..') + '/intermediate_data/svi_calibration_50etf_puts_noZeroVol.pickle', 'rb') as f:
     calibrered_params_ts = pickle.load(f)[0]
-with open(os.path.abspath('..') + '/intermediate_data/svi_dataset_50etf_calls_noZeroVol.pickle', 'rb') as f:
+with open(os.path.abspath('..') + '/intermediate_data/svi_dataset_50etf_puts_noZeroVol.pickle', 'rb') as f:
     svi_dataset = pickle.load(f)[0]
 with open(os.path.abspath('..') + '/intermediate_data/total_hedging_bs_estimated_vols.pickle', 'rb') as f:
     estimated_vols = pickle.load(f)[0]
@@ -35,15 +35,15 @@ def get_vol_data(evalDate, daycounter, calendar, contractType):
 
 #######################################################################################################
 
-begin_date = ql.Date(13, 6, 2016)
+begin_date = ql.Date(1, 10, 2016)
 fee = 0.2 / 1000
 # dt = 1.0 / 365
 rf = 0.03
 rf1 = 0.03
-barrier_pct = 0.15
+barrier_pct = -0.15
 
-optionType = ql.Option.Call
-barrierType = ql.Barrier.UpOut
+optionType = ql.Option.Put
+barrierType = ql.Barrier.DownOut
 contractType = '50etf'
 engineType = 'BinomialBarrierEngine'
 calendar = ql.China()
@@ -58,6 +58,7 @@ barrier = strike * (1 + barrier_pct)
 optionBarrierEuropean = OptionBarrierEuropean(strike, maturitydt, optionType, barrier, barrierType)
 barrier_option = optionBarrierEuropean.option_ql
 
+print('date : ', begin_date)
 print('barrier : ', barrier)
 print('strike  : ', strike)
 print('eval date : ',begin_date)
@@ -97,7 +98,7 @@ try:
     #     const_vol, engineType)
     price_svi, delta_svi, price_bs, delta_bs, svi_vol = exotic_util.calculate_matrics(
         evaluation, daycounter, calendar, optionBarrierEuropean, hist_spots, daily_close,
-                      black_var_surface,const_vol, engineType,barrier,strike,ttm)
+                      black_var_surface,const_vol, engineType,ttm)
 except Exception as e:
     print(e)
     print('initial price unavailable')
@@ -129,7 +130,7 @@ print("%15s %15s %15s %15s %15s %15s %15s %15s %15s %15s %15s" % (
 while begDate < endDate:
     # Contruct vol surfave at previous date
     daily_close, x, xx = get_vol_data(begDate, daycounter, calendar, contractType)
-    if daily_close >= barrier:
+    if daily_close <= barrier:
         print('barrier reached.', barrier, daily_close)
         break
     hist_spots.append(daily_close)
@@ -166,7 +167,7 @@ while begDate < endDate:
                     #     const_vol, engineType)
                     price_svi, delta_svi, price_bs, delta_bs, svi_vol = exotic_util.calculate_matrics(
                         evaluation, daycounter, calendar, optionBarrierEuropean, hist_spots, s,
-                        black_var_surface, const_vol, engineType, barrier,strike,ttm)
+                        black_var_surface, const_vol, engineType,ttm)
                 except Exception as e:
                     print(e)
                     print('no npv at ', t)
@@ -214,7 +215,7 @@ while begDate < endDate:
             #     const_vol, engineType)
             price_svi, delta_svi, price_bs, delta_bs, svi_vol = exotic_util.calculate_matrics(
                 evaluation, daycounter, calendar, optionBarrierEuropean, hist_spots, daily_close,
-                black_var_surface, const_vol, engineType, barrier,strike,ttm)
+                black_var_surface, const_vol, engineType,ttm)
         except Exception as e:
             print(e)
             print('no npv at ', begDate)
@@ -240,6 +241,7 @@ while begDate < endDate:
     last_price_svi = price_svi
     last_price_bs = price_bs
     last_s = daily_close
+    marked = daily_close
 
     print("%15s %15s %15s %15s %15s %15s %15s %15s %15s %15s %15s" % (
         begDate, round(daily_close, 4), round(svi_vol, 4), round(const_vol, 4), round(delta_svi, 4), round(delta_bs, 4),

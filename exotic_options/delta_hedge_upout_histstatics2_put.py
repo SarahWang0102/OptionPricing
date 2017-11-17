@@ -13,9 +13,9 @@ from pricing_options.SviPricingModel import SviPricingModel
 from pricing_options.SviVolSurface import SviVolSurface
 import exotic_options.exotic_option_utilities as exotic_util
 
-with open(os.path.abspath('..') + '/intermediate_data/svi_calibration_50etf_calls_noZeroVol.pickle', 'rb') as f:
+with open(os.path.abspath('..') + '/intermediate_data/svi_calibration_50etf_puts_noZeroVol.pickle', 'rb') as f:
     calibrered_params_ts = pickle.load(f)[0]
-with open(os.path.abspath('..') + '/intermediate_data/svi_dataset_50etf_calls_noZeroVol.pickle', 'rb') as f:
+with open(os.path.abspath('..') + '/intermediate_data/svi_dataset_50etf_puts_noZeroVol.pickle', 'rb') as f:
     svi_dataset = pickle.load(f)[0]
 with open(os.path.abspath('..') + '/intermediate_data/total_hedging_bs_estimated_vols.pickle', 'rb') as f:
     estimated_vols = pickle.load(f)[0]
@@ -37,15 +37,16 @@ def get_vol_data(evalDate, daycounter, calendar, contractType):
 #######################################################################################################
 
 begin_date = ql.Date(1, 9, 2015)
-end_date = ql.Date(30, 6, 2017)
+# begin_date = ql.Date(25, 6, 2017)
+end_date = ql.Date(30, 5, 2017)
 fee = 0.2 / 1000
 # dt = 1.0 / 365
 rf = 0.03
 rf1 = 0.03
-barrier_pct = 0.15
+barrier_pct = -0.15
 
-optionType = ql.Option.Call
-barrierType = ql.Barrier.UpOut
+optionType = ql.Option.Put
+barrierType = ql.Barrier.DownOut
 contractType = '50etf'
 engineType = 'BinomialBarrierEngine'
 calendar = ql.China()
@@ -74,17 +75,16 @@ while begin_date < end_date:
     optionBarrierEuropean = OptionBarrierEuropean(strike, maturitydt, optionType, barrier, barrierType)
     barrier_option = optionBarrierEuropean.option_ql
     hist_spots = []
+    # print(begin_date,maturitydt)
 
     #######################################################################################################
     # Construct initial rebalancing portfolio
     begDate = begin_date
     evaluation = Evaluation(begDate, daycounter, calendar)
-    daily_close, black_var_surface, const_vol = get_vol_data(begDate, daycounter, calendar, contractType)
-
+    ttm = daycounter.yearFraction(begDate, maturitydt)
     price_svi, price_bs, delta_svi, delta_bs = 0.0, 0.0, 0.0, 0.0
-
     try:
-        ttm = daycounter.yearFraction(begDate, maturitydt)
+        daily_close, black_var_surface, const_vol = get_vol_data(begDate, daycounter, calendar, contractType)
         price_svi, delta_svi, price_bs, delta_bs, svi_vol = exotic_util.calculate_matrics(
             evaluation, daycounter, calendar, optionBarrierEuropean, hist_spots, daily_close,
             black_var_surface, const_vol, engineType,ttm)
@@ -113,7 +113,7 @@ while begin_date < end_date:
     while begDate < endDate:
         # Contruct vol surfave at previous date
         daily_close, black_var_surface, const_vol = get_vol_data(begDate, daycounter, calendar, contractType)
-        if daily_close >= barrier:
+        if daily_close <= barrier:
             print('barrier reached.', barrier, daily_close)
             break
         hist_spots.append(daily_close)
@@ -202,6 +202,7 @@ while begin_date < end_date:
         last_price_svi = price_svi
         last_price_bs = price_bs
         last_s = daily_close
+        marked = daily_close
 
     dates.append(begin_date)
     svi_pnl.append(portfolio_net_svi / init_svi)
@@ -216,8 +217,8 @@ while begin_date < end_date:
         round(portfolio_net_svi / init_svi, 4), round(portfolio_net_bs / init_bs, 4),
         round(totalfees_svi / init_svi, 4)))
 print('=' * 200)
-print("%20s %20s %20s %20s %20s %20s %20s %20s" % (
-    "eval date", "spot", "delta", 'price_svi', 'price_bs', 'portfolio_svi', 'portfolio_bs',
+print("%20s %20s %20s %20s %20s %20s" % (
+    "eval date", 'price_svi', 'price_bs', 'portfolio_svi', 'portfolio_bs',
     'transaction'))
 print('svi_pnl', sum(svi_pnl) / len(svi_pnl))
 print('bs_pnl', sum(bs_pnl) / len(bs_pnl))
@@ -233,7 +234,7 @@ results.update({'transaction bs': transaction_bs})
 
 df = pd.DataFrame(data=results)
 # print(df)
-df.to_csv(os.path.abspath('..') + '/results/delta_hedge_upout_new.csv')
+df.to_csv(os.path.abspath('..') + '/results/delta_hedge_upout_put.csv')
 
 t,p = stats.ttest_ind(svi_pnl,bs_pnl)
 print(t,p)

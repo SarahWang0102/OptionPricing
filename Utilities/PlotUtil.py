@@ -44,16 +44,25 @@ class PlotUtil:
             axarr.xaxis.set_ticks_position('bottom')
         return axarrs
 
-    def plot_line(self,ax,count,x,y,lgd,x_label='', y_label=''):
+    def plot_line(self,ax,count,x,y,lgd='' ,x_label='', y_label=''):
         c = self.colors[count]
         l = self.lines[count]
-        if count == 3:
-            tmp, = ax.plot(x, y, color=c, linestyle=l, linewidth=2, label=lgd)
-            tmp.set_dashes(self.dash)
-        elif count == 0:
-            ax.plot(x, y, color=c, linestyle=l, linewidth=2.3, label=lgd)
+        if lgd == '':
+            if count == 3:
+                tmp, = ax.plot(x, y, color=c, linestyle=l, linewidth=2)
+                tmp.set_dashes(self.dash)
+            elif count == 0:
+                ax.plot(x, y, color=c, linestyle=l, linewidth=2.3)
+            else:
+                ax.plot(x, y, color=c, linestyle=l, linewidth=2)
         else:
-            ax.plot(x, y, color=c, linestyle=l, linewidth=2, label=lgd)
+            if count == 3:
+                tmp, = ax.plot(x, y, color=c, linestyle=l, linewidth=2, label=lgd)
+                tmp.set_dashes(self.dash)
+            elif count == 0:
+                ax.plot(x, y, color=c, linestyle=l, linewidth=2.3, label=lgd)
+            else:
+                ax.plot(x, y, color=c, linestyle=l, linewidth=2, label=lgd)
         ax.legend()
         ax.set_xlabel(x_label)
         ax.set_ylabel(y_label)
