@@ -5,8 +5,8 @@ import timeit
 import os
 import pickle
 
-# with open(os.path.abspath('..') +'/intermediate_data/total_hedging_bs_estimated_vols_call.pickle','rb') as f:
-#     estimated_vols = pickle.load(f)[0]
+with open(os.path.abspath('..') +'/intermediate_data/total_hedging_bs_estimated_vols_call.pickle','rb') as f:
+    estimated_vols = pickle.load(f)[0]
 
 
 start = timeit.default_timer()
@@ -15,11 +15,11 @@ calendar = ql.China()
 daycounter = ql.ActualActual()
 
 
-evalDate = ql.Date(1, 1, 2016)
+evalDate = ql.Date(1, 9, 2015)
 #evalDate = ql.Date(28, 9, 2017)
 endDate = ql.Date(10, 10, 2017)
 
-estimated_vols = {}
+# estimated_vols = {}
 while evalDate < endDate:
     print('Start : ', evalDate)
 

@@ -35,12 +35,12 @@ def get_vol_data(evalDate, daycounter, calendar, contractType):
 
 #######################################################################################################
 
-begin_date = ql.Date(23, 10, 2016)
+begin_date = ql.Date(27, 9, 2015)
 fee = 0.2 / 1000
 # dt = 1.0 / 365
 rf = 0.03
 rf1 = 0.03
-barrier_pct = 0.15
+barrier_pct = 0.1
 
 optionType = ql.Option.Call
 barrierType = ql.Barrier.UpIn
@@ -101,9 +101,9 @@ try:
 except Exception as e:
     print(e)
     print('initial price unavailable')
-# init_svi = price_svi
-# init_bs = price_bs
-init_bs = init_svi = 0.02
+init_svi = price_svi
+init_bs = price_bs
+# init_bs = init_svi = 0.02
 init_spot = daily_close
 # rebalancing positions
 tradingcost_svi, cash_svi, portfolio_net_svi, totalfees_svi, rebalance_cont = exotic_util.calculate_hedging_positions(
@@ -130,9 +130,9 @@ print("%15s %15s %15s %15s %15s %15s %15s %15s %15s %15s %15s" % (
 while begDate < endDate:
     # Contruct vol surfave at previous date
     daily_close, x, xx = get_vol_data(begDate, daycounter, calendar, contractType)
-    if daily_close >= barrier:
-        print('barrier reached.', barrier, daily_close)
-        break
+    # if daily_close >= barrier:
+    #     print('barrier reached.', barrier, daily_close)
+    #     break
     hist_spots.append(daily_close)
     begDate = calendar.advance(begDate, ql.Period(1, ql.Days))
     evaluation = Evaluation(begDate, daycounter, calendar)
@@ -150,7 +150,7 @@ while begDate < endDate:
         s = intraday_etf.loc[t].values[0]
         # condition1 = abs(barrier - s) < 0.02 and abs(marked - s) > 0.01
         # condition2 = abs(barrier - s) > 0.02 and abs(marked - s) > 0.5
-        condition2 = abs(marked - s) > 0.05*daily_close
+        condition2 = abs(marked - s) > 0.03*daily_close
         if condition2:  # rebalancing
             if begDate == maturitydt:
                 if s>barrier: price_svi = price_bs = 0.0
@@ -170,7 +170,7 @@ while begDate < endDate:
                         black_var_surface, const_vol, engineType,ttm)
                 except Exception as e:
                     print(e)
-                    print('no npv at ', t)
+                    print('no npv at ', t, 'spot : ', s, '; barrier : ', barrier)
                     continue
 
             # rebalancing positions
@@ -190,6 +190,7 @@ while begDate < endDate:
             last_price_bs = price_bs
             last_s = s
             marked = s
+
 
             print("%15s %15s %15s %15s %15s %15s %15s %15s %15s %15s %15s" % (
                 t, round(s, 4), round(svi_vol, 4), round(const_vol, 4), round(delta_svi, 4),

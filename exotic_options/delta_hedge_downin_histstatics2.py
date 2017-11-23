@@ -17,7 +17,7 @@ with open(os.path.abspath('..') + '/intermediate_data/svi_calibration_50etf_call
     calibrered_params_ts = pickle.load(f)[0]
 with open(os.path.abspath('..') + '/intermediate_data/svi_dataset_50etf_calls_noZeroVol_itd.pickle', 'rb') as f:
     svi_dataset = pickle.load(f)[0]
-with open(os.path.abspath('..') + '/intermediate_data/total_hedging_bs_estimated_vols.pickle', 'rb') as f:
+with open(os.path.abspath('..') + '/intermediate_data/total_hedging_bs_estimated_vols_call.pickle', 'rb') as f:
     estimated_vols = pickle.load(f)[0]
 
 def get_vol_data(evalDate, daycounter, calendar, contractType):
@@ -42,12 +42,12 @@ fee = 0.2 / 1000
 # dt = 1.0 / 365
 rf = 0.0
 rf1 = 0.03
-barrier_pct = 0.13
+barrier_pct = -0.15
 dt = 1.0/365
 
 optionType = ql.Option.Call
-barrierType = ql.Barrier.UpIn
-barrier_type = 'upincall'
+barrierType = ql.Barrier.DownIn
+barrier_type = 'downincall'
 contractType = '50etf'
 engineType = 'BinomialBarrierEngine'
 calendar = ql.China()
@@ -101,12 +101,14 @@ while begin_date < end_date:
         print('initial price unavailable')
     # init_svi = price_svi
     # init_bs = price_bs
-    init_spot = daily_close
     init_svi = init_bs = max(price_bs, price_svi)
+    init_spot = daily_close
+
     if init_svi <= 0.001 or init_bs <= 0.001 :
+        # print('init <= 0.005 ', init_svi,init_bs)
         # init_svi = init_bs = 0.001
         continue
-    # if init_bs == 0.0 or init_svi == 0.0: continue
+    # if init_bs < 0.001 or init_svi < 0.001: continue
     # rebalancing positions
     tradingcost_svi, cash_svi, portfolio_net_svi, totalfees_svi, rebalance_cont = exotic_util.calculate_hedging_positions(
         daily_close, price_svi, delta_svi, init_svi, fee)
@@ -134,6 +136,7 @@ while begin_date < end_date:
         datestr = str(begDate.year()) + "-" + str(begDate.month()) + "-" + str(begDate.dayOfMonth())
         intraday_etf = pd.read_json(os.path.abspath('..') + '\marketdata\intraday_etf_' + datestr + '.json')
         daily_close = intraday_etf.loc[intraday_etf.index[-1]].values[0]
+        hist_spots.append(daily_close)
         hist_spots.append(daily_close)
         begDate = calendar.advance(begDate, ql.Period(1, ql.Days))
         # black_var_surface, const_vol = get_vol_data(begDate, daycounter, calendar, contractType)
@@ -208,6 +211,7 @@ while begin_date < end_date:
             r = rf
         cash_svi = cash_svi * math.exp(r * dt)
         cash_bs = cash_bs * math.exp(r * dt)
+
         # rebalancing positions
         # tradingcost_svi, cash_svi, portfolio_net_svi, totalfees_svi, rebalance_cont = \
         #     exotic_util.calculate_hedging_positions(

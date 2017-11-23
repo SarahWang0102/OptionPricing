@@ -21,6 +21,8 @@ import QuantLib as ql
 #         const_vol, engineType)
 #     return price_svi, delta_svi,price_bs,delta_bs,svi_vol
 
+
+
 def calculate_matrics(evaluation, daycounter, calendar, optionBarrierEuropean, hist_spots, spot,
                       black_var_surface, const_vol, engineType,ttm):
     optionType = optionBarrierEuropean.optionType
@@ -28,7 +30,9 @@ def calculate_matrics(evaluation, daycounter, calendar, optionBarrierEuropean, h
     # strike = optionBarrierEuropean.strike
     barrier_type = optionBarrierEuropean.barrierType
     svi_vol = black_var_surface.blackVol(ttm, spot)
-
+    if not svi_vol > 0.0:
+        print(evaluation.evalDate,svi_vol)
+        svi_vol = const_vol
     if optionType == ql.Option.Call and barrier_type == ql.Barrier.UpOut:
         # if barrier - spot < 0.01 * barrier and ttm < 7.0 / 365:
         if spot<barrier and spot>barrier*0.99 and ttm < 7.0 / 365:
@@ -41,6 +45,10 @@ def calculate_matrics(evaluation, daycounter, calendar, optionBarrierEuropean, h
     elif optionType == ql.Option.Call and barrier_type == ql.Barrier.UpIn:
         if spot<barrier and spot>barrier*0.99 and ttm < 7.0 / 365:
             spot = barrier*0.99
+            print('spot ~ ',spot)
+    elif optionType == ql.Option.Put and barrier_type == ql.Barrier.DownOut:
+        if spot>barrier and spot<barrier*1.01 and ttm < 7.0 / 365:
+            spot = barrier*1.01
             print('spot ~ ',spot)
     price_svi, delta_svi = calculate_barrier_price_vol(
         evaluation, daycounter, calendar, optionBarrierEuropean, hist_spots, spot,
@@ -66,6 +74,13 @@ def calculate_hedging_positions(spot, option_price, delta, cash, fee,
     portfolio_net = replicate - option_price
     total_fees += -tradingcost
     rebalance_cont += 1
+    # if delta < 0:
+    #     if last_delta < 0:
+    #         margin = (abs(delta)-abs(last_delta))*spot*0.2
+    #     else:
+    #         margin = abs(delta)*spot*0.2
+    #     cash -= margin
+    # if delta < 0: interest = abs(delta*spot)*0.2*(math.exp(r * dt)-1)
     cash = cash * math.exp(r * dt)
     return tradingcost, cash, portfolio_net, total_fees, rebalance_cont
 
@@ -115,23 +130,39 @@ def calculate_barrier_price_vol(evaluation,daycounter,calendar,barrier_option,hi
                 option_delta = calculate_effective_delta(
                     evaluation,daycounter,calendar,barrier_option,spot,vol)
         elif barrierType == ql.Barrier.DownIn:
-            if min(hist_spots) > barrier and spot > barrier:
-                option_price = barrier_ql.NPV()
-                # option_delta = barrier_ql.delta()
-                option_delta = calculate_effective_delta(
-                    evaluation, daycounter, calendar, barrier_option, spot, vol)
-            else:
-                option_price =  option_ql.NPV()
+            if min(hist_spots) <= barrier or spot <= barrier:
                 option_delta = option_ql.delta()
-        else:
-            if max(hist_spots) < barrier and spot < barrier:
+                option_price = option_ql.NPV()
+            else:
                 option_price = barrier_ql.NPV()
                 # option_delta = barrier_ql.delta()
                 option_delta = calculate_effective_delta(
                     evaluation, daycounter, calendar, barrier_option, spot, vol)
-            else:
+            # if min(hist_spots) > barrier and spot > barrier:
+            #     option_price = barrier_ql.NPV()
+            #     # option_delta = barrier_ql.delta()
+            #     option_delta = calculate_effective_delta(
+            #         evaluation, daycounter, calendar, barrier_option, spot, vol)
+            # else:
+            #     option_price =  option_ql.NPV()
+            #     option_delta = option_ql.delta()
+        else:
+            if max(hist_spots) >= barrier or spot >=barrier:
                 option_price = option_ql.NPV()
                 option_delta = option_ql.delta()
+            else:
+                option_price = barrier_ql.NPV()
+                # option_delta = barrier_ql.delta()
+                option_delta = calculate_effective_delta(
+                    evaluation, daycounter, calendar, barrier_option, spot, vol)
+            # if max(hist_spots) < barrier and spot < barrier:
+            #     option_price = barrier_ql.NPV()
+            #     # option_delta = barrier_ql.delta()
+            #     option_delta = calculate_effective_delta(
+            #         evaluation, daycounter, calendar, barrier_option, spot, vol)
+            # else:
+            #     option_price = option_ql.NPV()
+            #     option_delta = option_ql.delta()
     barrier_engine = None
     european_engine = None
     barrier_ql = None
@@ -228,17 +259,17 @@ def calculate_barrier_price(evaluation,barrier_option,hist_spots,process,engineT
     barrier_ql = barrier_option.option_ql
     exercise = barrier_option.exercise
     payoff = barrier_option.payoff
-    barrier_engine = ql.BinomialBarrierEngine(process, 'crr', 400)
-    european_engine = ql.BinomialVanillaEngine(process, 'crr', 400)
-    # european_engine = ql.AnalyticEuropeanEngine(process)
-    # barrier_engine = ql.AnalyticBarrierEngine(process)
+    # barrier_engine = ql.BinomialBarrierEngine(process, 'crr', 400)
+    # european_engine = ql.BinomialVanillaEngine(process, 'crr', 400)
+    european_engine = ql.AnalyticEuropeanEngine(process)
+    barrier_engine = ql.AnalyticBarrierEngine(process)
     barrier_ql.setPricingEngine(barrier_engine)
     option_ql = ql.EuropeanOption(payoff, exercise)
     option_ql.setPricingEngine(european_engine)
     # check if hist_spots hit the barrier
     if len(hist_spots) == 0:
         option_price = barrier_ql.NPV()
-        option_delta = barrier_ql.delta()
+        # option_delta = barrier_ql.delta()
     else:
         if barrierType == ql.Barrier.DownOut:
             if min(hist_spots) <= barrier :
@@ -247,7 +278,7 @@ def calculate_barrier_price(evaluation,barrier_option,hist_spots,process,engineT
                 return 0.0,0.0
             else:
                 option_price = barrier_ql.NPV()
-                option_delta = barrier_ql.delta()
+                # option_delta = barrier_ql.delta()
         elif barrierType == ql.Barrier.UpOut:
             if max(hist_spots) >= barrier:
                 barrier_engine = None
@@ -255,29 +286,29 @@ def calculate_barrier_price(evaluation,barrier_option,hist_spots,process,engineT
                 return 0.0,0.0
             else:
                 option_price = barrier_ql.NPV()
-                option_delta = barrier_ql.delta()
+                # option_delta = barrier_ql.delta()
         elif barrierType == ql.Barrier.DownIn:
             if min(hist_spots) > barrier:
                 option_price = barrier_ql.NPV()
-                option_delta = barrier_ql.delta()
+                # option_delta = barrier_ql.delta()
             else:
                 option_price =  option_ql.NPV()
-                option_delta = option_ql.delta()
+                # option_delta = option_ql.delta()
         else:
             if max(hist_spots) < barrier:
                 option_price = barrier_ql.NPV()
-                option_delta = barrier_ql.delta()
+                # option_delta = barrier_ql.delta()
             else:
                 option_price = option_ql.NPV()
-                option_delta = option_ql.delta()
+                # option_delta = option_ql.delta()
     barrier_engine = None
     european_engine = None
     barrier_ql = None
     option_ql = None
     if math.isnan(option_price):
-        return 0.0,0.0
+        return 0.0
     else:
-        return option_price,option_delta
+        return option_price
 
 
 
