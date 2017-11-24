@@ -38,7 +38,7 @@ def get_vol_data(evalDate, daycounter, calendar, contractType):
 # barrier_pct = 0.13
 barrier_cont = [0.14,0.15,0.16]
 period = ql.Period(1,ql.Days)
-
+rebalancerate = 0.03
 #######################################################################################################
 
 for barrier_pct in barrier_cont:
@@ -139,7 +139,7 @@ for barrier_pct in barrier_cont:
             balanced = False
             for t in intraday_etf.index:
                 s = intraday_etf.loc[t].values[0]
-                condition2 = abs(marked - s) > 0.03 * daily_close
+                condition2 = abs(marked - s) > rebalancerate * daily_close
                 if condition2:  # rebalancing
                     try:
                         price_svi, delta_svi, price_bs, delta_bs, svi_vol = exotic_util.calculate_matrics(
@@ -236,7 +236,7 @@ for barrier_pct in barrier_cont:
 
     df = pd.DataFrame(data=results)
     # print(df)
-    df.to_csv(os.path.abspath('..') + '/results/t3_delta_hedge_'+barrier_type+'b='+str(barrier_pct*100)+'.csv')
+    df.to_csv(os.path.abspath('..') + '/results/dh_'+barrier_type+'_r='+str(rebalancerate) + '_b=' + str(barrier_pct * 100) + '.csv')
 
     t,p = stats.ttest_ind(svi_pnl,bs_pnl)
 
