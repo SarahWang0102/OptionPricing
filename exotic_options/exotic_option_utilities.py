@@ -31,13 +31,15 @@ def calculate_matrics(evaluation, daycounter, calendar, optionBarrierEuropean, h
     barrier_type = optionBarrierEuropean.barrierType
     svi_vol = black_var_surface.blackVol(ttm, spot)
     if not svi_vol > 0.0:
-        print(evaluation.evalDate,svi_vol)
+        # print(evaluation.evalDate,svi_vol)
         svi_vol = const_vol
+    # if not const_vol > 0.0:
+    #     const_vol = 0.0
     if optionType == ql.Option.Call and barrier_type == ql.Barrier.UpOut:
         # if barrier - spot < 0.01 * barrier and ttm < 7.0 / 365:
         if spot<barrier and spot>barrier*0.99 and ttm < 7.0 / 365:
             spot = barrier*0.99
-            print('spot ~ ',spot)
+            # print('spot ~ ',spot)
     # elif barrier_type == ql.Barrier.DownOut:
     #     if spot < barrier*1.01 and spot > barrier:
     #         spot = barrier*1.01
@@ -45,11 +47,11 @@ def calculate_matrics(evaluation, daycounter, calendar, optionBarrierEuropean, h
     elif optionType == ql.Option.Call and barrier_type == ql.Barrier.UpIn:
         if spot<barrier and spot>barrier*0.99 and ttm < 7.0 / 365:
             spot = barrier*0.99
-            print('spot ~ ',spot)
+            # print('spot ~ ',spot)
     elif optionType == ql.Option.Put and barrier_type == ql.Barrier.DownOut:
         if spot>barrier and spot<barrier*1.01 and ttm < 7.0 / 365:
             spot = barrier*1.01
-            print('spot ~ ',spot)
+            # print('spot ~ ',spot)
     price_svi, delta_svi = calculate_barrier_price_vol(
         evaluation, daycounter, calendar, optionBarrierEuropean, hist_spots, spot,
         svi_vol, engineType)
@@ -67,7 +69,7 @@ def calculate_matrics(evaluation, daycounter, calendar, optionBarrierEuropean, h
 
 def calculate_hedging_positions(spot, option_price, delta, cash, fee,
                                 last_delta=0.0, rebalance_cont=0, total_fees=0.0,
-                                r=0.0, dt=1.0 / 365):
+                                ):
     tradingcost = abs(delta - last_delta) * spot * fee
     cash += - (delta - last_delta) * spot - tradingcost
     replicate = delta * spot + cash
@@ -81,7 +83,7 @@ def calculate_hedging_positions(spot, option_price, delta, cash, fee,
     #         margin = abs(delta)*spot*0.2
     #     cash -= margin
     # if delta < 0: interest = abs(delta*spot)*0.2*(math.exp(r * dt)-1)
-    cash = cash * math.exp(r * dt)
+    # cash = cash * math.exp(r * dt)
     return tradingcost, cash, portfolio_net, total_fees, rebalance_cont
 
 
@@ -148,6 +150,7 @@ def calculate_barrier_price_vol(evaluation,daycounter,calendar,barrier_option,hi
             #     option_delta = option_ql.delta()
         else:
             if max(hist_spots) >= barrier or spot >=barrier:
+                # print('barrier crossed')
                 option_price = option_ql.NPV()
                 option_delta = option_ql.delta()
             else:

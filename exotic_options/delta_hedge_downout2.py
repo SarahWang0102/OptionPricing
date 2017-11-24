@@ -30,27 +30,26 @@ def get_vol_data(evalDate, daycounter, calendar, contractType):
                           to_ql_dates(maturity_dates), ql.Option.Call, contractType)
     black_var_surface = svi.black_var_surface()
     const_vol = estimated_vols.get(to_dt_date(evalDate))
-
     return spot, black_var_surface, const_vol
 
-#######################################################################################################
 
-begin_date = ql.Date(12, 10, 2015)
-fee = 0.2 / 1000
+#######################################################################################################
+begin_date = ql.Date(12, 3, 2016)
+fee = 10.3 / 1000
 # dt = 1.0 / 365
 rf = 0.03
 rf1 = 0.03
-barrier_pct = 0.13
+barrier_pct = -0.1
 
 optionType = ql.Option.Call
-barrierType = ql.Barrier.UpOut
+barrierType = ql.Barrier.DownOut
 contractType = '50etf'
 engineType = 'BinomialBarrierEngine'
 calendar = ql.China()
 daycounter = ql.ActualActual()
 begin_date = calendar.advance(begin_date, ql.Period(1, ql.Days))  # contract effective date
 maturitydt = calendar.advance(begin_date, ql.Period(3, ql.Months))  # contract maturity
-endDate = calendar.advance(maturitydt, ql.Period(-1, ql.Days))  # last hedging date
+# endDate = calendar.advance(maturitydt, ql.Period(-1, ql.Days))  # last hedging date
 
 svidata = svi_dataset.get(to_dt_date(begin_date))
 strike = svidata.spot
@@ -60,12 +59,12 @@ barrier_option = optionBarrierEuropean.option_ql
 
 print('barrier : ', barrier)
 print('strike  : ', strike)
-print('eval date : ',begin_date)
+print('eval date : ', begin_date)
 print('=' * 200)
-# print("%15s %20s %20s %20s " % ("begin_date", "rebalencing cont", "svi hedge pnl", "bs hedge pnl"))
-print("%15s %15s %15s %15s %15s %15s %15s %15s %15s %15s %15s" % (
-    "eval date", "spot","svi vol","bs vol", "delta svi", "delta bs", 'price_svi', 'price_bs', 'portfolio_svi', 'portfolio_bs',
-     'transaction'))
+print("%15s %15s %15s %15s %15s %15s %15s %15s %15s %15s %15s %15s" % (
+    "eval date", "spot", "svi vol", "bs vol", "delta svi", "delta bs", 'price_svi', 'price_bs', 'svi',
+    'bs',
+    'transaction','transaction'))
 print('-' * 200)
 
 hist_spots = []
@@ -75,7 +74,6 @@ rebalancings = []
 pnls_svi = []
 pnls_bs = []
 results = {}
-
 #######################################################################################################
 # Construct initial rebalancing portfolio
 begDate = begin_date
@@ -84,6 +82,7 @@ daily_close, black_var_surface, const_vol = get_vol_data(begDate, daycounter, ca
 ttm = daycounter.yearFraction(begDate, maturitydt)
 price_svi, price_bs, delta_svi, delta_bs = 0.0, 0.0, 0.0, 0.0
 try:
+
     price_svi, delta_svi, price_bs, delta_bs, svi_vol = exotic_util.calculate_matrics(
         evaluation, daycounter, calendar, optionBarrierEuropean, hist_spots, daily_close,
         black_var_surface, const_vol, engineType, ttm)
@@ -96,36 +95,39 @@ init_svi = init_bs = max(price_svi,price_bs)
 init_spot = daily_close
 # rebalancing positions
 tradingcost_svi, cash_svi, portfolio_net_svi, totalfees_svi, rebalance_cont = exotic_util.calculate_hedging_positions(
-    daily_close, price_svi, delta_svi,init_svi, fee)
+    daily_close, price_svi, delta_svi, init_svi, fee)
 tradingcost_bs, cash_bs, portfolio_net_bs, totalfees_bs, e1 = exotic_util.calculate_hedging_positions(
-    daily_close, price_bs, delta_bs,init_bs, fee)
+    daily_close, price_bs, delta_bs, init_bs, fee)
+
+
 
 last_delta_svi = delta_svi
 last_delta_bs = delta_bs
 last_price_svi = price_svi
 last_price_bs = price_bs
 last_s = daily_close
-marked = daily_close
 hist_spots.append(daily_close)
 
 print('init option price, ', 'svi: ', price_svi, 'bs: ', price_bs)
 print('-' * 200)
 print("%15s %15s %15s %15s %15s %15s %15s %15s %15s %15s %15s" % (
-    begDate, round(daily_close, 4), round(svi_vol, 4),round(const_vol, 4), round(delta_svi, 4),round(delta_bs, 4), round(price_svi, 4),round(price_bs, 4),
+    begDate, round(daily_close, 4), round(svi_vol, 4), round(const_vol, 4), round(delta_svi, 4), round(delta_bs, 4),
+    round(price_svi, 4), round(price_bs, 4),
     round(portfolio_net_svi / init_svi, 4), round(portfolio_net_bs / init_bs, 4),
     round(totalfees_svi / init_svi, 4)))
 
 #######################################################################################################
 # Rebalancing portfolio
+marked = daily_close
 while begDate < maturitydt:
-    # Contruct vol surfave at previous date
     daily_close, black_var_surface, const_vol = get_vol_data(begDate, daycounter, calendar, contractType)
-    if daily_close >= barrier:
+    if daily_close <= barrier:
         print('barrier reached.', barrier, daily_close)
         break
     hist_spots.append(daily_close)
+    # print(max(hist_spots))
     begDate = calendar.advance(begDate, ql.Period(1, ql.Days))
-    if (begDate == maturitydt):
+    if(begDate == maturitydt):
         print('')
     evaluation = Evaluation(begDate, daycounter, calendar)
     ttm = daycounter.yearFraction(begDate, maturitydt)
@@ -167,7 +169,7 @@ while begDate < maturitydt:
                 t, round(s, 4), round(svi_vol, 4), round(const_vol, 4), round(delta_svi, 4),
                 round(delta_bs, 4), round(price_svi, 4), round(price_bs, 4),
                 round(portfolio_net_svi / init_svi, 4), round(portfolio_net_bs / init_bs, 4),
-                round(totalfees_svi / init_svi, 4), round(totalfees_bs / init_bs, 4)))
+                round(totalfees_svi / init_svi, 4),round(totalfees_bs / init_bs, 4)))
     if not balanced:
         try:
             daily_close = intraday_etf.loc[intraday_etf.index[-1]].values[0]
@@ -200,7 +202,7 @@ while begDate < maturitydt:
             t, round(s, 4), round(svi_vol, 4), round(const_vol, 4), round(delta_svi, 4),
             round(delta_bs, 4), round(price_svi, 4), round(price_bs, 4),
             round(portfolio_net_svi / init_svi, 4), round(portfolio_net_bs / init_bs, 4),
-            round(totalfees_svi / init_svi, 4), round(totalfees_bs / init_bs, 4)))
+            round(totalfees_svi / init_svi, 4),round(totalfees_bs / init_bs, 4)))
 
 print('=' * 200)
 print("%15s %15s %15s %15s %15s %15s %15s %15s %15s %15s %15s" % (

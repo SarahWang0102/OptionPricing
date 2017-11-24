@@ -30,7 +30,7 @@ def get_vol_data(evalDate, daycounter, calendar, contractType):
                           to_ql_dates(maturity_dates), ql.Option.Call, contractType)
     black_var_surface = svi.black_var_surface()
     const_vol = estimated_vols.get(to_dt_date(evalDate))
-    return black_var_surface, const_vol
+    return spot,black_var_surface, const_vol
 
 
 
@@ -61,8 +61,7 @@ transaction_svi = []
 transaction_bs = []
 holdings_svi = []
 holdings_bs =[]
-tradedvalue_svi = 0.0
-tradedvalue_bs = 0.0
+
 # rebalancings = []
 print('=' * 200)
 print("%20s %20s %20s %20s %20s %20s" % (
@@ -81,14 +80,13 @@ while begin_date < end_date:
     hist_spots = []
     deltacont_svi = []
     deltacont_bs = []
+    tradedvalue_svi = 0.0
+    tradedvalue_bs = 0.0
     #######################################################################################################
     # Construct initial rebalancing portfolio
     begDate = begin_date
     evaluation = Evaluation(begDate, daycounter, calendar)
-    black_var_surface, const_vol = get_vol_data(begDate, daycounter, calendar, contractType)
-    datestr = str(begDate.year()) + "-" + str(begDate.month()) + "-" + str(begDate.dayOfMonth())
-    intraday_etf = pd.read_json(os.path.abspath('..') + '\marketdata\intraday_etf_' + datestr + '.json')
-    daily_close = intraday_etf.loc[intraday_etf.index[-1]].values[0]
+    daily_close,black_var_surface, const_vol = get_vol_data(begDate, daycounter, calendar, contractType)
     price_svi, price_bs, delta_svi, delta_bs = 0.0, 0.0, 0.0, 0.0
 
     try:
@@ -124,113 +122,81 @@ while begin_date < end_date:
     #######################################################################################################
     # Rebalancing portfolio
     while begDate < endDate:
-        # Contruct vol surfave at previous date
-        black_var_surface, const_vol = get_vol_data(begDate, daycounter, calendar, contractType)
-        datestr = str(begDate.year()) + "-" + str(begDate.month()) + "-" + str(begDate.dayOfMonth())
-        intraday_etf = pd.read_json(os.path.abspath('..') + '\marketdata\intraday_etf_' + datestr + '.json')
-        daily_close = intraday_etf.loc[intraday_etf.index[-1]].values[0]
-        if daily_close >= barrier:
-            print('barrier reached.', barrier, daily_close)
-            break
+        daily_close, black_var_surface, const_vol = get_vol_data(begDate, daycounter, calendar, contractType)
+        if daily_close >= barrier : break
         hist_spots.append(daily_close)
         begDate = calendar.advance(begDate, ql.Period(1, ql.Days))
-        # black_var_surface, const_vol = get_vol_data(begDate, daycounter, calendar, contractType)
         evaluation = Evaluation(begDate, daycounter, calendar)
         ttm = daycounter.yearFraction(begDate, maturitydt)
+
         datestr = str(begDate.year()) + "-" + str(begDate.month()) + "-" + str(begDate.dayOfMonth())
         intraday_etf = pd.read_json(os.path.abspath('..') + '\marketdata\intraday_etf_' + datestr + '.json')
-
-        # print('daily close',daily_close)
-        # print(intraday_etf.loc[intraday_etf.index[-1]].values[0])
-        # print(intraday_etf)
-
+        balanced = False
         for t in intraday_etf.index:
             s = intraday_etf.loc[t].values[0]
             condition2 = abs(marked - s) > 0.03 * daily_close
             if condition2:  # rebalancing
-                # if begDate == maturitydt:
-                #     if s > barrier:
-                #         price_svi = price_bs = 0.0
-                #     else:
-                #         price_svi = price_bs = max(0, s - strike)
-                #     delta_svi = delta_bs = 0.0
-                # else:
                 try:
-
                     price_svi, delta_svi, price_bs, delta_bs, svi_vol = exotic_util.calculate_matrics(
-                            evaluation, daycounter, calendar, optionBarrierEuropean, hist_spots, s,
-                            black_var_surface, const_vol, engineType,ttm)
-
+                        evaluation, daycounter, calendar, optionBarrierEuropean, hist_spots, s,
+                        black_var_surface, const_vol, engineType, ttm)
+                    balanced = True
                 except Exception as e:
                     print(e)
-                    print('no npv at ', t)
+                    print('no npv at ', t, 'spot : ', s, '; barrier : ', barrier)
                     continue
-
                 # rebalancing positions
                 tradingcost_svi, cash_svi, portfolio_net_svi, totalfees_svi, rebalance_cont = \
                     exotic_util.calculate_hedging_positions(
-                        s, price_svi, delta_svi, cash_svi, fee,
+                        daily_close, price_svi, delta_svi, cash_svi, fee,
                         last_delta_svi, rebalance_cont, totalfees_svi
                     )
                 tradingcost_bs, cash_bs, portfolio_net_bs, totalfees_bs, e1 = \
                     exotic_util.calculate_hedging_positions(
-                        s, price_bs, delta_bs, cash_bs, fee,
+                        daily_close, price_bs, delta_bs, cash_bs, fee,
                         last_delta_bs, rebalance_cont, totalfees_bs)
-                tradedvalue_svi += abs(delta_svi-last_delta_svi) * s
-                tradedvalue_bs += abs(delta_bs-last_delta_bs) * s
-                deltacont_svi.append(abs(delta_svi-last_delta_svi))
-                deltacont_bs.append(abs(delta_bs-last_delta_bs))
+
                 last_delta_svi = delta_svi
                 last_delta_bs = delta_bs
                 last_price_svi = price_svi
                 last_price_bs = price_bs
                 last_s = s
                 marked = s
+        if not balanced:
+            try:
+                daily_close = intraday_etf.loc[intraday_etf.index[-1]].values[0]
+                price_svi, delta_svi, price_bs, delta_bs, svi_vol = exotic_util.calculate_matrics(
+                    evaluation, daycounter, calendar, optionBarrierEuropean, hist_spots, daily_close,
+                    black_var_surface, const_vol, engineType, ttm)
+                # balanced = True
+            except Exception as e:
+                print(e)
+                print('no npv at ', begDate, 'spot : ', daily_close, '; barrier : ', barrier)
+                continue
+            # rebalancing positions
+            tradingcost_svi, cash_svi, portfolio_net_svi, totalfees_svi, rebalance_cont = \
+                exotic_util.calculate_hedging_positions(
+                    daily_close, price_svi, delta_svi, cash_svi, fee,
+                    last_delta_svi, rebalance_cont, totalfees_svi
+                )
+            tradingcost_bs, cash_bs, portfolio_net_bs, totalfees_bs, e1 = \
+                exotic_util.calculate_hedging_positions(
+                    daily_close, price_bs, delta_bs, cash_bs, fee,
+                    last_delta_bs, rebalance_cont, totalfees_bs)
 
-        # Rebalancing on close price
-        # if begDate == maturitydt:
-        #     if daily_close > barrier:
-        #         price_svi = price_bs = 0.0
-        #     else:
-        #         price_svi = price_bs = max(0, daily_close - strike)
-        #     delta_svi = delta_bs = 0.0
-        # else:
-        # try:
-        #
-        #     price_svi, delta_svi, price_bs, delta_bs, svi_vol = exotic_util.calculate_matrics(
-        #             evaluation, daycounter, calendar, optionBarrierEuropean, hist_spots, daily_close,
-        #             black_var_surface, const_vol, engineType,ttm)
-        #
-        # except Exception as e:
-        #     print(e)
-        #     print('no npv at ', begDate)
-        #     continue
+            last_delta_svi = delta_svi
+            last_delta_bs = delta_bs
+            last_price_svi = price_svi
+            last_price_bs = price_bs
+            last_s = daily_close
+            marked = daily_close
         if cash_svi < 0:
             r = rf1
         else:
             r = rf
         cash_svi = cash_svi * math.exp(r * dt)
         cash_bs = cash_bs * math.exp(r * dt)
-        # # rebalancing positions
-        # tradingcost_svi, cash_svi, portfolio_net_svi, totalfees_svi, rebalance_cont = \
-        #     exotic_util.calculate_hedging_positions(
-        #         daily_close, price_svi, delta_svi, cash_svi, fee,
-        #         last_delta_svi, rebalance_cont, totalfees_svi, r
-        #     )
-        # tradingcost_bs, cash_bs, portfolio_net_bs, totalfees_bs, e2 = \
-        #     exotic_util.calculate_hedging_positions(
-        #         daily_close, price_bs, delta_bs, cash_bs, fee,
-        #         last_delta_bs, rebalance_cont, totalfees_bs, r)
-        # tradedvalue_svi += abs(delta_svi-last_delta_svi) * daily_close
-        # tradedvalue_bs += abs(delta_bs-last_delta_bs) * daily_close
-        # deltacont_svi.append(abs(delta_svi-last_delta_svi))
-        # deltacont_bs.append(abs(delta_bs-last_delta_bs))
-        # last_delta_svi = delta_svi
-        # last_delta_bs = delta_bs
-        # last_price_svi = price_svi
-        # last_price_bs = price_bs
-        # last_s = daily_close
-        # marked = daily_close
+
 
     dates.append(begin_date)
     svi_pnl.append(portfolio_net_svi / init_svi)
@@ -242,10 +208,10 @@ while begin_date < end_date:
     # rebalancings.append(rebalance_cont)
     option_init_bs.append(init_bs)
     option_init_svi.append(init_svi)
-    print("%20s %20s %20s %20s %20s %20s" % (
+    print("%20s %20s %20s %20s %20s %20s %20s" % (
         begin_date, round(init_svi, 4), round(init_bs, 4),
         round(portfolio_net_svi / init_svi, 4), round(portfolio_net_bs / init_bs, 4),
-        round(totalfees_svi / init_svi, 4)))
+        round(tradedvalue_svi / init_svi, 4), round(tradedvalue_bs / init_bs, 4)))
 print('=' * 200)
 print("%20s %20s %20s %20s %20s %20s %20s %20s" % (
     "eval date", "spot", "delta", 'price_svi', 'price_bs', 'portfolio_svi', 'portfolio_bs',
@@ -266,7 +232,7 @@ results.update({'holdings bs': holdings_bs})
 
 df = pd.DataFrame(data=results)
 # print(df)
-df.to_csv(os.path.abspath('..') + '/results/t2_delta_hedge_'+barrier_type+'b='+str(barrier_pct*100)+'.csv')
+df.to_csv(os.path.abspath('..') + '/results/t3_delta_hedge_'+barrier_type+'b='+str(barrier_pct*100)+'.csv')
 
 t,p = stats.ttest_ind(svi_pnl,bs_pnl)
 print(t,p)

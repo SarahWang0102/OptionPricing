@@ -41,8 +41,8 @@ end_date = ql.Date(30, 6, 2017)
 fee = 0.2 / 1000
 # dt = 1.0 / 365
 rf = 0.0
-rf1 = 0.03
-barrier_pct = -0.15
+rf1 = 0.0
+barrier_pct = -0.05
 dt = 1.0/365
 
 optionType = ql.Option.Call
@@ -127,7 +127,7 @@ while begin_date < end_date:
 
     #######################################################################################################
     # Rebalancing portfolio
-    while begDate < endDate:
+    while begDate < maturitydt:
         # Contruct vol surfave at previous date
         black_var_surface, const_vol = get_vol_data(begDate, daycounter, calendar, contractType)
         # if daily_close >= barrier:
@@ -262,7 +262,7 @@ results.update({'holdings bs': holdings_bs})
 
 df = pd.DataFrame(data=results)
 # print(df)
-df.to_csv(os.path.abspath('..') + '/results/t2_delta_hedge_'+barrier_type+'b='+str(barrier_pct*100)+'.csv')
+df.to_csv(os.path.abspath('..') + '/results/t2_delta_hedge_'+barrier_type+'_b='+str(barrier_pct*100)+'.csv')
 
 t,p = stats.ttest_ind(svi_pnl,bs_pnl)
 print(t,p)

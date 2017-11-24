@@ -20,70 +20,164 @@ with open(os.path.abspath('..') + '/intermediate_data/svi_dataset_50etf_calls_no
 with open(os.path.abspath('..') + '/intermediate_data/total_hedging_bs_estimated_vols.pickle', 'rb') as f:
     estimated_vols = pickle.load(f)[0]
 
-# Evaluation Settings
-evalDate = ql.Date(17, 6, 2017)
+# # Evaluation Settings
+# evalDate = ql.Date(17, 6, 2017)
+# calendar = ql.China()
+# daycounter = ql.ActualActual()
+# contractType = '50etf'
+# engineType = 'AnalyticEuropeanEngine'
+# facevalue = 1
+# # i = 2
+# rf = 0.03
+# evalDate = calendar.advance(evalDate,ql.Period(1,ql.Days))
+# evaluation = Evaluation(evalDate, daycounter, calendar)
+#
+# maturitydt = calendar.advance(evalDate, ql.Period(3, ql.Months))  # contract maturity
+#
+# svidata = svi_dataset.get(to_dt_date(evalDate))
+# paramset = calibrered_params_ts.get(to_dt_date(evalDate))
+# volSurface = SviVolSurface(evalDate, paramset, daycounter, calendar)
+# daily_close = svidata.spot
+# maturity_dates = sorted(svidata.dataSet.keys())
+# svi = SviPricingModel(volSurface, daily_close, daycounter, calendar,
+#                       to_ql_dates(maturity_dates), ql.Option.Call, contractType)
+# black_var_surface = svi.black_var_surface()
+# print(maturitydt)
+# underlying = ql.SimpleQuote(daily_close)
+# process = evaluation.get_bsmprocess(daycounter, underlying, black_var_surface)
+# print(daily_close)
+# # Barrier Option
+# strike = daily_close
+# barrier = strike - 0.2
+#
+# optiontype = ql.Option.Call
+# barrierType = ql.Barrier.DownOut
+# exercise = ql.EuropeanExercise(maturitydt)
+# payoff = ql.PlainVanillaPayoff(optiontype, strike)
+# barrieroption = ql.BarrierOption(barrierType, barrier, 0.0, payoff, exercise)
+#
+# barrier_option = OptionBarrierEuropean(strike, maturitydt, optiontype, barrier, barrierType)
+# staticHedge = StaticHedgePortfolio(barrier_option)
+# # staticHedge.set_static_portfolio(evaluation,spot,black_var_surface)
+#
+#
+# ttm = daycounter.yearFraction(evalDate, maturitydt)
+# strike_barrier = ((barrier) ** 2) / strike
+# strike_barrierforward = ((barrier * np.exp(rf * ttm)) ** 2) / strike
+# strike_strikeforward = ((daily_close) ** 2) / strike
+#
+# print('underlying : ', daily_close)
+# print('barrier : ', barrier)
+# print('strike : ', strike)
+# print('barrier forward : ', barrier * np.exp(rf * ttm))
+#
+# barrier_engine = ql.AnalyticBarrierEngine(process)
+# european_engine = ql.AnalyticEuropeanEngine(process)
+# barrieroption.setPricingEngine(barrier_engine)
+# barrier_price = barrieroption.NPV()
+#
+# # Construct Replicaiton Portfolio
+# portfolio = ql.CompositeInstrument()
+#
+# # Long a call struck at strike
+# call = ql.EuropeanOption(payoff, exercise)
+# call.setPricingEngine(european_engine)
+# call_price = call.NPV()
+# print('call value : ', call_price)
+# portfolio.add(call)
+#
+# # short put_ratio shares of puts struck at k_put
+# k_put = strike_barrierforward
+# print('k` : ', k_put)
+# put_payoff = ql.PlainVanillaPayoff(ql.Option.Put, k_put)
+# put = ql.EuropeanOption(put_payoff, exercise)
+# put.setPricingEngine(european_engine)
+#
+#
+# underlying.setValue(barrier)
+# callprice_at_barrier = call.NPV()
+# putprice_at_barrier = put.NPV()
+# put_ratio = callprice_at_barrier / putprice_at_barrier
+# # put_ratio = math.sqrt(strike/k_put)
+#
+# print('put ratio : ', put_ratio)
+# portfolio.subtract(put, put_ratio)
+#
+#
+# underlying.setValue(daily_close)
+# portfolio_value = portfolio.NPV()
+
+evalDate = ql.Date(25, 5, 2017)
+maturitydt = ql.Date(28, 6, 2017)
+endDate = ql.Date(28, 6, 2017)
 calendar = ql.China()
 daycounter = ql.ActualActual()
+
 contractType = '50etf'
 engineType = 'AnalyticEuropeanEngine'
-facevalue = 1
-# i = 2
+facevalue = 1000
+# i = 3
 rf = 0.03
+
+optionType = ql.Option.Call
+barrierType = ql.Barrier.DownOut
+
 evalDate = calendar.advance(evalDate,ql.Period(1,ql.Days))
 evaluation = Evaluation(evalDate, daycounter, calendar)
 
-maturitydt = calendar.advance(evalDate, ql.Period(3, ql.Months))  # contract maturity
-
 svidata = svi_dataset.get(to_dt_date(evalDate))
-paramset = calibrered_params_ts.get(to_dt_date(evalDate))
-volSurface = SviVolSurface(evalDate, paramset, daycounter, calendar)
+# paramset = calibrered_params_ts.get(to_dt_date(evalDate))
+# volSurface = SviVolSurface(evalDate, paramset, daycounter, calendar)
 daily_close = svidata.spot
-maturity_dates = sorted(svidata.dataSet.keys())
-svi = SviPricingModel(volSurface, daily_close, daycounter, calendar,
-                      to_ql_dates(maturity_dates), ql.Option.Call, contractType)
-black_var_surface = svi.black_var_surface()
-print(maturitydt)
+# maturity_dates = sorted(svidata.dataSet.keys())
+# svi = SviPricingModel(volSurface, daily_close, daycounter, calendar,
+#                       to_ql_dates(maturity_dates), ql.Option.Call, contractType)
+# black_var_surface = svi.black_var_surface()
+ttm = daycounter.yearFraction(evalDate, maturitydt)
+
+# print(black_var_surface.blackVol(ttm,2.495))
 underlying = ql.SimpleQuote(daily_close)
-process = evaluation.get_bsmprocess(daycounter, underlying, black_var_surface)
+# process = evaluation.get_bsmprocess(daycounter, underlying, black_var_surface)
+vol = estimated_vols.get(to_dt_date(evalDate))
+# vol = 0.12
+process = evaluation.get_bsmprocess_cnstvol(daycounter,calendar,underlying,vol)
 print(daily_close)
-# Barrier Option
-strike = daily_close
-barrier = strike - 0.2
+# barrierstrike = daily_close # 2.475
+strike = 2.495
+barrier = 2.35
 
-optiontype = ql.Option.Call
-barrierType = ql.Barrier.DownOut
 exercise = ql.EuropeanExercise(maturitydt)
-payoff = ql.PlainVanillaPayoff(optiontype, strike)
+payoff = ql.PlainVanillaPayoff(optionType, strike)
 barrieroption = ql.BarrierOption(barrierType, barrier, 0.0, payoff, exercise)
-
-barrier_option = OptionBarrierEuropean(strike, maturitydt, optiontype, barrier, barrierType)
-staticHedge = StaticHedgePortfolio(barrier_option)
+# barrieroption.setPricingEngine(ql.AnalyticBarrierEngine(process))
+barrier_option = OptionBarrierEuropean(strike, maturitydt, optionType, barrier, barrierType)
+# staticHedge = StaticHedgePortfolio(barrier_option)
 # staticHedge.set_static_portfolio(evaluation,spot,black_var_surface)
 
 
-ttm = daycounter.yearFraction(evalDate, maturitydt)
 strike_barrier = ((barrier) ** 2) / strike
 strike_barrierforward = ((barrier * np.exp(rf * ttm)) ** 2) / strike
 strike_strikeforward = ((daily_close) ** 2) / strike
 
+print(maturitydt)
+print('init spot',daily_close)
 print('underlying : ', daily_close)
 print('barrier : ', barrier)
 print('strike : ', strike)
-print('barrier forward : ', barrier * np.exp(rf * ttm))
-
-barrier_engine = ql.AnalyticBarrierEngine(process)
+# print('barrier forward : ', barrier * np.exp(rf * ttm))
 european_engine = ql.AnalyticEuropeanEngine(process)
+barrier_engine = ql.AnalyticBarrierEngine(process)
 barrieroption.setPricingEngine(barrier_engine)
 barrier_price = barrieroption.NPV()
-
+init_barrier = barrier_price*facevalue
 # Construct Replicaiton Portfolio
 portfolio = ql.CompositeInstrument()
 
 # Long a call struck at strike
 call = ql.EuropeanOption(payoff, exercise)
 call.setPricingEngine(european_engine)
-call_price = call.NPV()
-print('call value : ', call_price)
+call_value = call.NPV()
+print('call value : ', call_value)
 portfolio.add(call)
 
 # short put_ratio shares of puts struck at k_put
@@ -98,6 +192,9 @@ underlying.setValue(barrier)
 callprice_at_barrier = call.NPV()
 putprice_at_barrier = put.NPV()
 put_ratio = callprice_at_barrier / putprice_at_barrier
+# put_price = put_data[put_230.Times.index(to_dt_date(evalDate))]
+# call_price = call_data[call_265.Times.index(to_dt_date(evalDate))]
+# put_ratio = (barrier_price-call_price)/put_price
 # put_ratio = math.sqrt(strike/k_put)
 
 print('put ratio : ', put_ratio)
@@ -106,6 +203,11 @@ portfolio.subtract(put, put_ratio)
 
 underlying.setValue(daily_close)
 portfolio_value = portfolio.NPV()
+
+print('portfolio init value : ',portfolio_value)
+print('barrier option init value : ',barrier_price)
+
+
 print('reference npv :', barrier_price)
 print('replicate npv :', portfolio_value)
 print('hedge error : ', barrier_price - portfolio_value)
@@ -137,9 +239,9 @@ for s in spot_range:
     call_npvs.append(call_npv)
     put_npvs.append((put_npv))
     portfolio_values.append(portfolio_value)
-    pnls.append(pnl/barrier_price)
+    pnls.append(pnl/init_barrier)
     print("%15s %25s %25s %25s %25s %25s" % (s, round(barrier_npv, 2), round(call_npv, 2), round(put_npv, 2),
-                                             round(portfolio_value, 2), round(pnl/barrier_price, 2)))
+                                             round(portfolio_value, 2), round(pnl/init_barrier, 2)))
 df['Spot'] = spot_range
 df['barrier_npv'] = barrier_npvs
 df['call_npv'] = call_npvs
@@ -147,5 +249,5 @@ df['put_npv'] = put_npvs
 df['replicate_portfolio'] = portfolio_values
 df['pnl'] = pnls
 # df.to_csv('static_hegde_knockout_call.csv')
-df.to_csv(os.path.abspath('..') + '/results/static_hegde_knockout_call.csv')
+df.to_csv(os.path.abspath('..') + '/results/static_hegde_knockout_call2.csv')
 
