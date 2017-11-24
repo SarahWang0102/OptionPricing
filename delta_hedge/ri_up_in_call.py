@@ -36,7 +36,7 @@ def get_vol_data(evalDate, daycounter, calendar, contractType):
 
 #######################################################################################################
 # barrier_pct = 0.13
-barrier_cont = [0.14,0.15,0.16]
+barrier_cont = [0.1,0.15,0.05]
 period = ql.Period(1,ql.Days)
 
 #######################################################################################################
@@ -51,7 +51,7 @@ for barrier_pct in barrier_cont:
 
     dt = 1.0/365
     optionType = ql.Option.Call
-    barrierType = ql.Barrier.UpOut
+    barrierType = ql.Barrier.UpIn
     barrier_type = 'upoutcall'
     contractType = '50etf'
     engineType = 'BinomialBarrierEngine'
@@ -68,6 +68,7 @@ for barrier_pct in barrier_cont:
     holdings_svi = []
     holdings_bs =[]
 
+    # rebalancings = []
     print('=' * 200)
     print("%20s %20s %20s %20s %20s %20s" % (
         "eval date", 'price_svi', 'price_bs', 'portfolio_svi', 'portfolio_bs',
@@ -125,10 +126,9 @@ for barrier_pct in barrier_cont:
         marked = daily_close
         #######################################################################################################
         # Rebalancing portfolio
-        # while begDate < endDate:
         while begDate < maturitydt:
             daily_close, black_var_surface, const_vol = get_vol_data(begDate, daycounter, calendar, contractType)
-            if daily_close >= barrier : break
+            # if daily_close >= barrier : break
             hist_spots.append(daily_close)
             begDate = calendar.advance(begDate, ql.Period(1, ql.Days))
             evaluation = Evaluation(begDate, daycounter, calendar)
