@@ -24,7 +24,6 @@ while evalDate < endDate:
     evalDate = calendar.advance(evalDate, ql.Period(1, ql.Days))
     datestr = str(evalDate.year()) + "-" + str(evalDate.month()) + "-" + str(evalDate.dayOfMonth())
     # ids = w.wsd("SR.CZC", "trade_hiscode",datestr, datestr, "")
-
     #w.wsi("510050.SH", "close", "2017-11-09 09:00:00", "2017-11-09 12:17:54", "Fill=Previous")
     #print(ids.Data)
     data = w.wsi("510050.SH", "close", datestr+" 09:00:00", datestr+" 15:01:00", "Fill=Previous")

@@ -11,45 +11,37 @@ import pickle
 
 w.start()
 
-evalDate = ql.Date(1, 4, 2017)
+evalDate = ql.Date(1, 8, 2015)
 # evalDate = ql.Date(28, 7, 2017)
-endDate = ql.Date(2, 5, 2017)
+endDate = ql.Date(1, 1, 2016)
 calendar = ql.China()
 daycounter = ql.ActualActual()
 
-# evalDate = calendar.advance(evalDate, ql.Period(1, ql.Days))
+evalDate = calendar.advance(evalDate, ql.Period(1, ql.Days))
 #
 # begstr = str(evalDate.year()) + "-" + str(evalDate.month()) + "-" + str(evalDate.dayOfMonth())
 # endstr = str(endDate.year()) + "-" + str(endDate.month()) + "-" + str(endDate.dayOfMonth())
-# # data = w.wsd("SR.CZC", "trade_hiscode",begstr, endstr, "")
-# data = w.wsd("M.DCE", "trade_hiscode",begstr, endstr, "")
+# data = w.wsd("SR.CZC", "trade_hiscode",begstr, endstr, "")
 # df = pd.DataFrame(data=data.Data[0], index=data.Times)
-# df.to_json(os.path.abspath('..') + '\marketdata\hiscodes_m' + '.json')
-# # df.to_json(os.path.abspath('..') + '\marketdata\hiscodes_sr' + '.json')
+# df.to_json(os.path.abspath('..') + '\marketdata\hiscodes_sr' + '.json')
 # print(df)
 #
-with open(os.path.abspath('..') + '/intermediate_data/total_hedging_bs_estimated_vols_call.pickle', 'rb') as f:
-    estimated_vols = pickle.load(f)[0]
 
-print(estimated_vols)
-for key in estimated_vols.keys():
-    print(key,estimated_vols[key])
-
-'''
 while evalDate < endDate:
     evalDate = calendar.advance(evalDate, ql.Period(1, ql.Days))
     datestr = str(evalDate.year()) + "-" + str(evalDate.month()) + "-" + str(evalDate.dayOfMonth())
-    # ids = w.wsd("SR.CZC", "trade_hiscode",datestr, datestr, "")
-    ids = w.wsd("M.DCE", "trade_hiscode",datestr, datestr, "")
-    #print(ids.Data)
+    ids = w.wsd("SR.CZC", "trade_hiscode",datestr, datestr, "")
+    # ids = w.wsd("M.DCE", "trade_hiscode", datestr, datestr, "")
+    print(ids.Data)
     data = w.wsi(ids.Data[0][0], "close", datestr+" 09:00:00", datestr+" 23:31:00", "Fill=Previous")
-    print(data.Times)
-    #print(data.Data[-1])
+    # print(data.Times)
+    print(data.Data)
     df = pd.DataFrame(data=data.Data[0], index=data.Times)
-    df.to_json(os.path.abspath('..') + '\marketdata\intraday_m_'+datestr + '.json')
-    # df.to_json(os.path.abspath('..') + '\marketdata\intraday_sr_'+datestr + '.json')
+    df.to_json(os.path.abspath('..') + '\marketdata\intraday_sr_'+datestr + '.json')
+    # df.to_json(os.path.abspath('..') + '\marketdata\intraday_m_'+datestr + '.json')
 
 
+'''
 
 diffs = []
 stds = []

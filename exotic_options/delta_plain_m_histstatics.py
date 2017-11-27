@@ -58,7 +58,7 @@ pnls_svi = []
 pnls_bs = []
 results = {}
 for dk in dk_cont:
-    begin_date = ql.Date(29, 4, 2017)
+    begin_date = ql.Date(29, 4, 2016)
     begin_date2 = ql.Date(30, 6, 2017)
     print('dk : ', dk)
     #strike = 2.65

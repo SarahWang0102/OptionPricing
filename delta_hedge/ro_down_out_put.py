@@ -36,9 +36,13 @@ def get_vol_data(evalDate, daycounter, calendar, contractType):
 
 #######################################################################################################
 # barrier_pct = -0.13
-barrier_cont = [-0.13,-0.14,-0.15,-0.16]
+# barrier_cont = [-0.13,-0.14,-0.15,-0.16]
+barrier_cont = [-0.17]
 period = ql.Period(1,ql.Days)
 rebalancerate = 0.03
+fee = 0.3 / 1000
+rf = 0.03
+rf1 = 0.06
 #######################################################################################################
 
 for barrier_pct in barrier_cont:
@@ -46,9 +50,7 @@ for barrier_pct in barrier_cont:
 
     begin_date = ql.Date(1, 9, 2015)
     end_date = ql.Date(30, 6, 2017)
-    fee = 0.2 / 1000
-    rf = 0.03
-    rf1 = 0.03
+
     dt = 1.0 / 365
 
     optionType = ql.Option.Put
@@ -101,9 +103,9 @@ for barrier_pct in barrier_cont:
         except Exception as e:
             print(e)
             print('initial price unavailable')
-        # init_svi = price_svi
-        # init_bs = price_bs
-        init_svi = init_bs = max(price_bs, price_svi)
+        init_svi = price_svi
+        init_bs = price_bs
+        # init_svi = init_bs = max(price_bs, price_svi)
         init_spot = daily_close
         if init_svi <= 0.001 or init_bs <= 0.001: continue
         # rebalancing positions
@@ -236,7 +238,7 @@ for barrier_pct in barrier_cont:
 
     df = pd.DataFrame(data=results)
     # print(df)
-    df.to_csv(os.path.abspath('..') + '/results/dh_'+barrier_type+'_r='+str(rebalancerate) + '_b=' + str(barrier_pct * 100) + '.csv')
+    df.to_csv(os.path.abspath('..') + '/results/dh_'+barrier_type+'_r='+str(rebalancerate) + '_b=' + str(barrier_pct * 100) + '_diffinit.csv')
 
     t, p = stats.ttest_ind(svi_pnl, bs_pnl)
     print(t, p)

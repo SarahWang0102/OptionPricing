@@ -13,11 +13,11 @@ from pricing_options.SviPricingModel import SviPricingModel
 from pricing_options.SviVolSurface import SviVolSurface
 import exotic_options.exotic_option_utilities as exotic_util
 
-with open(os.path.abspath('..') + '/intermediate_data/svi_calibration_50etf_calls_noZeroVol_itd.pickle', 'rb') as f:
+with open(os.path.abspath('..') + '/intermediate_data/svi_calibration_50etf_puts_noZeroVol_itd.pickle', 'rb') as f:
     calibrered_params_ts = pickle.load(f)[0]
-with open(os.path.abspath('..') + '/intermediate_data/svi_dataset_50etf_calls_noZeroVol_itd.pickle', 'rb') as f:
+with open(os.path.abspath('..') + '/intermediate_data/svi_dataset_50etf_puts_noZeroVol_itd.pickle', 'rb') as f:
     svi_dataset = pickle.load(f)[0]
-with open(os.path.abspath('..') + '/intermediate_data/total_hedging_bs_estimated_vols_call.pickle', 'rb') as f:
+with open(os.path.abspath('..') + '/intermediate_data/total_hedging_bs_estimated_vols_put.pickle', 'rb') as f:
     estimated_vols = pickle.load(f)[0]
 
 def get_vol_data(evalDate, daycounter, calendar, contractType):
@@ -36,9 +36,8 @@ def get_vol_data(evalDate, daycounter, calendar, contractType):
 
 #######################################################################################################
 # barrier_pct = 0.13
-# barrier_cont = [0.13,0.14,0.16,0.17]
-barrier_cont = [0.1]
-period = ql.Period(1,ql.Days)
+barrier_cont = [-0.1,-0.09,-0.08,-0.07]
+period = ql.Period(1,ql.Weeks)
 rebalancerate = 0.03
 fee = 0.3 / 1000
 rf = 0.03
@@ -49,10 +48,11 @@ for barrier_pct in barrier_cont:
     print('barrier : ', barrier_pct)
     begin_date = ql.Date(1, 9, 2015)
     end_date = ql.Date(30, 6, 2017)
+
     dt = 1.0/365
-    optionType = ql.Option.Call
-    barrierType = ql.Barrier.UpOut
-    barrier_type = 'upoutcall'
+    optionType = ql.Option.Put
+    barrierType = ql.Barrier.DownIn
+    barrier_type = 'downinput'
     contractType = '50etf'
     engineType = 'BinomialBarrierEngine'
     calendar = ql.China()
@@ -68,6 +68,7 @@ for barrier_pct in barrier_cont:
     holdings_svi = []
     holdings_bs =[]
 
+    # rebalancings = []
     print('=' * 200)
     print("%20s %20s %20s %20s %20s %20s" % (
         "eval date", 'price_svi', 'price_bs', 'portfolio_svi', 'portfolio_bs',
@@ -102,10 +103,10 @@ for barrier_pct in barrier_cont:
         except Exception as e:
             print(e)
             print('initial price unavailable')
-        init_svi = price_svi
-        init_bs = price_bs
+        # init_svi = price_svi
+        # init_bs = price_bs
         init_spot = daily_close
-        # init_svi = init_bs = max(price_bs, price_svi)
+        init_svi = init_bs = max(price_bs, price_svi)
         if init_svi <= 0.001 or init_bs <= 0.001: continue
         # rebalancing positions
         tradingcost_svi, cash_svi, portfolio_net_svi, totalfees_svi, rebalance_cont = \
@@ -125,10 +126,9 @@ for barrier_pct in barrier_cont:
         marked = daily_close
         #######################################################################################################
         # Rebalancing portfolio
-        # while begDate < endDate:
         while begDate < maturitydt:
             daily_close, black_var_surface, const_vol = get_vol_data(begDate, daycounter, calendar, contractType)
-            if daily_close >= barrier : break
+            # if daily_close >= barrier : break
             hist_spots.append(daily_close)
             begDate = calendar.advance(begDate, ql.Period(1, ql.Days))
             evaluation = Evaluation(begDate, daycounter, calendar)
@@ -236,7 +236,7 @@ for barrier_pct in barrier_cont:
 
     df = pd.DataFrame(data=results)
     # print(df)
-    df.to_csv(os.path.abspath('..') + '/results/dh_'+barrier_type+'_r='+str(rebalancerate) + '_b=' + str(barrier_pct * 100) + '_diffinit.csv')
+    df.to_csv(os.path.abspath('..') + '/results/dh_'+barrier_type+'_r='+str(rebalancerate) + '_b=' + str(barrier_pct * 100) + '.csv')
 
     t,p = stats.ttest_ind(svi_pnl,bs_pnl)
 

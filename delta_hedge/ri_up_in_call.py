@@ -36,23 +36,22 @@ def get_vol_data(evalDate, daycounter, calendar, contractType):
 
 #######################################################################################################
 # barrier_pct = 0.13
-barrier_cont = [0.1,0.15,0.05]
-period = ql.Period(1,ql.Days)
+barrier_cont = [0.1,0.09,0.08,0.07]
+period = ql.Period(1,ql.Weeks)
 rebalancerate = 0.03
+fee = 0.3 / 1000
+rf = 0.03
+rf1 = 0.06
 #######################################################################################################
 
 for barrier_pct in barrier_cont:
     print('barrier : ', barrier_pct)
     begin_date = ql.Date(1, 9, 2015)
     end_date = ql.Date(30, 6, 2017)
-    fee = 0.2 / 1000
-    rf = 0.03
-    rf1 = 0.03
-
     dt = 1.0/365
     optionType = ql.Option.Call
     barrierType = ql.Barrier.UpIn
-    barrier_type = 'upoutcall'
+    barrier_type = 'upincall'
     contractType = '50etf'
     engineType = 'BinomialBarrierEngine'
     calendar = ql.China()

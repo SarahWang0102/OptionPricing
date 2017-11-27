@@ -18,7 +18,7 @@ with open(os.path.abspath('..')+'/intermediate_data/svi_dataset_sr_calls.pickle'
 df = pd.read_json(os.path.abspath('..') + '\marketdata\hiscodes_sr' + '.json')
 
 
-evalDate = ql.Date(29, 4, 2017)
+evalDate = ql.Date(19, 4, 2017)
 #evalDate = ql.Date(28, 7, 2017)
 #endDate = ql.Date(9, 10, 2017)
 endDate = ql.Date(10, 8, 2017)
@@ -42,6 +42,7 @@ while evalDate <= endDate:
         results_call, results_put, underlying_prices = get_commodity_sr_data(evalDate,calendar)
     except:
         continue
+    print(evalDate)
     yield_ts = ql.YieldTermStructureHandle(curve)
     dividend_ts = ql.YieldTermStructureHandle(ql.FlatForward(evalDate, 0.0, daycounter))
 

@@ -10,6 +10,9 @@ import os
 with open(os.path.abspath('..')+'/intermediate_data/svi_dataset_m_calls.pickle','rb') as f:
     svi_dataset = pickle.load(f)[0]
 
+with open(os.path.abspath('..')+'/intermediate_data/bs_estimite_vols_m_calls.pickle','rb') as f:
+    estimated_vols = pickle.load(f)[0]
+
 print(svi_dataset)
 
 optiontype = ql.Option.Call
@@ -18,8 +21,10 @@ calendar = ql.China()
 
 dates = svi_dataset.keys()
 
-estimated_vols = {}
+# estimated_vols = {}
 for evalDate in dates:
+    # if evalDate in estimated_vols.keys():continue
+    ql.Settings.instance().evaluationDate = util.to_ql_date(evalDate)
     svi_data = svi_dataset.get(evalDate).dataSet
     curve = get_curve_treasury_bond(util.to_ql_date(evalDate), daycounter)
     yield_ts = ql.YieldTermStructureHandle(curve)
