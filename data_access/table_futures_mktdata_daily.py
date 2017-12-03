@@ -11,9 +11,10 @@ from data_access import spider_api_sfe as sfe
 
 def dce_night(dt,data):
     db_data = []
+    cd_exchange = 'dce'
     for column in data.columns.values:
         product = data[column]
-        codename = du.get_codename(product.loc['商品名称'])
+        codename = du.get_codename(product.loc['商品名称']).lower()
         id_instrument = codename +'_'+ product.loc['交割月份']
         dt_date = dt
         flag_night = 1
@@ -42,7 +43,7 @@ def dce_night(dt,data):
                   'amt_trading_volume': amt_trading_volume,
                   'amt_trading_value': amt_trading_value,
                   'amt_holding_volume': amt_holding_volume,
-                  'cd_exchange':'dce',
+                  'cd_exchange':cd_exchange,
                   'timestamp': datetime.datetime.today()
                   }
         db_data.append(db_row)
@@ -51,9 +52,10 @@ def dce_night(dt,data):
 
 def dce_day(dt,data):
     db_data = []
+    cd_exchange = 'dce'
     for column in data.columns.values:
         product = data[column]
-        codename = du.get_codename(product.loc['商品名称'])
+        codename = du.get_codename(product.loc['商品名称']).lower()
         id_instrument = codename +'_' + product.loc['交割月份']
         dt_date = dt
         flag_night = 0
@@ -82,7 +84,7 @@ def dce_day(dt,data):
                   'amt_trading_volume': amt_trading_volume,
                   'amt_trading_value': amt_trading_value,
                   'amt_holding_volume': amt_holding_volume,
-                  'cd_exchange': 'dce',
+                  'cd_exchange': cd_exchange,
                   'timestamp': datetime.datetime.today()
                   }
         db_data.append(db_row)
@@ -93,12 +95,13 @@ def sfe_daily(dt,data):
     key_map = du.key_map_sfe()
     data_dict1 = data['o_curinstrument']
     db_data = []
+    cd_exchange = 'sfe'
     for dict in data_dict1:
         name = dict[key_map['codename']].replace(' ', '')
         contractmonth = dict[key_map['contractmonth']].replace(' ', '')
         if name == '总计' or contractmonth =='小计':continue
         try:
-            name_code = name[0:name.index('_')]
+            name_code = name[0:name.index('_')].lower()
         except:
             print(name)
             continue
@@ -140,14 +143,14 @@ def sfe_daily(dt,data):
                   'amt_trading_volume': amt_trading_volume,
                   'amt_trading_value': amt_trading_value,
                   'amt_holding_volume': amt_holding_volume,
-                  'cd_exchange': 'sfe',
+                  'cd_exchange': cd_exchange,
                   'timestamp': datetime.datetime.today()
                   }
         db_data.append(db_row)
     return db_data
 tradetype = 0  # 0:期货，1：期权
-begdate = datetime.date(2017, 9, 21)
-enddate = datetime.date(2017, 10, 1)
+begdate = datetime.date(2017, 12, 1)
+enddate = datetime.date(2017, 12, 1)
 
 
 engine = create_engine('mysql+pymysql://root:liz1128@101.132.148.152/mktdata',
@@ -156,17 +159,17 @@ conn = engine.connect()
 metadata = MetaData(engine)
 table = Table('futures_mktdata_daily', metadata, autoload=True)
 
-# ds_day = dce.spider_mktdata_day(begdate, enddate, tradetype)
-# for dt in ds_day.keys():
-#     data = ds_day[dt]
-#     db_data = dce_day(dt,data)
-#     try:
-#         conn.execute(table.insert(), db_data)
-#     except Exception as e:
-#         print(dt)
-#         print(e)
-#         continue
-# ds_day = None
+ds_day = dce.spider_mktdata_day(begdate, enddate, tradetype)
+for dt in ds_day.keys():
+    data = ds_day[dt]
+    db_data = dce_day(dt,data)
+    try:
+        conn.execute(table.insert(), db_data)
+    except Exception as e:
+        print(dt)
+        print(e)
+        continue
+ds_day = None
 #
 # ds_night = dce.spider_mktdata_night(begdate, enddate, tradetype)
 # for dt in ds_night.keys():
@@ -180,16 +183,16 @@ table = Table('futures_mktdata_daily', metadata, autoload=True)
 #         continue
 # ds_night = None
 
-ds =sfe.spider_mktdata(begdate,enddate)
-for dt in ds.keys():
-    data = ds[dt]
-    db_data = sfe_daily(dt,data)
-    try:
-        conn.execute(table.insert(), db_data)
-    except Exception as e:
-        print(dt)
-        print(e)
-        continue
-ds = None
+# ds =sfe.spider_mktdata(begdate,enddate)
+# for dt in ds.keys():
+#     data = ds[dt]
+#     db_data = sfe_daily(dt,data)
+#     try:
+#         conn.execute(table.insert(), db_data)
+#     except Exception as e:
+#         print(dt)
+#         print(e)
+#         continue
+# ds = None
 
 

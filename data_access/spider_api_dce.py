@@ -93,10 +93,10 @@ def spider_mktdata_day(firstdate, enddate,tradetype):
                 if len(colums_of_row) != index_length:
                     continue
                 data[nbrRow] = colums_of_row
-                dt_date = datetime.date(date)
-                dataset.update({dt_date:data})
-                # datestr = str(date.year) + "-" + str(date.month) + "-" + str(date.day)
-                # data.to_json(os.path.abspath('..')+ '\marketdata\\' + codename + '_mkt_' + datestr + '.json')
+            dt_date = datetime.date(date)
+            dataset.update({dt_date:data})
+            # datestr = str(date.year) + "-" + str(date.month) + "-" + str(date.day)
+            # data.to_json(os.path.abspath('..')+ '\marketdata\\' + codename + '_mkt_' + datestr + '.json')
     return dataset
 
 def spider_mktdata_night(firstdate, enddate,tradetype):
@@ -122,10 +122,10 @@ def spider_mktdata_night(firstdate, enddate,tradetype):
                 if len(colums_of_row) != index_length:
                     continue
                 data[nbrRow] = colums_of_row
-                dt_date = datetime.date(date)
-                dataset.update({dt_date:data})
-                # datestr = str(date.year) + "-" + str(date.month) + "-" + str(date.day)
-                # data.to_json(os.path.abspath('..')+ '\marketdata\\' + codename + '_mkt_' + datestr + '.json')
+            dt_date = datetime.date(date)
+            dataset.update({dt_date:data})
+            # datestr = str(date.year) + "-" + str(date.month) + "-" + str(date.day)
+            # data.to_json(os.path.abspath('..')+ '\marketdata\\' + codename + '_mkt_' + datestr + '.json')
     return dataset
 
 def spider_positions(codename,firstdate, enddate,tradetype):
@@ -171,12 +171,12 @@ def spider_positions(codename,firstdate, enddate,tradetype):
     return dataset
 
 
-'''
-codename = 'm'
-begdate=date(2017,11,1)
-enddate=date(2017,11,1)
 
-tradetype = 1 # 0:期货，1：期权
-ds = spider_positions(codename, begdate, enddate,0)
-print(ds[begdate])
-'''
+# codename = 'm'
+# begdate=date(2017,11,1)
+# enddate=date(2017,11,1)
+# #
+# tradetype = 1 # 0:期货，1：期权
+# ds = spider_mktdata_night(begdate, enddate,1)
+# print(ds[begdate])
+#

@@ -99,7 +99,7 @@ def sfe_data(dt, data):
         if amt_difference == '': amt_difference = 0.0
         db_row = {'dt_date': dt_date,
                   'cd_positions_type': cd_positions_type,
-                  'id_instrument': id_instrument,
+                  'id_instrument': id_instrument.lower(),
                   'nbr_rank': nbr_rank,
                   'name_company': name_company,
                   'amt_volume': amt_volume,
