@@ -236,5 +236,7 @@ df.to_csv(os.path.abspath('..') + '/results2/dh_plain_'+contractType
           + '_r=' + str(rebalancerate)  + '_2.csv')
 
 t, p = stats.ttest_ind(svi_pnl, bs_pnl)
-
+t1,p1 = stats.wilcoxon(svi_pnl,bs_pnl)
 print(t, p)
+print(t1, p1)
+

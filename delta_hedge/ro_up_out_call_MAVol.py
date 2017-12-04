@@ -35,16 +35,19 @@ with open(os.path.abspath('..') + '/intermediate_data/total_hedging_bs_estimated
 def get_vol_data_MA(evalDate, daycounter, calendar, contractType):
     black_var_surfaces = []
     for i in range(5):
-        dt = calendar.advance(evalDate, ql.Period(-i, ql.Days))
-        svidata = svi_dataset.get(to_dt_date(dt))
-        paramset = calibrered_params_ts.get(to_dt_date(dt))
-        volSurface = SviVolSurface(dt, paramset, daycounter, calendar)
-        spot = svidata.spot
-        maturity_dates = sorted(svidata.dataSet.keys())
-        svi = SviPricingModel(volSurface, spot, daycounter, calendar,
-                              to_ql_dates(maturity_dates), ql.Option.Call, contractType)
-        black_var_surface = svi.black_var_surface()
-        black_var_surfaces.append(black_var_surface)
+        try:
+            dt = calendar.advance(evalDate, ql.Period(-i, ql.Days))
+            svidata = svi_dataset.get(to_dt_date(dt))
+            paramset = calibrered_params_ts.get(to_dt_date(dt))
+            volSurface = SviVolSurface(dt, paramset, daycounter, calendar)
+            spot = svidata.spot
+            maturity_dates = sorted(svidata.dataSet.keys())
+            svi = SviPricingModel(volSurface, spot, daycounter, calendar,
+                                  to_ql_dates(maturity_dates), ql.Option.Call, contractType)
+            black_var_surface = svi.black_var_surface()
+            black_var_surfaces.append(black_var_surface)
+        except Exception as e:
+            print(e)
     const_vol = estimated_vols.get(to_dt_date(evalDate))
     spot = svi_dataset.get(to_dt_date(evalDate)).spot
     return spot,black_var_surfaces, const_vol
@@ -56,8 +59,8 @@ def get_vol_data_MA(evalDate, daycounter, calendar, contractType):
 # barrier_cont = [0.13,0.14,0.15,0.16,0.17]
 # barrier_cont = [0.15,0.14,0.13]
 # barrier_cont = [0.15,0.14,0.13]
-barrier_cont = [0.15]
-period = ql.Period(2,ql.Days)
+barrier_cont = [0.15,0.14,0.13]
+period = ql.Period(3,ql.Weeks)
 rebalancerate = 0.03
 fee = 0.3 / 1000
 rf = 0.03
@@ -67,7 +70,7 @@ rf1 = 0.06
 for barrier_pct in barrier_cont:
     print('barrier : ', barrier_pct)
     begin_date = ql.Date(15, 9, 2015)
-    end_date = ql.Date(30, 6, 2017)
+    end_date = ql.Date(20, 6, 2017)
     dt = 1.0/365
     optionType = ql.Option.Call
     barrierType = ql.Barrier.UpOut
@@ -125,7 +128,7 @@ for barrier_pct in barrier_cont:
         # init_bs = price_bs
         init_spot = daily_close
         init_svi = init_bs = max(price_bs, price_svi)
-        if init_svi <= 0.001 or init_bs <= 0.001: continue
+        # if init_svi <= 0.001 or init_bs <= 0.001: continue
         # rebalancing positions
         tradingcost_svi, cash_svi, portfolio_net_svi, totalfees_svi, tradedamt_svi = \
             exotic_util.calculate_hedging_positions(daily_close, price_svi, delta_svi, init_svi, fee,tradedamt_svi)
@@ -256,9 +259,11 @@ for barrier_pct in barrier_cont:
 
     df = pd.DataFrame(data=results)
     # print(df)
-    df.to_csv(os.path.abspath('..') + '/results3/dh_MA_'+barrier_type+'_r='
+    df.to_csv(os.path.abspath('..') + '/results4/dh_MA_'+barrier_type+'_r='
               +str(rebalancerate) + '_b=' + str(barrier_pct) + '.csv')
 
     t,p = stats.ttest_ind(svi_pnl,bs_pnl)
-
-    print(t,p)
+    t1,p1 = stats.wilcoxon(svi_pnl,bs_pnl)
+    print(barrier_type, ' ',barrier_pct)
+    print('t : ',t,p)
+    print('wilcoxom : ',t1,p1)

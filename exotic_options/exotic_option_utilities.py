@@ -37,12 +37,12 @@ def calculate_matrics_MAVol(evaluation, daycounter, calendar, optionBarrierEurop
     # svi_vol = sum(svi_vols)/len(svi_vols)
     if cont > 0: svi_vol = svi_vol / cont
     else:
-        svi_vol = const_vol
-        print(evaluation.evalDate,' no svi vol ', const_vol)
+        svi_vol = 0.1
+        print(evaluation.evalDate,' no svi vol ')
 
     if not const_vol > 0.0:
         print('const vol : ',const_vol)
-        const_vol = 0.05
+        const_vol = 0.1
 
     if optionType == ql.Option.Call and barrier_type == ql.Barrier.UpOut:
         # if barrier - spot < 0.01 * barrier and ttm < 7.0 / 365:

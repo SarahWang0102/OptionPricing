@@ -11,15 +11,19 @@ import datetime
 import os
 import pickle
 
-with open(os.path.abspath('..')+'/intermediate_data/svi_calibration_50etf_calls_noZeroVol_open.pickle','rb') as f:
+# with open(os.path.abspath('..')+'/intermediate_data/svi_calibration_50etf_calls_noZeroVol_open.pickle','rb') as f:
+#     calibrered_params_ts = pickle.load(f)[0]
+# with open(os.path.abspath('..')+'/intermediate_data/svi_dataset_50etf_calls_noZeroVol_open.pickle','rb') as f:
+#     svi_dataset = pickle.load(f)[0]
+
+with open(os.path.abspath('..') + '/intermediate_data/svi_calibration_50etf_puts_noZeroVol_itd_2.pickle', 'rb') as f:
     calibrered_params_ts = pickle.load(f)[0]
-with open(os.path.abspath('..')+'/intermediate_data/svi_dataset_50etf_calls_noZeroVol_open.pickle','rb') as f:
+with open(os.path.abspath('..') + '/intermediate_data/svi_dataset_50etf_puts_noZeroVol_itd_2.pickle', 'rb') as f:
     svi_dataset = pickle.load(f)[0]
 
-
-evalDate = ql.Date(8, 8, 2016)
+evalDate = ql.Date(20, 3, 2016)
 #evalDate = ql.Date(28, 9, 2017)
-endDate = ql.Date(1, 1, 2017)
+endDate = ql.Date(20, 9, 2017)
 calendar = ql.China()
 daycounter = ql.ActualActual()
 
@@ -42,11 +46,10 @@ while evalDate <= endDate:
         svi_data = svi_dataset.get(evaldt)
     else:
         svi_data = SviInputSet(evaldt,spot)
-
         for optionid in optionids:
             optionDataIdx = optionData[optionFlds.index('wind_code')].index(optionid)
-            if optionData[optionFlds.index('call_or_put')][optionDataIdx] == '认购':
-            #if optionData[optionFlds.index('call_or_put')][optionDataIdx] == '认沽':
+            # if optionData[optionFlds.index('call_or_put')][optionDataIdx] == '认购':
+            if optionData[optionFlds.index('call_or_put')][optionDataIdx] == '认沽':
                 temp = pd.to_datetime(optionData[optionFlds.index('exercise_date')][optionDataIdx])
                 mdate = datetime.date(temp.year,temp.month,temp.day)
                 maturitydt = ql.Date(mdate.day, mdate.month, mdate.year)
@@ -135,13 +138,13 @@ while evalDate <= endDate:
         print(calibrered_params)
         calibrered_params_ts.update({to_dt_date(evalDate):calibrered_params})
     plt.show()
-with open(os.path.abspath('..')+'/intermediate_data/svi_calibration_50etf_calls.pickle','wb') as f:
-    pickle.dump([calibrered_params_ts],f)
-
-print('svi',svi_dataset)
-with open(os.path.abspath('..')+'/intermediate_data/svi_dataset_50etf_calls.pickle','wb') as f:
-    pickle.dump([svi_dataset],f)
-
+# with open(os.path.abspath('..')+'/intermediate_data/svi_calibration_50etf_calls_noZeroVol_itd_2.pickle','wb') as f:
+#     pickle.dump([calibrered_params_ts],f)
+#
+# print('svi',svi_dataset)
+# with open(os.path.abspath('..')+'/intermediate_data/svi_dataset_50etf_calls_noZeroVol_itd_2.pickle','wb') as f:
+#     pickle.dump([svi_dataset],f)
+#
 
 
 

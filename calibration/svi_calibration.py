@@ -90,7 +90,7 @@ while evalDate <= endDate:
         optimization_data.append(logMoneynesses)
         optimization_data.append(data_mdate.totalvariance)
         ttm = data_mdate.ttm
-        params = svi_util.get_svi_optimal_params(optimization_data, ttm, 10)
+        params = svi_util.get_svi_optimal_params(optimization_data, ttm, 5)
         #print('params : ',params)
         calibrered_params.update({mdate:params})
         a_star, b_star, rho_star, m_star, sigma_star = params
@@ -112,11 +112,11 @@ while evalDate <= endDate:
     #print(calibrered_params)
     calibrered_params_ts.update({to_dt_date(evalDate):calibrered_params})
 print('calibrered_params_ts',calibrered_params_ts)
-with open(os.path.abspath('..')+'/intermediate_data/svi_calibration_50etf_puts_noZeroVol_itd.pickle','wb') as f:
+with open(os.path.abspath('..')+'/intermediate_data/svi_calibration_50etf_puts_noZeroVol_itd_2.pickle','wb') as f:
     pickle.dump([calibrered_params_ts],f)
 
 print('svi',svi_dataset)
-with open(os.path.abspath('..')+'/intermediate_data/svi_dataset_50etf_puts_noZeroVol_itd.pickle','wb') as f:
+with open(os.path.abspath('..')+'/intermediate_data/svi_dataset_50etf_puts_noZeroVol_itd_2.pickle','wb') as f:
     pickle.dump([svi_dataset],f)
 #
 

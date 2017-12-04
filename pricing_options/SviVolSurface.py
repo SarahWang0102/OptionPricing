@@ -31,6 +31,7 @@ class SviVolSurface:
         maturity_dates = self.calibrated_params.keys()
         #print(maturity_dates)
         maturity_dates = sorted(maturity_dates)
+        maturity_dates = maturity_dates[1:]
         #print(maturity_dates)
         for mdt in maturity_dates:
             params = self.calibrated_params.get(mdt)

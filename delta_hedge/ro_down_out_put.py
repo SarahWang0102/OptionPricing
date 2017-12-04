@@ -38,7 +38,7 @@ def get_vol_data(evalDate, daycounter, calendar, contractType):
 # barrier_pct = 0.13
 # barrier_cont = [-0.13,-0.14,-0.15,-0.16,-0.17]
 # barrier_cont = [-0.15,-0.14,-0.13,-0.12,-0.11]
-barrier_cont = [0.1]
+barrier_cont = [-0.1]
 period = ql.Period(1,ql.Weeks)
 rebalancerate = 0.03
 fee = 0.3 / 1000
