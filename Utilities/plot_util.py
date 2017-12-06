@@ -1,3 +1,5 @@
+import matplotlib.pyplot as plt
+
 
 c1 = "#CC0000"
 c2 = "#8C8C8C"
@@ -29,3 +31,20 @@ def set_frame(axarrs):
         axarr.spines['top'].set_visible(False)
         axarr.yaxis.set_ticks_position('left')
         axarr.xaxis.set_ticks_position('bottom')
+
+def get_figure(x,Y,legends,x_label='',y_label=''):
+    plt.rcParams['font.sans-serif'] = ['STKaiti']
+    plt.rcParams.update({'font.size': 13})
+    f, ax = plt.subplots()
+    for idx,y in enumerate(Y):
+        lgd = legends[idx]
+        print('c'+str(idx+1),'l'+str(idx+1))
+        print(x)
+        print(y)
+        # 'l'+str(idx+1)
+        ax.plot(x, y, color='c'+str(idx+1), line=l1, linewith=2, label=lgd)
+    ax.legend()
+    ax.set_xlabel(x_label)
+    ax.set_ylabel(y_label)
+    set_frame([ax])
+    return f

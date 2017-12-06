@@ -25,7 +25,7 @@ start = timeit.default_timer()
 np.random.seed()
 w.start()
 
-begDate = ql.Date(1, 9, 2015)
+begDate = ql.Date(17, 7, 2017)
 #begDate = ql.Date(1, 6, 2017)
 endDate = ql.Date(20, 7, 2017)
 calendar = ql.China()
@@ -68,7 +68,11 @@ while evalDate <= endDate:
             totalvariance = data[1]
             expiration_date = data[2]
             ttm = daycounter.yearFraction(evalDate, expiration_date)
-            params = svi_util.get_svi_optimal_params(data, ttm, 50)
+            print(data)
+            #print(ttm)
+            print(spot)
+            print(rfs.get(i))
+            params = svi_util.get_svi_optimal_params(data, ttm, 5)
 
             a_star, b_star, rho_star, m_star, sigma_star = params
             x_svi = np.arange(min(logMoneynesses) - 0.005, max(logMoneynesses) + 0.02, 0.1 / 100)  # log_forward_moneyness
@@ -78,6 +82,7 @@ while evalDate <= endDate:
             plt.plot(logMoneynesses, totalvariance, 'ro')
             plt.plot(x_svi, tv_svi2, 'b--')
             plt.title(str(evalDate)+','+str(i))
+            plt.show()
             params_months.append(params)
         count += 1
         daily_params.update({key_date:params_months})
@@ -89,7 +94,7 @@ while evalDate <= endDate:
     print(params_months[1])
     print(params_months[2])
     print(params_months[3])
-plt.show()
+
 
 #print(daily_params)
 timebreak1 = timeit.default_timer()
@@ -98,9 +103,11 @@ print('daily_params = ',daily_params)
 print('daily_svi_dataset = ',daily_svi_dataset)
 print('dates = ', dates)
 
+'''
 with open(os.getcwd()+'/intermediate_data/total_hedging_daily_params_puts.pickle','wb') as f:
     pickle.dump([daily_params],f)
 with open(os.getcwd()+'/intermediate_data/total_hedging_dates_puts.pickle','wb') as f:
     pickle.dump([dates],f)
 with open(os.getcwd()+'/intermediate_data/total_hedging_daily_svi_dataset_puts.pickle','wb') as f:
     pickle.dump([daily_svi_dataset],f)
+'''

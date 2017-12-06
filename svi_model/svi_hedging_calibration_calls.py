@@ -66,15 +66,18 @@ while evalDate <= endDate:
     dividend_ts = ql.YieldTermStructureHandle(ql.FlatForward(evalDate, 0.0, daycounter))
     month_indexs = wind_data.get_contract_months(evalDate)
     params_months = {}
-    plt.figure(count)
+    #plt.figure(count)
     for nbr_month,contractId in enumerate(data_months):
         data = data_months.get(contractId)
         logMoneynesses = data[0]
         totalvariance = data[1]
         expiration_date = data[2]
         ttm = daycounter.yearFraction(evalDate, expiration_date)
-        params = svi_util.get_svi_optimal_params_m(data, ttm, 20)
-
+        try:
+            params = svi_util.get_svi_optimal_params_m(data, ttm, 20)
+        except Exception as e :
+            print(e)
+            continue
         a_star, b_star, rho_star, m_star, sigma_star = params
         x_svi = np.arange(min(logMoneynesses) - 0.005, max(logMoneynesses) + 0.02, 0.1 / 100)  # log_forward_moneyness
         tv_svi2 = np.multiply(
@@ -99,11 +102,11 @@ print('daily_params = ',daily_params)
 print('daily_svi_dataset = ',daily_svi_dataset)
 print('dates = ', dates)
 
-with open(os.path.abspath('..')+'/intermediate_data/sr_hedging_daily_params_calls.pickle','wb') as f:
+with open(os.path.abspath('..')+'/intermediate_data/sr_hedging_daily_params_calls_noZeroVol.pickle','wb') as f:
     pickle.dump([daily_params],f)
-with open(os.path.abspath('..')+'/intermediate_data/sr_hedging_dates_calls.pickle','wb') as f:
+with open(os.path.abspath('..')+'/intermediate_data/sr_hedging_dates_calls_noZeroVol.pickle','wb') as f:
     pickle.dump([dates],f)
-with open(os.path.abspath('..')+'/intermediate_data/sr_hedging_daily_svi_dataset_calls.pickle','wb') as f:
+with open(os.path.abspath('..')+'/intermediate_data/sr_hedging_daily_svi_dataset_calls_noZeroVol.pickle','wb') as f:
     pickle.dump([daily_svi_dataset],f)
 
 #plt.show()

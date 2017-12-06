@@ -42,8 +42,10 @@ def get_svi_optimal_params(data,ttm,sim_no = 100):
     calibrated_params = []
     min_sse = 10
     for iter in range(sim_no):
-        ms_0 = ms_rnd[iter,:]
-        adc_0 = adc_rnd[iter, :]
+        ms_0 = [0.1, 0.1]
+        adc_0 = [0.1, 0.1, 0.1]
+        #ms_0 = ms_rnd[iter,:]
+        #adc_0 = adc_rnd[iter, :]
         nm = SVI_NelderMeadOptimization(data,adc_0,ms_0,1e-7)
         calibrated_params, obj = nm.optimization()
         _a_star, _d_star, _c_star, m_star, sigma_star = calibrated_params
@@ -137,6 +139,7 @@ def orgnize_data_for_optimization_cmd(
         spotid = idx_month
         for moneyness in option_data.keys():
             vol = option_data.get(moneyness)[0]
+            if abs(vol) < 0.0001: continue
             strike = option_data.get(moneyness)[1]
             close = option_data.get(moneyness)[2]
             spotid = option_data.get(moneyness)[3]

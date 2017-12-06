@@ -70,9 +70,9 @@ def get_commodity_sr_data(evalDate,calendar):
             close = mktData[mktFlds.index('今收盘')][idx]
             volume = mktData[mktFlds.index('成交额(万元)')][idx]
             strike = id[-4:len(id)]
-            data.append(int(strike))
-            data.append(float(close))
-            data.append(float(volume))
+            data.append(int(strike.replace(',', '')))
+            data.append(float(close.replace(',', '')))
+            data.append(float(volume.replace(',', '')))
             data.append(id[5])  # C or P
             data.append(id[0:5])  # spot id
             orgnised_data.update({id: data})
@@ -212,6 +212,44 @@ def get_wind_data(evalDate):
         return
     return vols, spot, mktData, mktFlds, optionData, optionFlds, optionids
 
+def get_wind_data2(evalDate):
+    datestr = str(evalDate.year()) + "-" + str(evalDate.month()) + "-" + str(evalDate.dayOfMonth())
+
+    try:
+        # 50ETF contrats info
+        optioncontractbasicinfo = pd.read_json(os.path.abspath('..') + '\marketdata\optioncontractbasicinfo' + '.json')
+        optionData = optioncontractbasicinfo.values.tolist()
+        optionFlds = optioncontractbasicinfo.index.tolist()
+        # 50ETF market price data
+        optionmkt = pd.read_json(os.path.abspath('..') + '\marketdata\optionmkt_' + datestr + '.json')
+        mktFlds = optionmkt.index.tolist()
+        mktData = optionmkt.values.tolist()
+        # Uderlying market price
+        underlyingdata = pd.read_json(os.path.abspath('..') + '\marketdata\spotclose' + '.json')
+        spot_ts = underlyingdata.values.tolist()
+        dates_ts = underlyingdata.index.tolist()
+        dt = datetime.datetime(evalDate.year(), evalDate.month(), evalDate.dayOfMonth(),
+                               dates_ts[0].hour, dates_ts[0].minute, dates_ts[0].second, dates_ts[0].microsecond)
+        spot_close = spot_ts[dates_ts.index(dt)][0]
+
+        underlyingopen = pd.read_json(os.path.abspath('..') + '\marketdata\spotopen' + '.json')
+        open_ts = underlyingopen.values.tolist()
+        dates_ts = underlyingopen.index.tolist()
+        dt = datetime.datetime(evalDate.year(), evalDate.month(), evalDate.dayOfMonth(),
+                               dates_ts[0].hour, dates_ts[0].minute, dates_ts[0].second, dates_ts[0].microsecond)
+        spot_open = open_ts[dates_ts.index(dt)][0]
+        optionids = mktData[mktFlds.index('option_code')]
+        optionids_SH = []
+        for i, id in enumerate(optionids):
+            id_sh = id + '.SH'
+            optionids_SH.append(id_sh)
+        vols = []
+    except Exception as e:
+        print(e)
+        print('Error def -- get_wind_data in \'svi_read_data\' on date : ', evalDate)
+        return
+    return vols, spot_open,spot_close, mktData, mktFlds, optionData, optionFlds, optionids
+
 
 def get_curve_treasury_bond(evalDate, daycounter):
     datestr = str(evalDate.year()) + "-" + str(evalDate.month()) + "-" + str(evalDate.dayOfMonth())
@@ -219,7 +257,7 @@ def get_curve_treasury_bond(evalDate, daycounter):
         curvedata = pd.read_json(os.path.abspath('..') + '\marketdata\curvedata_tb_' + datestr + '.json')
         rates = curvedata.values[0]
         calendar = ql.China()
-        dates = [calendar.advance(evalDate, ql.Period(1, ql.Days)),
+        dates = [evalDate,
                  calendar.advance(evalDate, ql.Period(1, ql.Months)),
                  calendar.advance(evalDate, ql.Period(3, ql.Months)),
                  calendar.advance(evalDate, ql.Period(6, ql.Months)),
@@ -235,23 +273,26 @@ def get_curve_treasury_bond(evalDate, daycounter):
 
 
 def get_contract_months(evalDate):
-    if evalDate.month() == 12:
+    month = evalDate.month()
+    if evalDate == ql.China().endOfMonth(evalDate):
+        month += 1
+    if month == 12:
         m2 = 1
     else:
-        m2 = evalDate.month() + 1
-    if evalDate.month() in [11,12,1]:
+        m2 = month + 1
+    if month in [11,12,1]:
         m3 = 3
         m4 = 6
-    elif evalDate.month() in [2,3,4]:
+    elif month in [2,3,4]:
         m3 = 6
         m4 = 9
-    elif evalDate.month() in [5,6,7]:
+    elif month in [5,6,7]:
         m3 = 9
         m4 = 12
     else:
         m3 = 12
         m4 = 3
-    month_indexs = [evalDate.month(), m2, m3, m4]
+    month_indexs = [month, m2, m3, m4]
     return month_indexs
 
 # w.start()
