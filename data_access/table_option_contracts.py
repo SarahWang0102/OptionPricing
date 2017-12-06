@@ -104,7 +104,7 @@ def wind_options_m():
         cd_exercise_type = exercise_mode[idx].encode('utf-8')
         name_contract_month = datetime.datetime.strptime(limit_month[idx], "%Y-%m").date().strftime("%y%m")
         amt_strike = exercise_price[idx]
-        id_instrument = name_code+'_'+name_contract_month+'_'+cd_option_type[0]+'_'+str(amt_strike)
+        id_instrument = name_code+'_'+name_contract_month+'_'+cd_option_type[0]+'_'+str(int(amt_strike))
         id_underlying = name_code+'_'+name_contract_month
         windcode_underlying = option_mark_code[idx]
         dt_listed = listed_date[idx]
@@ -162,7 +162,7 @@ def wind_options_sr():
         cd_exercise_type = exercise_mode[idx].encode('utf-8')
         name_contract_month = datetime.datetime.strptime(limit_month[idx], "%Y-%m").date().strftime("%y%m")
         amt_strike = exercise_price[idx]
-        id_instrument = name_code+'_'+name_contract_month+'_'+cd_option_type[0]+'_'+str(amt_strike)
+        id_instrument = name_code+'_'+name_contract_month+'_'+cd_option_type[0]+'_'+str(int(amt_strike))
         id_underlying = name_code+'_'+name_contract_month
         windcode_underlying = option_mark_code[idx]
         dt_listed = listed_date[idx]

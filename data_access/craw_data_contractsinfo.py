@@ -30,14 +30,14 @@ option_contracts = Table('option_contracts', metadata, autoload=True)
 #         print(db_data)
 #         continue
 
-# db_datas = table_options.wind_options_m()
-# for db_data in db_datas:
-#     try:
-#         conn.execute(option_contracts.insert(), db_data)
-#     except Exception as e:
-#         print(e)
-#         print(db_data)
-#         continue
+db_datas = table_options.wind_options_m()
+for db_data in db_datas:
+    try:
+        conn.execute(option_contracts.insert(), db_data)
+    except Exception as e:
+        print(e)
+        print(db_data)
+        continue
 
 db_datas = table_options.wind_options_sr()
 for db_data in db_datas:

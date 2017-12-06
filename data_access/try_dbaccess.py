@@ -1,3 +1,5 @@
+# encoding: utf-8
+
 import QuantLib as ql
 import pandas as pd
 import numpy as np
@@ -8,14 +10,30 @@ import data_access.wind_data as wd
 from WindPy import w
 from datetime import date, datetime
 import pickle
+from sqlalchemy import create_engine, MetaData, Table, Column, TIMESTAMP,select
 
-w.start()
 
-evalDate = ql.Date(1, 4, 2017)
-# evalDate = ql.Date(28, 7, 2017)
-endDate = ql.Date(2, 5, 2017)
-calendar = ql.China()
-daycounter = ql.ActualActual()
+engine = create_engine('mysql+pymysql://root:liz1128@101.132.148.152/mktdata',
+                       echo=False)
+conn = engine.connect()
+metadata = MetaData(engine)
+option_contracts = Table('option_contracts', metadata, autoload=True)
+
+res1 = option_contracts.select((option_contracts.c.id_instrument == 'm_1801_c_2450')
+                              | (option_contracts.c.id_instrument == 'sr_1803_c_5400')).execute()
+res = select([option_contracts.c.id_instrument,option_contracts.c.windcode],
+             option_contracts.c.id_instrument == 'm_1801_c_2450').execute()
+for r in res:
+    print('r : ',r)
+
+
+# w.start()
+#
+# evalDate = ql.Date(1, 4, 2017)
+# # evalDate = ql.Date(28, 7, 2017)
+# endDate = ql.Date(2, 5, 2017)
+# calendar = ql.China()
+# daycounter = ql.ActualActual()
 
 # evalDate = calendar.advance(evalDate, ql.Period(1, ql.Days))
 #
@@ -28,12 +46,12 @@ daycounter = ql.ActualActual()
 # # df.to_json(os.path.abspath('..') + '\marketdata\hiscodes_sr' + '.json')
 # print(df)
 #
-with open(os.path.abspath('..') + '/intermediate_data/total_hedging_bs_estimated_vols_call.pickle', 'rb') as f:
-    estimated_vols = pickle.load(f)[0]
-
-print(estimated_vols)
-for key in estimated_vols.keys():
-    print(key,estimated_vols[key])
+# with open(os.path.abspath('..') + '/intermediate_data/total_hedging_bs_estimated_vols_call.pickle', 'rb') as f:
+#     estimated_vols = pickle.load(f)[0]
+#
+# print(estimated_vols)
+# for key in estimated_vols.keys():
+#     print(key,estimated_vols[key])
 
 '''
 while evalDate < endDate:
