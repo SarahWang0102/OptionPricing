@@ -2,6 +2,37 @@ from sqlalchemy import create_engine, MetaData, Table, Column
 from WindPy import w
 import datetime
 
+def wind_codes():
+    db_data = []
+    data = w.wset("optioncontractbasicinfo", "exchange=sse;windcode=510050.SH;status=all")
+    optionData = data.Data
+    optionFlds = data.Fields
+    wind_code = optionData[optionFlds.index('wind_code')]
+    sec_name = optionData[optionFlds.index('sec_name')]
+    call_or_put = optionData[optionFlds.index('call_or_put')]
+    exercise_price = optionData[optionFlds.index('exercise_price')]
+    expire_date = optionData[optionFlds.index('expire_date')]
+    for idx, windcode in enumerate(wind_code):
+        windcode = windcode+'.SH'
+        if call_or_put[idx] == '认购' : cd_option_type = 'call'
+        elif call_or_put[idx] == '认沽' : cd_option_type = 'put'
+        else :
+            cd_option_type = 'none'
+            print('error in call_or_put')
+        dt_maturity = expire_date[idx].date()
+        name_contract_month = dt_maturity.strftime("%y%m")
+        amt_strike = exercise_price[idx]
+        if sec_name[idx][-1] == 'A':
+            id_instrument = '50etf_'+name_contract_month+'_'+ cd_option_type[0]+'_'+str(amt_strike)[:6]+'_A'
+        else:
+            id_instrument = '50etf_' + name_contract_month + '_' + cd_option_type[0] + '_' + str(amt_strike)[:6]
+
+        db_row = {'windcode': windcode,
+                  'id_instrument': id_instrument,
+                  }
+        db_data.append(db_row)
+    return db_data
+
 
 def wind_options_50etf():
     db_data = []
@@ -44,6 +75,7 @@ def wind_options_50etf():
             id_instrument = '50etf_'+name_contract_month+'_'+ cd_option_type[0]+'_'+str(amt_strike)[:6]+'_A'
         else:
             id_instrument = '50etf_' + name_contract_month + '_' + cd_option_type[0] + '_' + str(amt_strike)[:6]
+
         dt_listed = listed_date[idx]
         dt_maturity = expire_date[idx]
         dt_exercise = datetime.datetime.strptime(exercise_date[idx], "%Y-%m-%d").date()

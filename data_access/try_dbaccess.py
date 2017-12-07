@@ -12,21 +12,44 @@ from datetime import date, datetime
 import pickle
 from sqlalchemy import create_engine, MetaData, Table, Column, TIMESTAMP,select
 
+w.start()
+datestr = '2017-11-22'
+# data = w.wset("optionchain","date=2017-12-07;us_code=510050.SH;option_var=全部;call_put=全部")
+data = w.wset("optiondailyquotationstastics",
+                  "startdate="+datestr+";enddate="+datestr+";exchange=sse;windcode=510050.SH")
+df = pd.DataFrame()
+for i,f in enumerate(data.Fields):
+    df[f] = data.Data[i]
 
-engine = create_engine('mysql+pymysql://root:liz1128@101.132.148.152/mktdata',
-                       echo=False)
-conn = engine.connect()
-metadata = MetaData(engine)
-option_contracts = Table('option_contracts', metadata, autoload=True)
+print(df)
+df = df.fillna(0.0)
 
-res1 = option_contracts.select((option_contracts.c.id_instrument == 'm_1801_c_2450')
-                              | (option_contracts.c.id_instrument == 'sr_1803_c_5400')).execute()
-res = select([option_contracts.c.id_instrument,option_contracts.c.windcode],
-             option_contracts.c.id_instrument == 'm_1801_c_2450').execute()
-for r in res:
-    print('r : ',r)
-
-
+print(df)
+#
+# criterion = df['option_code'].map(lambda x: x =='10000897.SH')
+# print(df[criterion])
+# for (i,r) in df.iterrows():
+#     print(r['option_code'])
+# engine = create_engine('mysql+pymysql://root:liz1128@101.132.148.152/mktdata',
+#                        echo=False)
+# conn = engine.connect()
+# metadata = MetaData(engine)
+# option_contracts = Table('option_contracts', metadata, autoload=True)
+# options_mktdata_daily = Table('options_mktdata', metadata, autoload=True)
+#
+# res1 = options_mktdata_daily.select((options_mktdata_daily.c.dt_date == '2017-11-22')
+#                               & (options_mktdata_daily.c.name_code == '50etf')).execute()
+# res2 = select([option_contracts.c.id_instrument,option_contracts.c.windcode],
+#              option_contracts.c.id_instrument == 'm_1801_c_2450').execute()
+# res = select([option_contracts.c.id_instrument],
+#                      option_contracts.c.windcode == '10000001.SH').execute()
+# for r in res1:
+#     print('r : ',r[0])
+# if res1.rowcount == 0 : print('empty data')
+# data = w.wset("optiondailyquotationstastics","startdate=2017-12-05;enddate=2017-12-05;exchange=sse;windcode=510050.SH")
+# print(data.Fields)
+# for f in data.Fields:
+#     print(f)
 # w.start()
 #
 # evalDate = ql.Date(1, 4, 2017)

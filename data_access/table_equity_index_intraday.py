@@ -3,7 +3,7 @@ from WindPy import w
 import datetime
 
 
-def wind_data_50etf(windcode,date):
+def wind_data_equity_index(windcode,date):
     db_data = []
     id_instrument = 'index_50etf'
     datasource = 'wind'
@@ -19,7 +19,7 @@ def wind_data_50etf(windcode,date):
         db_row = {'dt_datetime': dt,
                   'id_instrument': id_instrument,
                   'datasource': datasource,
-                  'windcode': windcode,
+                  'code_instrument': windcode,
                   'amt_price': price,
                   'amt_trading_volume': volume,
                   'amt_trading_value': trading_value,
