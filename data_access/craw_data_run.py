@@ -17,7 +17,7 @@ import data_access.table_option_mktdata_intraday as table_option_intraday
 w.start()
 
 # date = datetime.datetime.today().date()
-date = datetime.date(2017, 12, 6)
+date = datetime.date(2017, 12, 7)
 
 engine = create_engine('mysql+pymysql://root:liz1128@101.132.148.152/mktdata', echo=False)
 conn = engine.connect()
@@ -142,11 +142,9 @@ except Exception as e:
 
 #####################option_mktdata_intraday######################################
 dt_date = date.strftime("%Y-%m-%d")
-dt_datetime = dt_date + ' 09:30:00'
-print(dt_date)
 db_data = table_option_intraday.wind_data_50etf_option_intraday(dt_date)
 try:
-    conn.execute(option_mktdata_intraday.insert(), db_data)
+    conn_intraday.execute(option_mktdata_intraday.insert(), db_data)
     print('option_mktdata_intraday -- inserted into data base succefully')
 except Exception as e:
     print(e)

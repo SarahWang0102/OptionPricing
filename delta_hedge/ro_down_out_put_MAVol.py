@@ -56,8 +56,8 @@ def get_vol_data_MA(evalDate, daycounter, calendar, contractType):
 
 #######################################################################################################
 
-barrier_cont = [-0.15,-0.14,-0.13]
-period = ql.Period(3,ql.Weeks)
+barrier_cont = [-0.15]
+period = ql.Period(2,ql.Days)
 rebalancerate = 0.03
 fee = 0.3 / 1000
 rf = 0.03

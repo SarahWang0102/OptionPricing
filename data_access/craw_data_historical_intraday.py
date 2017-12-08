@@ -12,8 +12,8 @@ import data_access.table_option_mktdata_intraday as table_option
 
 w.start()
 # tradetype = 0  # 0:期货，1：期权
-beg_date = datetime.date(2017, 11, 1)
-end_date = datetime.date(2017, 12, 4)
+beg_date = datetime.date(2017, 6, 1)
+end_date = datetime.date(2017, 11, 1)
 
 engine = create_engine('mysql+pymysql://root:liz1128@101.132.148.152/mktdata_intraday',
                        echo=False)
