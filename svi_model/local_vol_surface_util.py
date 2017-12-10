@@ -33,6 +33,7 @@ def get_black_variance_surface_cmd(calibrated_params,calibrate_date,daycounter,c
     #print(strikes)
     #print(implied_vols)
     black_var_surface = ql.BlackVarianceSurface(calibrate_date, calendar,maturity_dates, strikes,implied_vols, daycounter)
+
     return black_var_surface
 
 def get_black_variance_surface(calibrated_params,maturity_dates_c,calibrate_date,daycounter,calendar,spot,rfs):

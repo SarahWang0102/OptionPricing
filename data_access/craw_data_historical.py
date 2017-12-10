@@ -14,8 +14,8 @@ import data_access.table_futures_mktdata_daily as table_futures
 
 w.start()
 # tradetype = 0  # 0:期货，1：期权
-beg_date = datetime.date(2017, 3, 16)
-end_date = datetime.date(2017, 9, 1)
+beg_date = datetime.date(2017, 4, 1)
+end_date = datetime.date(2017, 12, 8)
 
 engine = create_engine('mysql+pymysql://root:liz1128@101.132.148.152/mktdata',
                        echo=False)
@@ -23,12 +23,27 @@ conn = engine.connect()
 metadata = MetaData(engine)
 options_mktdata_daily = Table('options_mktdata', metadata, autoload=True)
 futures_mktdata_daily = Table('futures_mktdata', metadata, autoload=True)
+futures_dominants = Table('futures_dominants', metadata, autoload=True)
 # futures_institution_positions = Table('futures_institution_positions', metadata, autoload=True)
 
 
-date_range = w.tdays(beg_date, end_date, "").Data[0]
+data = w.wsd("SR.CZC", "trade_hiscode", beg_date, end_date, "")
 
+for idx,dt in enumerate(data.Times):
+    date = dt
+    name_contract = 'SR.CZC'
+    a = data.Data[0][idx].lower()
+    id_instrument = a[0:2]+'_1'+a[2:5]
+    db_data = {'dt_date':date,'name_contract':name_contract,'id_instrument':id_instrument}
+    try:
+        conn.execute(futures_dominants.insert(), db_data)
+        print('inserted into data base succefully')
+    except Exception as e:
+        print(dt)
+        print(e)
+        continue
 
+# date_range = w.tdays(beg_date, end_date, "").Data[0]
 # for dt in date_range:
 #
 #     dt_date = dt.date().strftime("%Y-%m-%d")
@@ -47,13 +62,13 @@ date_range = w.tdays(beg_date, end_date, "").Data[0]
 #         continue
 
 
-i = 0
-while i < len(date_range):
-    # crawd and insert into db 5-day data at a time
-    begdate = date_range[i]
-    if i+5 < len(date_range): enddate = date_range[i+5]
-    else : enddate = date_range[-1]
-    print(begdate,enddate)
+# i = 0
+# while i < len(date_range):
+#     # crawd and insert into db 5-day data at a time
+#     begdate = date_range[i]
+#     if i+5 < len(date_range): enddate = date_range[i+5]
+#     else : enddate = date_range[-1]
+#     print(begdate,enddate)
     # # dce option data (type = 1), day
     # ds = dce.spider_mktdata_day(begdate, enddate, 1)
     # for dt in ds.keys():
@@ -82,7 +97,7 @@ while i < len(date_range):
     #         print(dt)
     #         print(e)
     #         continue
-    # # czce option data
+    # czce option data
     # ds = czce.spider_option(begdate, enddate)
     # for dt in ds.keys():
     #     data = ds[dt]
@@ -96,41 +111,57 @@ while i < len(date_range):
     #         print(dt)
     #         print(e)
     #         continue
-    # dce futures data (type = 0), day
-    ds = dce.spider_mktdata_day(begdate, enddate, 0)
-    for dt in ds.keys():
-        data = ds[dt]
-        db_data = table_futures.dce_day(dt,data)
-        if len(db_data) == 0 : continue
-        try:
-            conn.execute(futures_mktdata_daily.insert(), db_data)
-        except Exception as e:
-            print(dt)
-            print(e)
-            continue
-    # dce futures data (type = 0), night
-    ds = dce.spider_mktdata_night(begdate, enddate, 0)
-    for dt in ds.keys():
-        data = ds[dt]
-        db_data = table_futures.dce_night(dt,data)
-        if len(db_data) == 0 : continue
-        try:
-            conn.execute(futures_mktdata_daily.insert(), db_data)
-        except Exception as e:
-            print(dt)
-            print(e)
-            continue
-    # sfe futures data
-    ds = sfe.spider_mktdata(begdate, enddate)
-    for dt in ds.keys():
-        data = ds[dt]
-        db_data = table_futures.sfe_daily(dt, data)
-        if len(db_data) == 0: continue
-        try:
-            conn.execute(futures_mktdata_daily.insert(), db_data)
-        except Exception as e:
-            print(dt)
-            print(e)
-            continue
-    i += 6
+    # # dce futures data (type = 0), day
+    # ds = dce.spider_mktdata_day(begdate, enddate, 0)
+    # for dt in ds.keys():
+    #     data = ds[dt]
+    #     db_data = table_futures.dce_day(dt,data)
+    #     if len(db_data) == 0 : continue
+    #     try:
+    #         conn.execute(futures_mktdata_daily.insert(), db_data)
+    #     except Exception as e:
+    #         print(dt)
+    #         print(e)
+    #         continue
+    # # dce futures data (type = 0), night
+    # ds = dce.spider_mktdata_night(begdate, enddate, 0)
+    # for dt in ds.keys():
+    #     data = ds[dt]
+    #     db_data = table_futures.dce_night(dt,data)
+    #     if len(db_data) == 0 : continue
+    #     try:
+    #         conn.execute(futures_mktdata_daily.insert(), db_data)
+    #     except Exception as e:
+    #         print(dt)
+    #         print(e)
+    #         continue
+    # # sfe futures data
+    # ds = sfe.spider_mktdata(begdate, enddate)
+    # for dt in ds.keys():
+    #     data = ds[dt]
+    #     db_data = table_futures.sfe_daily(dt, data)
+    #     if len(db_data) == 0: continue
+    #     try:
+    #         conn.execute(futures_mktdata_daily.insert(), db_data)
+    #     except Exception as e:
+    #         print(dt)
+    #         print(e)
+    #         continue
+    # czce futures data
+    # ds = czce.spider_future(begdate, enddate)
+    # for dt in ds.keys():
+    #     data = ds[dt]
+    #     db_data = table_futures.czce_daily(dt, data)
+    #     # print(db_data)
+    #     if len(db_data) == 0:
+    #         print('czce futures data -- no data')
+    #         continue
+    #     try:
+    #         conn.execute(futures_mktdata_daily.insert(), db_data)
+    #         print('czce futures data -- inserted into data base succefully')
+    #     except Exception as e:
+    #         print(dt)
+    #         print(e)
+    #         continue
+    # i += 6
 

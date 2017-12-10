@@ -17,7 +17,7 @@ import data_access.table_option_mktdata_intraday as table_option_intraday
 w.start()
 
 # date = datetime.datetime.today().date()
-date = datetime.date(2017, 12, 7)
+date = datetime.date(2017, 12, 8)
 
 engine = create_engine('mysql+pymysql://root:liz1128@101.132.148.152/mktdata', echo=False)
 conn = engine.connect()
@@ -128,7 +128,22 @@ for dt in ds.keys():
         print(dt)
         print(e)
         continue
-
+# czce futures data
+ds = czce.spider_future(date, date)
+for dt in ds.keys():
+    data = ds[dt]
+    db_data = table_futures.czce_daily(dt, data)
+    # print(db_data)
+    if len(db_data) == 0:
+        print('czce futures data -- no data')
+        continue
+    try:
+        conn.execute(futures_mktdata_daily.insert(), db_data)
+        print('czce futures data -- inserted into data base succefully')
+    except Exception as e:
+        print(dt)
+        print(e)
+        continue
 #####################equity_index_intraday######################################
 dt_date = date.strftime("%Y-%m-%d")
 windcode = "510050.SH"
@@ -139,7 +154,6 @@ try:
 except Exception as e:
     print(e)
 
-
 #####################option_mktdata_intraday######################################
 dt_date = date.strftime("%Y-%m-%d")
 db_data = table_option_intraday.wind_data_50etf_option_intraday(dt_date)
@@ -148,3 +162,4 @@ try:
     print('option_mktdata_intraday -- inserted into data base succefully')
 except Exception as e:
     print(e)
+

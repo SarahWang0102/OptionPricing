@@ -40,7 +40,7 @@ def czce_daily(dt, data):
         amt_settlement = product.loc['今结算'].replace(',', '')
         amt_trading_volume = product.loc['成交量(手)'].replace(',', '')
         amt_trading_value = product.loc['成交额(万元)'].replace(',', '')
-        amt_holding_volume = 0.0
+        amt_holding_volume = product.loc['空盘量'].replace(',', '')
         amt_bid = 0.0
         amt_ask = 0.0
         amt_exercised = product.loc['行权量'].replace(',', '')
