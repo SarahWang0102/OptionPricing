@@ -95,16 +95,13 @@ for d_k_plus in [50,100,150]:
         strike_otm2 = strike_atm + d_k_plus
         strike_itm2 = strike_atm + d_k_minus
 
-        # print(strike_otm2,strike_itm2)
+        price_short = coredata_df.ix[coredata_df['strike']==strike_otm2,'option_close'].values[0]
+        price_long = coredata_df.ix[coredata_df['strike']==strike_itm2,'option_close'].values[0]
 
-        price_otm2 = coredata_df.ix[coredata_df['strike']==strike_otm2,'option_close'].values[0]
-
-        price_itm2 = coredata_df.ix[coredata_df['strike']==strike_itm2,'option_close'].values[0]
-        # print(price_otm2,price_itm2)
-        portfolio_cost = price_itm2 - price_otm2
+        portfolio_cost = price_long - price_short
         init_cost = portfolio_cost
-        # print('portfolio_cost',portfolio_cost)
-        # print('contract_maturity:',contract_maturity)
+        print('init_cost : ', price_long, price_short,init_cost)
+
         date_range = w.tdays(evalDate.strftime('%Y-%m-%d'),maturity_date.strftime('%Y-%m-%d')).Data[0]
         week_b_cmdt = w.tdaysoffset(-1, contract_maturity, "Period=W").Data[0][0]
         # print(date_range)
@@ -154,12 +151,14 @@ for d_k_plus in [50,100,150]:
                 df = pd.read_sql(query.statement, query.session.bind)
                 # print('change contracts')
                 # print(df)
-                price_otm2_m = df.ix[df['id_underlying'] == id_underlying].ix[df['amt_strike'] == Decimal(strike_otm2)]['amt_close'].values[0]
-                price_itm2_m = df.ix[df['id_underlying'] == id_underlying].ix[df['amt_strike'] == Decimal(strike_itm2)]['amt_close'].values[0]
-                # print(price_otm2_m,price_itm2_m)
-                v = price_itm2_m - price_otm2_m
+                price_short_m = df.ix[df['id_underlying'] == id_underlying].ix[df['amt_strike'] == Decimal(strike_otm2)]['amt_close'].values[0]
+                price_long_m = df.ix[df['id_underlying'] == id_underlying].ix[df['amt_strike'] == Decimal(strike_itm2)]['amt_close'].values[0]
+
+                v = price_long_m - price_short_m
+
                 earning = v-portfolio_cost
-                r = (earning-portfolio_cost)*100.0/init_cost
+                r = earning*100.0/init_cost
+                print('maturity value : ', price_long_m, price_short_m, v,r,'%')
                 # print(evalDate,maturity_date,init_cost,'earning',earning,r,'%')
                 results_list.append({'date':evalDate,
                                 'strikes1':'+'+str(d_k_plus),
