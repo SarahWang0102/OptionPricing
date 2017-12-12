@@ -32,8 +32,13 @@ contract_maturities = {'m_1709': datetime.date(2017,7,25),
                    'm_1805': datetime.date(2018,3,26)}
 
 results_list = []
-
-for d_k_plus in [50,100,150]:
+print('=' * 200)
+print("%20s %20s %20s %20s %20s %20s" % (
+        "maturity date", 'init cose', 'rebalancing cost', 'value at maturity', 'earning',
+        'yield'))
+print('=' * 200)
+# for d_k_plus in [50,100,150]:
+for d_k_plus in [50]:
     d_k_minus = d_k_plus-200
 
     eval_dates = w.tdays(start_date.strftime('%Y-%m-%d'),end_date.strftime('%Y-%m-%d'),"").Data[0]
@@ -74,11 +79,14 @@ for d_k_plus in [50,100,150]:
 
         # Construct Bull Spread Strategy [Call Option]
         option_type = 'call'
-        # core_id = 'm_1709'
-        # if evalDate > datetime.date(2017,6,25) : core_id = 'm_1801'
-        # elif evalDate > datetime.date(2017,10,24) : core_id = 'm_1805'
-        core_id = 'm_1801'
-        if maturity_date > datetime.date(2017,11,24) :core_id = 'm_1805'
+        if evalDate < w.tdaysoffset(-1,contract_maturities['m_1709'],"Period = W").Data[0][0].date():
+            core_id = 'm_1709'
+        elif evalDate < w.tdaysoffset(-1,contract_maturities['m_1801'],"Period = W").Data[0][0].date():
+            core_id = 'm_1801'
+        else:
+            core_id = 'm_1805'
+
+        # if maturity_date > datetime.date(2017,11,24) :core_id = 'm_1805'
 
         id_underlying = core_id
         contract_maturity = contract_maturities[core_id]
@@ -94,17 +102,20 @@ for d_k_plus in [50,100,150]:
 
         strike_otm2 = strike_atm + d_k_plus
         strike_itm2 = strike_atm + d_k_minus
-
-        price_short = coredata_df.ix[coredata_df['strike']==strike_otm2,'option_close'].values[0]
-        price_long = coredata_df.ix[coredata_df['strike']==strike_itm2,'option_close'].values[0]
-
+        try :
+            price_short = coredata_df.ix[coredata_df['strike']==strike_otm2,'option_close'].values[0]
+            price_long = coredata_df.ix[coredata_df['strike']==strike_itm2,'option_close'].values[0]
+        except Exception as e:
+            print(e)
+            continue
         portfolio_cost = price_long - price_short
         init_cost = portfolio_cost
-        print('init_cost : ', price_long, price_short,init_cost)
+        # print('init_cost : ', price_long, price_short,init_cost)
 
         date_range = w.tdays(evalDate.strftime('%Y-%m-%d'),maturity_date.strftime('%Y-%m-%d')).Data[0]
         week_b_cmdt = w.tdaysoffset(-1, contract_maturity, "Period=W").Data[0][0]
         # print(date_range)
+        rebalancing_cost = 0.0
         for date in date_range:
             date = date.date()
             date_str = date.strftime('%Y-%m-%d')
@@ -127,15 +138,15 @@ for d_k_plus in [50,100,150]:
                 df = pd.read_sql(query.statement, query.session.bind)
                 # print('change contracts')
                 # print(df)
-                price_otm2_old = df.ix[df['id_underlying']==core_id].ix[df['amt_strike'] == Decimal(strike_otm2)]['amt_close'].values[0]
-                price_itm2_old = df.ix[df['id_underlying']==core_id].ix[df['amt_strike'] == Decimal(strike_itm2)]['amt_close'].values[0]
-                price_otm2_new = df.ix[df['id_underlying'] == core_id2].ix[df['amt_strike'] == Decimal(strike_otm2)]['amt_close'].values[0]
-                price_itm2_new = df.ix[df['id_underlying'] == core_id2].ix[df['amt_strike'] == Decimal(strike_itm2)]['amt_close'].values[0]
+                price_short_old = df.ix[df['id_underlying']==core_id].ix[df['amt_strike'] == Decimal(strike_otm2)]['amt_close'].values[0]
+                price_long_old = df.ix[df['id_underlying']==core_id].ix[df['amt_strike'] == Decimal(strike_itm2)]['amt_close'].values[0]
+                price_short_new = df.ix[df['id_underlying'] == core_id2].ix[df['amt_strike'] == Decimal(strike_otm2)]['amt_close'].values[0]
+                price_long_new = df.ix[df['id_underlying'] == core_id2].ix[df['amt_strike'] == Decimal(strike_itm2)]['amt_close'].values[0]
 
                 # print(price_otm2_old,price_itm2_old)
-                rebalancing_cost = price_itm2_new - price_otm2_new - (price_itm2_old - price_otm2_old)
+                rebalancing_cost = price_long_new - price_short_new - (price_long_old - price_short_old)
                 portfolio_cost += rebalancing_cost
-                # print(rebalancing_cost)
+                # print(date,'rebalancing_cost : ',rebalancing_cost)
                 # print(portfolio_cost)
 
             if date == maturity_date:
@@ -158,18 +169,21 @@ for d_k_plus in [50,100,150]:
 
                 earning = v-portfolio_cost
                 r = earning*100.0/init_cost
-                print('maturity value : ', price_long_m, price_short_m, v,r,'%')
+                # print('maturity value : ', price_long_m, price_short_m, v,r,'%')
                 # print(evalDate,maturity_date,init_cost,'earning',earning,r,'%')
-                results_list.append({'date':evalDate,
-                                'strikes1':'+'+str(d_k_plus),
-                                'strikes2':'-'+str(d_k_minus),
+                results_list.append({'date':maturity_date,
+                                'strikes1':str(d_k_plus),
+                                'strikes2':str(d_k_minus),
                                 'init_cost':init_cost,
                                 'earning':earning,
                                 'future_price':future_price,
                                 'yields':r}
                                 )
                 # print(results)
+                print("%20s %20s %20s %20s %20s %20s" % (
+                    maturity_date, init_cost, rebalancing_cost, v, earning,
+                    str(round(r,2))+'%'))
 results = pd.DataFrame(results_list)
 # results.append(results_list,ignore_index=True)
 print(results)
-results.to_csv('bull_spread_results.csv')
+# results.to_csv('bull_spread_results.csv')
