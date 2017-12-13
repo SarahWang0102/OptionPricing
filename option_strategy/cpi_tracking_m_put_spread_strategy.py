@@ -27,9 +27,10 @@ Options_c = dbt.Options
 # Eval Settings
 #################################################################################
 
-# term_in_days = 120 # 6M
+term_in_days = 120 # 6M
 # term_in_days = 60 # 3M
-term_in_days = 20 # 1M
+# term_in_days = 20 # 1M
+option_type = 'put'
 #################################################################################
 start_date = datetime.date(2017, 3, 31)
 last_date = '2017-12-08'
@@ -60,7 +61,7 @@ pu = PlotUtil()
 
 
 results_container = []
-dks = [100,150,200]
+dks = [-100,-50,0]
 # dks = [100]
 r_bond = 4.5*term_in_days/240
 r_cash = 3.0*term_in_days/240
@@ -70,7 +71,7 @@ for d_k_plus in dks:
 # for d_k_plus in [50]:
 # for d_k_plus in [100]:
     results_list = []
-    d_k_minus = d_k_plus-200
+    d_k_minus = d_k_plus+200
     eval_dates = w.tdays(start_date.strftime('%Y-%m-%d'),end_date.strftime('%Y-%m-%d'),"").Data[0]
     for evalDate in eval_dates:
         try:
@@ -110,7 +111,7 @@ for d_k_plus in dks:
                 idx_o += 1
 
             # Construct Bull Spread Strategy [Call Option]
-            option_type = 'call'
+
             if evalDate < w.tdaysoffset(-1,contract_maturities['m_1709'].strftime('%Y-%m-%d'),"Period = W").Data[0][0].date():
                 core_id = 'm_1709'
             elif evalDate < w.tdaysoffset(-1,contract_maturities['m_1801'].strftime('%Y-%m-%d'),"Period = W").Data[0][0].date():
@@ -254,9 +255,9 @@ host.spines['top'].set_visible(False)
 host.yaxis.set_ticks_position('left')
 host.xaxis.set_ticks_position('bottom')
 plt.legend(bbox_to_anchor=(0., 1.02, 1., .202), loc=3, ncol=4, mode="expand", borderaxespad=0.)
-# fig1.savefig(os.path.abspath('..')+ '/save_figure/CPI_6M_1.png', format='png')
+fig1.savefig(os.path.abspath('..')+ '/save_figure/CPI_6M_put1.png', format='png')
 # fig1.savefig(os.path.abspath('..')+ '/save_figure/CPI_3M_1.png', format='png')
-fig1.savefig(os.path.abspath('..')+ '/save_figure/CPI_1M_1.png', format='png')
+# fig1.savefig(os.path.abspath('..')+ '/save_figure/CPI_1M_1.png', format='png')
 
 fig2 = plt.figure(2)
 host = host_subplot(111)
@@ -277,46 +278,12 @@ host.spines['top'].set_visible(False)
 host.yaxis.set_ticks_position('left')
 host.xaxis.set_ticks_position('bottom')
 plt.legend(bbox_to_anchor=(0., 1.02, 1., .202), loc=3, ncol=4, mode="expand", borderaxespad=0.)
-# fig2.savefig(os.path.abspath('..')+ '/save_figure/CPI_6M_2.png', format='png')
+fig2.savefig(os.path.abspath('..')+ '/save_figure/CPI_6M_put2.png', format='png')
 # fig2.savefig(os.path.abspath('..')+ '/save_figure/CPI_3M_2.png', format='png')
-fig2.savefig(os.path.abspath('..')+ '/save_figure/CPI_1M_2.png', format='png')
+# fig2.savefig(os.path.abspath('..')+ '/save_figure/CPI_1M_2.png', format='png')
 
 
 
-# fig2 = plt.figure(2)
-# host1 = host_subplot(111)
-# par1 = host.twinx()
-# host1.set_ylabel("收益率 (年化，%)")
-# par1.set_ylabel("CPI变化率(%)")
-# cont = 0
-# for results in results_container:
-#
-#     p11, = host1.plot(results['date'],results['portfolio_annualized_return'], label="策略 "+str(cont+1),
-#                         color=pu.colors[cont],linestyle=pu.lines[cont], linewidth=2)
-#     cont += 1
-#
-# p21, = par1.plot(results['date'], results['cpi'], label="CPI(右)",
-#                            color=pu.colors[cont], linestyle=pu.lines[cont], linewidth=2)
-# host1.spines['top'].set_visible(False)
-# host1.yaxis.set_ticks_position('left')
-# host1.xaxis.set_ticks_position('bottom')
-# plt.legend(bbox_to_anchor=(0., 1.02, 1., .202), loc=3, ncol=4, mode="expand", borderaxespad=0.)
-
-# results.append(results_list,ignore_index=True)
-# print(results)
-# results.to_csv('bull_spread_results.csv')
-
-# fig = plt.figure
-# fig.save(os.path.abspath('..')+ '/save_figure/CPI '+str(term_in_days)+'.png', dpi=300, format='png')
-
-# plt.savefig(os.path.abspath('..')+ '/save_figure/CPI_6M.png', format='png')
-
-# fig1 = plt.gcf()
-
-
-
-# fig1.savefig(os.path.abspath('..')+ '/save_figure/CPI_6M_1.png', format='png')
-# fig2.savefig(os.path.abspath('..')+ '/save_figure/CPI_6M_2.png', format='png')
 plt.show()
 
 

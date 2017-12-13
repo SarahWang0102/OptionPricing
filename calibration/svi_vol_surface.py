@@ -19,8 +19,8 @@ calendar = ql.China()
 daycounter = ql.ActualActual()
 
 
-optionType = '认购'
-optiontype = ql.Option.Call
+optionType = '认沽'
+optiontype = ql.Option.Put
 
 calibrered_params_ts = {}
 evalDate = calendar.advance(evalDate, ql.Period(1, ql.Days))
