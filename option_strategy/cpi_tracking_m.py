@@ -27,9 +27,9 @@ Options_c = dbt.Options
 # Eval Settings
 #################################################################################
 
-# term_in_days = 120 # 6M
+term_in_days = 120 # 6M
 # term_in_days = 60 # 3M
-term_in_days = 20 # 1M
+# term_in_days = 20 # 1M
 #################################################################################
 start_date = datetime.date(2017, 3, 31)
 last_date = '2017-12-08'
@@ -63,7 +63,8 @@ results_container = []
 dks = [100,150,200]
 # dks = [100]
 r_bond = 4.5*term_in_days/240
-r_cash = 3.0*term_in_days/240
+# r_cash = 3.0*term_in_days/240
+r_cash = 0.0*term_in_days/240
 pct_bond = 0.985
 pct_cash = 0.01
 for d_k_plus in dks:
@@ -254,9 +255,9 @@ host.spines['top'].set_visible(False)
 host.yaxis.set_ticks_position('left')
 host.xaxis.set_ticks_position('bottom')
 plt.legend(bbox_to_anchor=(0., 1.02, 1., .202), loc=3, ncol=4, mode="expand", borderaxespad=0.)
-# fig1.savefig(os.path.abspath('..')+ '/save_figure/CPI_6M_1.png', format='png')
+fig1.savefig(os.path.abspath('..')+ '/save_figure/CPI_6M_1.png', format='png')
 # fig1.savefig(os.path.abspath('..')+ '/save_figure/CPI_3M_1.png', format='png')
-fig1.savefig(os.path.abspath('..')+ '/save_figure/CPI_1M_1.png', format='png')
+# fig1.savefig(os.path.abspath('..')+ '/save_figure/CPI_1M_1.png', format='png')
 
 fig2 = plt.figure(2)
 host = host_subplot(111)
@@ -277,9 +278,9 @@ host.spines['top'].set_visible(False)
 host.yaxis.set_ticks_position('left')
 host.xaxis.set_ticks_position('bottom')
 plt.legend(bbox_to_anchor=(0., 1.02, 1., .202), loc=3, ncol=4, mode="expand", borderaxespad=0.)
-# fig2.savefig(os.path.abspath('..')+ '/save_figure/CPI_6M_2.png', format='png')
+fig2.savefig(os.path.abspath('..')+ '/save_figure/CPI_6M_2.png', format='png')
 # fig2.savefig(os.path.abspath('..')+ '/save_figure/CPI_3M_2.png', format='png')
-fig2.savefig(os.path.abspath('..')+ '/save_figure/CPI_1M_2.png', format='png')
+# fig2.savefig(os.path.abspath('..')+ '/save_figure/CPI_1M_2.png', format='png')
 
 
 

@@ -17,7 +17,7 @@ import data_access.table_option_mktdata_intraday as table_option_intraday
 w.start()
 
 # date = datetime.datetime.today().date()
-date = datetime.date(2017, 12, 8)
+date = datetime.date(2017, 12, 13)
 
 engine = create_engine('mysql+pymysql://root:liz1128@101.132.148.152/mktdata', echo=False)
 conn = engine.connect()
