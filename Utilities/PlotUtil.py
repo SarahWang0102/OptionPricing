@@ -5,7 +5,7 @@ class PlotUtil:
     def __init__(self):
 
         plt.rcParams['font.sans-serif'] = ['STKaiti']
-        plt.rcParams.update({'font.size': 15})
+        plt.rcParams.update({'font.size': 11})
         self.c1 = "#CC0000"
         self.c2 = "#8C8C8C"
         self.c3 = "#FF6464"
@@ -52,7 +52,7 @@ class PlotUtil:
                 tmp, = ax.plot(x, y, color=c, linestyle=l, linewidth=2)
                 tmp.set_dashes(self.dash)
             elif count == 0:
-                ax.plot(x, y, color=c, linestyle=l, linewidth=2.3)
+                ax.plot(x, y, color=c, linestyle=l, linewidth=3)
             else:
                 ax.plot(x, y, color=c, linestyle=l, linewidth=2)
         else:
@@ -63,7 +63,9 @@ class PlotUtil:
                 ax.plot(x, y, color=c, linestyle=l, linewidth=2.3, label=lgd)
             else:
                 ax.plot(x, y, color=c, linestyle=l, linewidth=2, label=lgd)
-        ax.legend()
+        # ax.legend(bbox_to_anchor=(0.5, 1.,.1,.1), loc=3, mode="expand")
+        # ax.legend(bbox_to_anchor=(0.5,.8,0.1,0.), loc='center')
+
         ax.set_xlabel(x_label)
         ax.set_ylabel(y_label)
         self.set_frame([ax])

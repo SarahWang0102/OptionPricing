@@ -29,7 +29,7 @@ def spider_option(firstdate,enddate):
               +str(year)+'/'+str(year)+str_month+str_day+'/OptionDataDaily.txt'
         #http://www.czce.com.cn/portal/DFSStaticFiles/Future/2017/20170919/FutureDataDailyMA.htm
         #http://www.czce.com.cn/portal/DFSStaticFiles/Future/2017/20170915/FutureDataDailySR.txt
-        #http://www.czce.com.cn/portal/DFSStaticFiles/Option/2017/20170915/OptionDataDaily.txt
+        #http://www.czce.com.cn/portal/DFSStaticFiles/Option/2017/20171208/OptionDataDaily.txt
         res = requests.get(url)
         content = res.content
         # print(res)
@@ -58,26 +58,26 @@ def spider_option(firstdate,enddate):
             dataset.update({dt_date: data})
     return dataset
 
-def spider_future(codename, firstdate):
-
-    date_range = w.tdays(firstdate, "2017-10-20", "").Data[0]
+def spider_future(firstdate,enddate):
+    dataset = {}
+    date_range = w.tdays(firstdate, enddate, "").Data[0]
     for i in range(len(date_range)):
         time.sleep(0.5)
         date = date_range[i]
-        print(date)
+        # print(date)
         year, month, day = date.year, date.month, date.day
         if month < 10: str_month = '0'+str(month)
         else: str_month = str(month)
         if day < 10: str_day = '0' + str(day)
         else: str_day = str(day)
         url = 'http://www.czce.com.cn/portal/DFSStaticFiles/Future/'\
-              +str(year)+'/'+str(year)+str_month+str_day+'/FutureDataDailySR.txt'
+              +str(year)+'/'+str(year)+str_month+str_day+'/FutureDataDaily.txt'
         #http://www.czce.com.cn/portal/DFSStaticFiles/Future/2017/20170919/FutureDataDailyMA.htm
         #http://www.czce.com.cn/portal/DFSStaticFiles/Future/2017/20170915/FutureDataDailySR.txt
         #http://www.czce.com.cn/portal/DFSStaticFiles/Option/2017/20170915/OptionDataDaily.txt
         res = requests.get(url)
         content = res.content
-        print(res)
+        # print(res)
         result = content.decode(encoding='GB18030')
         rows = result.split('\n')
         if len(rows) == 0:
@@ -96,11 +96,13 @@ def spider_future(codename, firstdate):
                 if colums_of_row[0][0:2] == '小计' or colums_of_row[0][0:2] == '总计':
                     continue
                 data[nbrRow] = colums_of_row
-            datestr = str(date.year) + "-" + str(date.month) + "-" + str(date.day)
-            data.to_json(os.path.abspath('..')+ '\marketdata\\' + codename + '_future_mkt_' + datestr + '.json')
+            # datestr = str(date.year) + "-" + str(date.month) + "-" + str(date.day)
+            # data.to_json(os.path.abspath('..')+ '\marketdata\\' + codename + '_future_mkt_' + datestr + '.json')
+            dt_date = datetime.date(date)
+            dataset.update({dt_date: data})
+    return dataset
 
-
-# def get_data():
+            # def get_data():
 #
 #     # fd = {'i': '2013/10/18', 'jm': '2013/03/22', 'j': '2011/04/15'}
 #     fd = { 'sr': '2017-09-10'}

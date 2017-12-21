@@ -49,7 +49,6 @@ def dce_night(dt,data):
         db_data.append(db_row)
     return db_data
 
-
 def dce_day(dt,data):
     db_data = []
     cd_exchange = 'dce'
@@ -89,7 +88,6 @@ def dce_day(dt,data):
                   }
         db_data.append(db_row)
     return db_data
-
 
 def sfe_daily(dt,data):
     key_map = du.key_map_sfe()
@@ -149,51 +147,46 @@ def sfe_daily(dt,data):
         db_data.append(db_row)
     return db_data
 
-# tradetype = 0  # 0:期货，1：期权
-# begdate = datetime.date(2017, 12, 1)
-# enddate = datetime.date(2017, 12, 1)
-#
-#
-# engine = create_engine('mysql+pymysql://root:liz1128@101.132.148.152/mktdata',
-#                        echo=False)
-# conn = engine.connect()
-# metadata = MetaData(engine)
-# table = Table('futures_mktdata_daily', metadata, autoload=True)
-#
-# ds_day = dce.spider_mktdata_day(begdate, enddate, tradetype)
-# for dt in ds_day.keys():
-#     data = ds_day[dt]
-#     db_data = dce_day(dt,data)
-#     try:
-#         conn.execute(table.insert(), db_data)
-#     except Exception as e:
-#         print(dt)
-#         print(e)
-#         continue
-# ds_day = None
-#
-# ds_night = dce.spider_mktdata_night(begdate, enddate, tradetype)
-# for dt in ds_night.keys():
-#     data = ds_night[dt]
-#     db_data = dce_night(dt,data)
-#     try:
-#         conn.execute(table.insert(), db_data)
-#     except Exception as e:
-#         print(dt)
-#         print(e)
-#         continue
-# ds_night = None
-
-# ds =sfe.spider_mktdata(begdate,enddate)
-# for dt in ds.keys():
-#     data = ds[dt]
-#     db_data = sfe_daily(dt,data)
-#     try:
-#         conn.execute(table.insert(), db_data)
-#     except Exception as e:
-#         print(dt)
-#         print(e)
-#         continue
-# ds = None
-
-
+def czce_daily(dt, data):
+    db_data = []
+    # print(data)
+    cd_exchange = 'czce'
+    # datasource = 'czce'
+    flag_night = -1
+    for column in data.columns.values:
+        product = data[column]
+        product_name = product.loc['品种月份'].lower().replace(',', '').replace(' ', '')
+        dt_date = dt
+        name_code = product_name[:-3]
+        underlying = '1' + product_name[-3:]
+        id_instrument = name_code + '_' + underlying
+        amt_last_close = 0.0
+        amt_last_settlement = product.loc['昨结算'].replace(',', '')
+        amt_open = product.loc['今开盘'].replace(',', '')
+        amt_high = product.loc['最高价'].replace(',', '')
+        amt_low = product.loc['最低价'].replace(',', '')
+        amt_close = product.loc['今收盘'].replace(',', '')
+        amt_settlement = product.loc['今结算'].replace(',', '')
+        amt_trading_volume = product.loc['成交量(手)'].replace(',', '')
+        amt_trading_value = product.loc['成交额(万元)'].replace(',', '')
+        amt_holding_volume = 0.0
+        db_row = {'dt_date': dt_date,
+                  'id_instrument': id_instrument,
+                  'flag_night': flag_night,
+                  'name_code': name_code,
+                  'amt_last_close': amt_last_close,
+                  'amt_last_settlement': amt_last_settlement,
+                  'amt_open': amt_open,
+                  'amt_high': amt_high,
+                  'amt_low': amt_low,
+                  'amt_close': amt_close,
+                  'amt_settlement': amt_settlement,
+                  'amt_trading_volume': amt_trading_volume,
+                  'amt_trading_value': amt_trading_value,
+                  'amt_holding_volume': amt_holding_volume,
+                  'cd_exchange': cd_exchange,
+                  'timestamp': datetime.datetime.today()
+                  }
+        # print(db_data)
+        db_data.append(db_row)
+    return db_data

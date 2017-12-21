@@ -98,6 +98,6 @@ fig1.colorbar(surf, shrink=0.5, aspect=5)
 
 
 
-fig.savefig('svi_implied_vol_surface_sr1, call，'+ str(date) +'.png', dpi=300, format='png')
-fig1.savefig('svi_implied_vol_surface_sr2, call，'+ str(date) +'.png', dpi=300, format='png')
+fig.savefig(os.path.abspath('..')+'svi_implied_vol_surface_sr1, call，'+ str(date) +'.png', dpi=300, format='png')
+fig1.savefig(os.path.abspath('..')+'svi_implied_vol_surface_sr2, call，'+ str(date) +'.png', dpi=300, format='png')
 plt.show()

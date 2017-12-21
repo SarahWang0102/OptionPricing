@@ -59,8 +59,8 @@ def get_vol_data_MA(evalDate, daycounter, calendar, contractType):
 # barrier_cont = [0.13,0.14,0.15,0.16,0.17]
 # barrier_cont = [0.15,0.14,0.13]
 # barrier_cont = [0.15,0.14,0.13]
-barrier_cont = [0.15,0.14,0.13]
-period = ql.Period(3,ql.Weeks)
+barrier_cont = [0.15]
+period = ql.Period(2,ql.Days)
 rebalancerate = 0.03
 fee = 0.3 / 1000
 rf = 0.03
@@ -260,7 +260,7 @@ for barrier_pct in barrier_cont:
     df = pd.DataFrame(data=results)
     # print(df)
     df.to_csv(os.path.abspath('..') + '/results4/dh_MA_'+barrier_type+'_r='
-              +str(rebalancerate) + '_b=' + str(barrier_pct) + '.csv')
+              +str(rebalancerate) + '_b=' + str(barrier_pct) + 'f2.csv')
 
     t,p = stats.ttest_ind(svi_pnl,bs_pnl)
     t1,p1 = stats.wilcoxon(svi_pnl,bs_pnl)
