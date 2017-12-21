@@ -109,38 +109,3 @@ def sfe_data(dt, data):
                   }
         db_data.append(db_row)
     return db_data
-
-# engine = create_engine('mysql+pymysql://root:liz1128@101.132.148.152/mktdata',
-#                        echo=False)
-# conn = engine.connect()
-# metadata = MetaData(engine)
-# table = Table('futures_institution_positions', metadata, autoload=True)
-#
-# tradetype = 0  # 0:期货，1：期权
-# begdate = datetime.date(2017, 11, 2)
-# enddate = datetime.date(2017, 11, 2)
-#
-# for codename in du.code_map_dce().values():
-#     print(codename)
-#     ds = dce.spider_positions(codename, begdate, enddate, tradetype)
-#     for dt in ds.keys():
-#         data_list = ds[dt]
-#         print(data_list)
-#         db_data = dce_data(dt, codename, data_list)
-#         try:
-#             conn.execute(table.insert(), db_data)
-#         except Exception as e:
-#             print(dt)
-#             print(e)
-#             continue
-#
-# ds =sfe.spider_positions(begdate,enddate)
-# for dt in ds.keys():
-#     data = ds[dt]
-#     db_data = sfe_data(dt,data)
-#     try:
-#         conn.execute(table.insert(), db_data)
-#     except Exception as e:
-#         print(dt)
-#         print(e)
-#         continue

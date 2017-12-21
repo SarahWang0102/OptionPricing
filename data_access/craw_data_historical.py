@@ -14,8 +14,8 @@ import data_access.table_futures_mktdata_daily as table_futures
 
 w.start()
 # tradetype = 0  # 0:期货，1：期权
-beg_date = datetime.date(2016, 9, 6)
-end_date = datetime.date(2017, 1, 1)
+beg_date = datetime.date(2013, 1, 1)
+end_date = datetime.date(2014, 1, 1)
 
 # beg_date = datetime.date(2017, 11, 16)
 # end_date = datetime.date(2017, 12, 1)
@@ -49,23 +49,23 @@ futures_dominants = Table('futures_dominants', metadata, autoload=True)
 #         continue
 
 date_range = w.tdays(beg_date, end_date, "").Data[0]
-for dt in date_range:
-
-    dt_date = dt.date().strftime("%Y-%m-%d")
-    res = options_mktdata_daily.select((options_mktdata_daily.c.dt_date == dt_date)
-                                        & (options_mktdata_daily.c.name_code == '50etf')).execute()
-    if res.rowcount > 0: continue
-    print(dt_date)
-    db_data = table_options.wind_data_50etf_option(dt_date)
-    if len(db_data) == 0: continue
-    try:
-        conn.execute(options_mktdata_daily.insert(), db_data)
-        print('inserted into data base succefully')
-    except Exception as e:
-        print(dt)
-        print(e)
-        continue
-
+# for dt in date_range:
+#
+#     dt_date = dt.date().strftime("%Y-%m-%d")
+#     res = options_mktdata_daily.select((options_mktdata_daily.c.dt_date == dt_date)
+#                                         & (options_mktdata_daily.c.name_code == '50etf')).execute()
+#     if res.rowcount > 0: continue
+#     print(dt_date)
+#     db_data = table_options.wind_data_50etf_option(dt_date)
+#     if len(db_data) == 0: continue
+#     try:
+#         conn.execute(options_mktdata_daily.insert(), db_data)
+#         print('inserted into data base succefully')
+#     except Exception as e:
+#         print(dt)
+#         print(e)
+#         continue
+#
 
 i = 0
 while i < len(date_range):
@@ -74,48 +74,49 @@ while i < len(date_range):
     if i+5 < len(date_range): enddate = date_range[i+5]
     else : enddate = date_range[-1]
     print(begdate,enddate)
-    # dce option data (type = 1), day
-    ds = dce.spider_mktdata_day(begdate, enddate, 1)
-    for dt in ds.keys():
-        data = ds[dt]
-        if len(data) == 0: continue
-        db_data = table_options.dce_day(dt, data)
-        if len(db_data) == 0 : continue
-        try:
-            conn.execute(options_mktdata_daily.insert(), db_data)
-            print('inserted into data base succefully')
-        except Exception as e:
-            print(dt)
-            print(e)
-            continue
-    # dce option data (type = 1), night
-    ds = dce.spider_mktdata_night(begdate, enddate, 1)
-    for dt in ds.keys():
-        data = ds[dt]
-        if len(data) == 0: continue
-        db_data = table_options.dce_night(dt, data)
-        if len(db_data) == 0: continue
-        try:
-            conn.execute(options_mktdata_daily.insert(), db_data)
-            print('inserted into data base succefully')
-        except Exception as e:
-            print(dt)
-            print(e)
-            continue
-    # czce option data
-    ds = czce.spider_option(begdate, enddate)
-    for dt in ds.keys():
-        data = ds[dt]
-        if len(data) == 0: continue
-        db_data = table_options.czce_daily(dt, data)
-        if len(db_data) == 0: continue
-        try:
-            conn.execute(options_mktdata_daily.insert(), db_data)
-            print('inserted into data base succefully')
-        except Exception as e:
-            print(dt)
-            print(e)
-            continue
+
+    # # dce option data (type = 1), day
+    # ds = dce.spider_mktdata_day(begdate, enddate, 1)
+    # for dt in ds.keys():
+    #     data = ds[dt]
+    #     if len(data) == 0: continue
+    #     db_data = table_options.dce_day(dt, data)
+    #     if len(db_data) == 0 : continue
+    #     try:
+    #         conn.execute(options_mktdata_daily.insert(), db_data)
+    #         print('inserted into data base succefully')
+    #     except Exception as e:
+    #         print(dt)
+    #         print(e)
+    #         continue
+    # # dce option data (type = 1), night
+    # ds = dce.spider_mktdata_night(begdate, enddate, 1)
+    # for dt in ds.keys():
+    #     data = ds[dt]
+    #     if len(data) == 0: continue
+    #     db_data = table_options.dce_night(dt, data)
+    #     if len(db_data) == 0: continue
+    #     try:
+    #         conn.execute(options_mktdata_daily.insert(), db_data)
+    #         print('inserted into data base succefully')
+    #     except Exception as e:
+    #         print(dt)
+    #         print(e)
+    #         continue
+    # # czce option data
+    # ds = czce.spider_option(begdate, enddate)
+    # for dt in ds.keys():
+    #     data = ds[dt]
+    #     if len(data) == 0: continue
+    #     db_data = table_options.czce_daily(dt, data)
+    #     if len(db_data) == 0: continue
+    #     try:
+    #         conn.execute(options_mktdata_daily.insert(), db_data)
+    #         print('inserted into data base succefully')
+    #     except Exception as e:
+    #         print(dt)
+    #         print(e)
+    #         continue
     # dce futures data (type = 0), day
     ds = dce.spider_mktdata_day(begdate, enddate, 0)
     for dt in ds.keys():
@@ -156,7 +157,12 @@ while i < len(date_range):
     ds = czce.spider_future(begdate, enddate)
     for dt in ds.keys():
         data = ds[dt]
-        db_data = table_futures.czce_daily(dt, data)
+        try:
+            db_data = table_futures.czce_daily(dt, data)
+        except Exception as e:
+            print(dt)
+            print(e)
+            continue
         # print(db_data)
         if len(db_data) == 0:
             print('czce futures data -- no data')

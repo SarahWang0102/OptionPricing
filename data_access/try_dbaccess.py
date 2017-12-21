@@ -1,30 +1,64 @@
 # encoding: utf-8
 
 import QuantLib as ql
+from sqlalchemy import create_engine, MetaData, Table, Column, TIMESTAMP
+import datetime
 import pandas as pd
-import numpy as np
-from Utilities.utilities import to_dt_date
-import os
-from Utilities.svi_read_data import get_wind_data
-import data_access.wind_data as wd
 from WindPy import w
-from datetime import date, datetime
-import pickle
-from sqlalchemy import create_engine, MetaData, Table, Column, TIMESTAMP,select
+import os
+from data_access import db_utilities as du
+from data_access import spider_api_dce as dce
+from data_access import spider_api_sfe as sfe
+from data_access import spider_api_czce as czce
+import data_access.table_options_mktdata_daily as table_options
+import data_access.table_futures_mktdata_daily as table_futures
+import data_access.table_equity_index_intraday as table_index_intraday
+import data_access.table_option_mktdata_intraday as table_option_intraday
+import data_access.table_option_tick_data as table_option_tick
+import data_access.table_future_tick_data as table_future_tick
+import data_access.table_index_mktdata_daily as table_index
+
 
 w.start()
-datestr = '2017-11-22'
-# data = w.wset("optionchain","date=2017-12-07;us_code=510050.SH;option_var=全部;call_put=全部")
-data = w.wset("optiondailyquotationstastics",
-                  "startdate="+datestr+";enddate="+datestr+";exchange=sse;windcode=510050.SH")
-df = pd.DataFrame()
-for i,f in enumerate(data.Fields):
-    df[f] = data.Data[i]
 
-print(df)
-df = df.fillna(0.0)
+# dt_date = '2017-12-15'
+# windcode = "510050.SH"
+# id_instrument = 'index_50etf'
+# db_data = table_index.wind_data_index(windcode,'2017-12-18',id_instrument)
+# print(db_data)
+data = w.wset("optionchain","date=2017-12-07;us_code=510050.SH;option_var=全部;call_put=全部")
+print(data.ErrorCode)
+# engine = create_engine('mysql+pymysql://root:liz1128@101.132.148.152/mktdata',
+#                        echo=False)
+# metadata = MetaData(engine)
+# future_contracts = Table('future_contracts', metadata, autoload=True)
+# FutureContracts = dbt.Futures
+# Session = sessionmaker(bind=engine)
+# sess = Session()
+# query = sess.query(FutureContracts.windcode)\
+#             .filter(datestr>=FutureContracts.dt_listed)\
+#             .filter(datestr<=FutureContracts.dt_maturity)
+# df = pd.read_sql(query.statement,query.session.bind)
+# print(df)
+# begstr = '2017-12-08'
+# endstr = '2017-12-15'
+# data = w.wsd("IH.CFE", "trade_hiscode",begstr, endstr, "")
+#
+# print(data.Times)
+# print(data.Data)
 
-print(df)
+# datestr = '2017-11-22'
+# # data = w.wset("optionchain","date=2017-12-07;us_code=510050.SH;option_var=全部;call_put=全部")
+# data = w.wset("optiondailyquotationstastics",
+#                   "startdate="+datestr+";enddate="+datestr+";exchange=sse;windcode=510050.SH")
+# df = pd.DataFrame()
+# for i,f in enumerate(data.Fields):
+#     df[f] = data.Data[i]
+#
+# print(df)
+# df = df.fillna(0.0)
+#
+# print(df)
 #
 # criterion = df['option_code'].map(lambda x: x =='10000897.SH')
 # print(df[criterion])

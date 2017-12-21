@@ -52,7 +52,7 @@ class PlotUtil:
                 tmp, = ax.plot(x, y, color=c, linestyle=l, linewidth=2)
                 tmp.set_dashes(self.dash)
             elif count == 0:
-                ax.plot(x, y, color=c, linestyle=l, linewidth=2.3)
+                ax.plot(x, y, color=c, linestyle=l, linewidth=3)
             else:
                 ax.plot(x, y, color=c, linestyle=l, linewidth=2)
         else:

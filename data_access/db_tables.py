@@ -107,3 +107,86 @@ class DataBaseTables():
                     self.amt_strike,self.name_contract_month, self.dt_listed,self.dt_maturity,
                     self.dt_exercise,self.dt_settlement,self.cd_settle_method,self.nbr_multiplier,
                     self.cd_exchange,self.timestamp)
+
+    class Futures(Base):
+        __tablename__ = 'future_contracts'
+        id_instrument = Column(VARCHAR(45), nullable=True , primary_key=True)
+        windcode = Column(VARCHAR(20))
+        name_instrument = Column(VARCHAR(45))
+        name_code = Column(VARCHAR(20))
+        name_contract_month = Column(VARCHAR(20))
+        pct_margin = Column(DECIMAL(5, 2))
+        pct_change_limit = Column(DECIMAL(5, 2))
+        dt_listed = Column(DATE)
+        dt_maturity = Column(DATE)
+        dt_settlement = Column(DATE)
+        nbr_multiplier = Column(INT)
+        cd_exchange = Column(VARCHAR(20))
+        timestamp = Column(TIMESTAMP)
+
+        def __repr__(self):
+            return "<Futures(id_instrument='%s', windcode='%s',name_instrument='%s'," \
+                   "name_code='%s',name_contract_month='%s',pct_margin='%s',pct_change_limit='%s'," \
+                   "dt_listed='%s',dt_maturity='%s',dt_settlement='%s'," \
+                   "nbr_multiplier='%s',cd_exchange='%s',timestamp='%s')" % \
+                   (self.id_instrument,self.windcode,self.name_instrument,self.name_code,
+                    self.name_contract_month, self.pct_margin,self.pct_change_limit,
+                    self.dt_listed,self.dt_maturity,self.dt_settlement,self.nbr_multiplier,
+                    self.cd_exchange,self.timestamp)
+
+    class EquityIndexIntraday(Base):
+        __tablename__ = 'equity_index_mktdata_intraday'
+        dt_datetime = Column(DATETIME, nullable=False , primary_key=True)
+        id_instrument = Column(VARCHAR(45), nullable=True , primary_key=True)
+        datasource = Column(VARCHAR(45), nullable=True, primary_key=True)
+        code_instrument = Column(VARCHAR(45))
+        amt_price = Column(DECIMAL(18, 4))
+        amt_trading_volume = Column(DECIMAL(18, 4))
+        amt_trading_value = Column(DECIMAL(18, 4))
+        timestamp = Column(TIMESTAMP)
+
+        def __repr__(self):
+            return "<EquityIndexIntraday(dt_datetime='%s', id_instrument='%s',datasource='%s'," \
+                   "code_instrument='%s',amt_price='%s',amt_trading_volume='%s',amt_trading_value='%s'," \
+                   "timestamp='%s')" % \
+                   (self.dt_datetime,self.id_instrument,self.datasource,self.code_instrument,
+                    self.amt_price, self.amt_trading_volume,self.amt_trading_value,
+                    self.timestamp)
+
+    class FutureMktIntraday(Base):
+        __tablename__ = 'future_mktdata_intraday'
+        dt_datetime = Column(DATETIME, nullable=False , primary_key=True)
+        id_instrument = Column(VARCHAR(45), nullable=True , primary_key=True)
+        datasource = Column(VARCHAR(45), nullable=True, primary_key=True)
+        code_instrument = Column(VARCHAR(45))
+        amt_price = Column(DECIMAL(18, 4))
+        amt_trading_volume = Column(DECIMAL(18, 4))
+        amt_trading_value = Column(DECIMAL(18, 4))
+        timestamp = Column(TIMESTAMP)
+
+        def __repr__(self):
+            return "<FutureMktIntraday(dt_datetime='%s', id_instrument='%s',datasource='%s'," \
+                   "code_instrument='%s',amt_price='%s',amt_trading_volume='%s',amt_trading_value='%s'," \
+                   "timestamp='%s')" % \
+                   (self.dt_datetime,self.id_instrument,self.datasource,self.code_instrument,
+                    self.amt_price, self.amt_trading_volume,self.amt_trading_value,
+                    self.timestamp)
+
+    class OptionMktIntraday(Base):
+        __tablename__ = 'option_mktdata_intraday'
+        dt_datetime = Column(DATETIME, nullable=False , primary_key=True)
+        id_instrument = Column(VARCHAR(45), nullable=True , primary_key=True)
+        datasource = Column(VARCHAR(45), nullable=True, primary_key=True)
+        code_instrument = Column(VARCHAR(45))
+        amt_price = Column(DECIMAL(18, 4))
+        amt_trading_volume = Column(DECIMAL(18, 4))
+        amt_trading_value = Column(DECIMAL(18, 4))
+        timestamp = Column(TIMESTAMP)
+
+        def __repr__(self):
+            return "<OptionMktIntraday(dt_datetime='%s', id_instrument='%s',datasource='%s'," \
+                   "code_instrument='%s',amt_price='%s',amt_trading_volume='%s',amt_trading_value='%s'," \
+                   "timestamp='%s')" % \
+                   (self.dt_datetime,self.id_instrument,self.datasource,self.code_instrument,
+                    self.amt_price, self.amt_trading_volume,self.amt_trading_value,
+                    self.timestamp)

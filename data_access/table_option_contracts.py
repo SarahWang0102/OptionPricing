@@ -221,28 +221,3 @@ def wind_options_sr():
         db_data.append(db_row)
     return db_data
 
-
-#
-# w.start()
-# data = w.wset("optioncontractbasicinfo", "exchange=sse;windcode=510050.SH;status=all")
-# # print(data.Fields)
-# for f in data.Fields:
-#     print(f)
-# optionData = data.Data
-# optionFlds = data.Fields
-# # print(data)
-# wind_code = optionData[optionFlds.index('wind_code')]
-# trade_code = optionData[optionFlds.index('trade_code')]
-# sec_name = optionData[optionFlds.index('sec_name')]
-# option_mark_code = optionData[optionFlds.index('option_mark_code')]
-# option_type = optionData[optionFlds.index('option_type')]
-# call_or_put = optionData[optionFlds.index('call_or_put')]
-# exercise_mode = optionData[optionFlds.index('exercise_mode')]
-# exercise_price = optionData[optionFlds.index('exercise_price')]
-# contract_unit = optionData[optionFlds.index('contract_unit')]
-# limit_month = optionData[optionFlds.index('limit_month')]
-# listed_date = optionData[optionFlds.index('listed_date')]
-# expire_date = optionData[optionFlds.index('expire_date')]
-# exercise_date = optionData[optionFlds.index('exercise_date')]
-# settlement_date = optionData[optionFlds.index('settlement_date')]
-# settle_mode = optionData[optionFlds.index('settle_mode')]
