@@ -13,8 +13,8 @@ from data_access.db_data_collection import DataCollection
 
 w.start()
 # tradetype = 0  # 0:期货，1：期权
-beg_date = datetime.date(2016, 1, 1)
-end_date = datetime.date(2017, 12, 20)
+beg_date = datetime.date(2015, 1, 1)
+end_date = datetime.date(2017, 12, 22)
 
 # beg_date = datetime.date(2017, 11, 16)
 # end_date = datetime.date(2017, 12, 1)
@@ -55,46 +55,64 @@ for dt in date_range:
 
     dt_date = dt.date().strftime("%Y-%m-%d")
     print(dt_date)
-    res = options_mktdata_daily.select((options_mktdata_daily.c.dt_date == dt_date)
-                                        & (options_mktdata_daily.c.name_code == '50etf')).execute()
-    if res.rowcount > 0:
-        print('options_mktdata_daily -- already exists')
+
+    # equity index futures
+    res = futures_mktdata_daily.select((futures_mktdata_daily.c.dt_date == dt_date)
+                                       & (futures_mktdata_daily.c.cd_exchange == 'cfe')).execute()
+    if res.rowcount == 0:
+        df = dc.table_future_contracts().get_future_contract_ids(dt_date)
+        for (idx_oc, row) in df.iterrows():
+            print(row)
+            db_data = dc.table_futures().wind_index_future_daily(dt_date, row['id_instrument'], row['windcode'])
+            try:
+                conn.execute(futures_mktdata_daily.insert(), db_data)
+                print('equity index futures -- inserted into data base succefully')
+            except Exception as e:
+                print(e)
     else:
-        db_data = dc.table_options().wind_data_50etf_option(dt_date)
-        if len(db_data) == 0: continue
-        try:
-            conn.execute(options_mktdata_daily.insert(), db_data)
-            print('options_mktdata_daily -- inserted into data base succefully')
-        except Exception as e:
-            print(dt)
-            print(e)
-            continue
-    windcode = "510050.SH"
-    id_instrument = 'index_50etf'
-    db_data = dc.table_index().wind_data_index(windcode, dt_date, id_instrument)
-    try:
-        conn.execute(index_daily.insert(), db_data)
-        print('equity_index-50etf -- inserted into data base succefully')
-    except Exception as e:
-        print(e)
+        print('equity index futures -- already exists')
 
-    windcode = "000016.SH"
-    id_instrument = 'index_50sh'
-    db_data = dc.table_index().wind_data_index(windcode, dt_date, id_instrument)
-    try:
-        conn.execute(index_daily.insert(), db_data)
-        print('equity_index-50etf -- inserted into data base succefully')
-    except Exception as e:
-        print(e)
 
-    windcode = "000300.SH"
-    id_instrument = 'index_300sh'
-    db_data = dc.table_index().wind_data_index(windcode, dt_date, id_instrument)
-    try:
-        conn.execute(index_daily.insert(), db_data)
-        print('equity_index-50etf -- inserted into data base succefully')
-    except Exception as e:
-        print(e)
+    # res = options_mktdata_daily.select((options_mktdata_daily.c.dt_date == dt_date)
+    #                                     & (options_mktdata_daily.c.name_code == '50etf')).execute()
+    # if res.rowcount > 0:
+    #     print('options_mktdata_daily -- already exists')
+    # else:
+    #     db_data = dc.table_options().wind_data_50etf_option(dt_date)
+    #     if len(db_data) == 0: continue
+    #     try:
+    #         conn.execute(options_mktdata_daily.insert(), db_data)
+    #         print('options_mktdata_daily -- inserted into data base succefully')
+    #     except Exception as e:
+    #         print(dt)
+    #         print(e)
+    #         continue
+    # windcode = "510050.SH"
+    # id_instrument = 'index_50etf'
+    # db_data = dc.table_index().wind_data_index(windcode, dt_date, id_instrument)
+    # try:
+    #     conn.execute(index_daily.insert(), db_data)
+    #     print('equity_index-50etf -- inserted into data base succefully')
+    # except Exception as e:
+    #     print(e)
+    #
+    # windcode = "000016.SH"
+    # id_instrument = 'index_50sh'
+    # db_data = dc.table_index().wind_data_index(windcode, dt_date, id_instrument)
+    # try:
+    #     conn.execute(index_daily.insert(), db_data)
+    #     print('equity_index-50etf -- inserted into data base succefully')
+    # except Exception as e:
+    #     print(e)
+    #
+    # windcode = "000300.SH"
+    # id_instrument = 'index_300sh'
+    # db_data = dc.table_index().wind_data_index(windcode, dt_date, id_instrument)
+    # try:
+    #     conn.execute(index_daily.insert(), db_data)
+    #     print('equity_index-50etf -- inserted into data base succefully')
+    # except Exception as e:
+    #     print(e)
 #
 # i = 0
 # while i < len(date_range):

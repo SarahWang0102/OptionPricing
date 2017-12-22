@@ -14,8 +14,7 @@ from OptionStrategyLib.calibration import SVICalibration
 w.start()
 
 ##################################################################################################
-
-evalDate = datetime.date(2017,4,12)
+evalDate = datetime.date(2017,12,8)
 ql_evalDate = ql.Date(evalDate.day,evalDate.month,evalDate.year)
 rf = 0.03
 ##################################################################################################
@@ -52,20 +51,22 @@ query_etf = sess.query(Index_mkt.amt_close)\
                 .filter(Index_mkt.id_instrument == 'index_50etf')
 
 df_option = pd.read_sql(query_option.statement,query_option.session.bind)
+df_option = df_option[df_option['id_instrument'].str[-1] != 'A']
 df_50etf = pd.read_sql(query_etf.statement,query_etf.session.bind)
 df_option['underlying_prices'] = [df_50etf['amt_close'].iloc[0]]*len(df_option)
 df_option['risk_free_rates'] = [rf]*len(df_option)
-print(df_option)
+# df_option['add'] = df_option['id_instrument'][-1]
+
 for (idx,row) in df_option.iterrows():
     optiontype = row['cd_option_type']
     if optiontype == 'call': ql_optiontype = ql.Option.Call
     else: ql_optiontype = ql.Option.Put
+    id = row['id_instrument']
     mdt = row['dt_maturity']
     ql_mdt = ql.Date(mdt.day,mdt.month,mdt.year)
     strike = row['amt_strike']
     spot = row['underlying_prices']
     close = row['amt_close']
-    print(ql_evalDate, ql_mdt)
     exercise = ql.EuropeanExercise(ql_mdt)
     payoff = ql.PlainVanillaPayoff(ql_optiontype, strike)
     option = ql.EuropeanOption(payoff, exercise)
@@ -83,10 +84,23 @@ for (idx,row) in df_option.iterrows():
         implied_vol = 0.0
     df_option['pct_implied_vol'].loc[idx] = implied_vol
 
-# svicalibration.calibrate_rawsvi(df_option['amt_strikes'],
-#                                 df_option['dt_maturity'],
-#                                 df_option['underlying_prices'],
-#                                 df_option['amt_close'],
-#                                 df_option['pct_implied_vol'],
-#                                 df_option['risk_free_rates'])
 print(df_option)
+df_option = df_option[df_option['pct_implied_vol'] > 0 ]
+# c1 = (df_option['cd_option_type'] == 'call') & (df_option['amt_strike']>=df_option['underlying_prices'])
+# c2 = (df_option['cd_option_type'] == 'put') & (df_option['amt_strike']<=df_option['underlying_prices'])
+# df_option = df_option[c1|c2]
+
+df_option = df_option[df_option['cd_option_type']=='call']
+params_dict = svicalibration.calibrate_rawsvi(df_option['amt_strike'],
+                                              df_option['dt_maturity'],
+                                              df_option['underlying_prices'],
+                                              df_option['amt_close'],
+                                              df_option['pct_implied_vol'],
+                                              df_option['risk_free_rates'])
+print(params_dict)
+
+
+
+
+
+

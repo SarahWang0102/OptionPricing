@@ -298,10 +298,11 @@ class DataCollection():
 
         def dce_night(self,dt, data):
             db_data = []
-            cd_exchange = 'dce'
+            datasource = cd_exchange = 'dce'
             for column in data.columns.values:
                 product = data[column]
-                codename = du.get_codename(product.loc['商品名称']).lower()
+                code_instrument = du.get_codename(product.loc['商品名称']).replace(',', '').replace(' ', '')
+                codename = code_instrument.lower()
                 id_instrument = codename + '_' + product.loc['交割月份']
                 dt_date = dt
                 flag_night = 1
@@ -319,6 +320,8 @@ class DataCollection():
                 db_row = {'dt_date': dt_date,
                           'id_instrument': id_instrument,
                           'flag_night': flag_night,
+                          'datasource': datasource,
+                          'code_instrument': code_instrument,
                           'name_code': name_code,
                           'amt_last_close': amt_last_close,
                           'amt_last_settlement': amt_last_settlement,
@@ -338,10 +341,11 @@ class DataCollection():
 
         def dce_day(self,dt, data):
             db_data = []
-            cd_exchange = 'dce'
+            datasource = cd_exchange = 'dce'
             for column in data.columns.values:
                 product = data[column]
-                codename = du.get_codename(product.loc['商品名称']).lower()
+                code_instrument = du.get_codename(product.loc['商品名称']).replace(',', '').replace(' ', '')
+                codename = code_instrument.lower()
                 id_instrument = codename + '_' + product.loc['交割月份']
                 dt_date = dt
                 flag_night = 0
@@ -359,6 +363,8 @@ class DataCollection():
                 db_row = {'dt_date': dt_date,
                           'id_instrument': id_instrument,
                           'flag_night': flag_night,
+                          'datasource': datasource,
+                          'code_instrument': code_instrument,
                           'name_code': name_code,
                           'amt_last_close': amt_last_close,
                           'amt_last_settlement': amt_last_settlement,
@@ -380,7 +386,7 @@ class DataCollection():
             key_map = du.key_map_sfe()
             data_dict1 = data['o_curinstrument']
             db_data = []
-            cd_exchange = 'sfe'
+            datasource = cd_exchange = 'sfe'
             for dict in data_dict1:
                 name = dict[key_map['codename']].replace(' ', '')
                 contractmonth = dict[key_map['contractmonth']].replace(' ', '')
@@ -417,6 +423,8 @@ class DataCollection():
                 db_row = {'dt_date': dt_date,
                           'id_instrument': id_instrument,
                           'flag_night': flag_night,
+                          'datasource': datasource,
+                          'code_instrument': name,
                           'name_code': name_code,
                           'amt_last_close': amt_last_close,
                           'amt_last_settlement': amt_last_settlement,
@@ -437,11 +445,12 @@ class DataCollection():
         def czce_daily(self,dt, data):
             db_data = []
             # print(data)
-            cd_exchange = 'czce'
+            datasource = cd_exchange = 'czce'
             # datasource = 'czce'
             flag_night = -1
             for column in data.columns.values:
                 product = data[column]
+                code_instrument = product.loc['品种月份'].replace(',', '').replace(' ', '')
                 product_name = product.loc['品种月份'].lower().replace(',', '').replace(' ', '')
                 dt_date = dt
                 name_code = product_name[:-3]
@@ -460,6 +469,8 @@ class DataCollection():
                 db_row = {'dt_date': dt_date,
                           'id_instrument': id_instrument,
                           'flag_night': flag_night,
+                          'datasource': datasource,
+                          'code_instrument': code_instrument,
                           'name_code': name_code,
                           'amt_last_close': amt_last_close,
                           'amt_last_settlement': amt_last_settlement,
@@ -478,8 +489,72 @@ class DataCollection():
                 db_data.append(db_row)
             return db_data
 
+        def wind_index_future_daily(self,datestr, id_instrument, windcode):
+            db_data = []
+            datasource = 'wind'
+            flag_night = -1
+            cd_exchange = 'cfe'
+            name_code = id_instrument[0:2]
+            tickdata = w.wsd(windcode,
+                             "pre_close,open,high,low,close,volume,amt,oi,pre_settle,settle",
+                             datestr , datestr , "Fill=Previous")
+            if tickdata.ErrorCode != 0:
+                print('wind get data error ', datestr, ',errorcode : ', tickdata.ErrorCode)
+                return []
+            df = pd.DataFrame()
+            for i, f in enumerate(tickdata.Fields):
+                df[f] = tickdata.Data[i]
+            df['dt_datetime'] = tickdata.Times
+            for (idx, row) in df.iterrows():
+                dt = row['dt_datetime']
+                dt_date = datetime.date(dt.year, dt.month, dt.day)
+                open_price = row['OPEN']
+                high = row['HIGH']
+                low = row['LOW']
+                close = row['CLOSE']
+                volume = row['VOLUME']
+                amt = row['AMT']
+                amt_holding_volume = row['OI']
+                amt_last_close = row['PRE_CLOSE']
+                amt_last_settlement = row['PRE_SETTLE']
+                amt_settlement = row['SETTLE']
+
+                db_row = {'dt_date': dt_date,
+                          'id_instrument': id_instrument,
+                          'flag_night': flag_night,
+                          'datasource': datasource,
+                          'code_instrument': windcode,
+                          'name_code': name_code,
+                          'amt_last_close': amt_last_close,
+                          'amt_last_settlement': amt_last_settlement,
+                          'amt_open': open_price,
+                          'amt_high': high,
+                          'amt_low': low,
+                          'amt_close': close,
+                          'amt_settlement': amt_settlement,
+                          'amt_trading_volume': volume,
+                          'amt_trading_value': amt,
+                          'amt_holding_volume': amt_holding_volume,
+                          'cd_exchange': cd_exchange,
+                          'timestamp': datetime.datetime.today()
+                          }
+                db_data.append(db_row)
+            return db_data
 
     class table_future_contracts():
+
+        def get_future_contract_ids(self,datestr):
+            engine = create_engine('mysql+pymysql://root:liz1128@101.132.148.152/mktdata',
+                                   echo=False)
+            FutureContracts = dbt.Futures
+            Session = sessionmaker(bind=engine)
+            sess = Session()
+            query = sess.query(FutureContracts.id_instrument, FutureContracts.windcode) \
+                .filter(datestr >= FutureContracts.dt_listed) \
+                .filter(datestr <= FutureContracts.dt_maturity)
+            df_windcode = pd.read_sql(query.statement, query.session.bind)
+            return df_windcode
+
 
         def wind_future_contracts(self,category_code, nbr_multiplier):
             db_data = []
@@ -903,17 +978,6 @@ class DataCollection():
 
     class table_future_tick():
 
-        def wind_option_codes(self,datestr):
-            engine = create_engine('mysql+pymysql://root:liz1128@101.132.148.152/mktdata',
-                                   echo=False)
-            FutureContracts = dbt.Futures
-            Session = sessionmaker(bind=engine)
-            sess = Session()
-            query = sess.query(FutureContracts.id_instrument, FutureContracts.windcode) \
-                .filter(datestr >= FutureContracts.dt_listed) \
-                .filter(datestr <= FutureContracts.dt_maturity)
-            df_windcode = pd.read_sql(query.statement, query.session.bind)
-            return df_windcode
 
         def wind_index_future_tick(self,datestr, id_instrument, windcode):
             db_data = []

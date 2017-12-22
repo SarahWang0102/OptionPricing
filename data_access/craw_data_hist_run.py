@@ -10,13 +10,6 @@ from data_access import spider_api_dce as dce
 from data_access import spider_api_sfe as sfe
 from data_access import spider_api_czce as czce
 from data_access.db_data_collection import DataCollection
-# import data_access.table_options_mktdata_daily as table_options
-# import data_access.table_futures_mktdata_daily as table_futures
-# import data_access.table_equity_index_intraday as table_index_intraday
-# import data_access.table_option_mktdata_intraday as table_option_intraday
-# import data_access.table_option_tick_data as table_option_tick
-# import data_access.table_future_tick_data as table_future_tick
-# import data_access.table_index_mktdata_daily as table_index
 
 w.start()
 
@@ -38,8 +31,8 @@ future_tick_data = Table('future_tick_data', metadata_intraday, autoload=True)
 index_daily = Table('indexes_mktdata', metadata, autoload=True)
 dc = DataCollection()
 #####################################################################################
-beg_date = datetime.date(2017, 12, 19)
-end_date = datetime.date(2017, 12, 19)
+beg_date = datetime.date(2017, 1, 1)
+end_date = datetime.date(2017, 12, 22)
 
 date_range = w.tdays(beg_date, end_date, "").Data[0]
 for dt in date_range:
@@ -117,7 +110,20 @@ for dt in date_range:
         print('czce option -- already exists')
 
     #####################futures_mktdata_daily######################################
-
+    # equity index futures
+    res = futures_mktdata_daily.select((futures_mktdata_daily.c.dt_date == dt_date)
+                                       & (futures_mktdata_daily.c.cd_exchange == 'cfe')).execute()
+    if res.rowcount == 0:
+        df = dc.table_future_contracts().get_future_contract_ids(dt_date)
+        for (idx_oc, row) in df.iterrows():
+            db_data = dc.table_futures().wind_index_future_daily(dt_date, row['id_instrument'], row['windcode'])
+            try:
+                conn.execute(futures_mktdata_daily.insert(), db_data)
+                print('equity index futures -- inserted into data base succefully')
+            except Exception as e:
+                print(e)
+    else:
+        print('equity index futures -- already exists')
     # dce futures data
     res = futures_mktdata_daily.select((futures_mktdata_daily.c.dt_date == dt_date)
                                             & (futures_mktdata_daily.c.cd_exchange == 'dce')).execute()
@@ -287,10 +293,9 @@ for dt in date_range:
     # equity index futures
     res = future_tick_data.select(future_tick_data.c.dt_datetime == dt_date+" 09:30:00").execute()
     if res.rowcount == 0:
-        df = dc.table_future_tick().wind_option_codes(dt_date)
+        df = dc.table_future_contracts().get_future_contract_ids(dt_date)
         for (idx_oc,row) in df.iterrows():
             db_data = dc.table_future_tick().wind_index_future_tick(dt_date,row['id_instrument'],row['windcode'])
-            print(db_data)
             try:
                 conn_intraday.execute(future_tick_data.insert(), db_data)
                 print(idx_oc, 'future_tick_data -- inserted into data base succefully')
