@@ -52,6 +52,7 @@ class DataBaseTables():
         dt_date = Column(Date, nullable=False , primary_key=True)
         id_instrument = Column(VARCHAR(45), nullable=False , primary_key=True)
         flag_night = Column(INT, nullable=False , primary_key=True)
+        datasource = Column(VARCHAR(45), nullable=False , primary_key=True)
         name_code = Column(VARCHAR(45))
         amt_last_close = Column(DECIMAL(18, 4))
         amt_last_settlement = Column(DECIMAL(18, 4))

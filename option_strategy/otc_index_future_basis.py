@@ -4,6 +4,7 @@ from sqlalchemy.orm import sessionmaker
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib as mpl
 from matplotlib import cm as plt_cm
+from mpl_toolkits.axes_grid1 import host_subplot
 import datetime
 import pandas as pd
 import numpy as np
@@ -29,34 +30,74 @@ future_mkt = Table('futures_mktdata', metadata, autoload=True)
 FutureMkt = dbt.FutureMkt
 IndexMkt = dbt.IndexMkt
 index_ids = ['index_300sh','index_50sh','index_500sh']
-futurescodes = ['IF.CFE','IH.CFE','IC.CFE']
+futurescodes = ['IF','IH','IC']
 indexid = 'index_300sh'
-futurescode = 'IF.CFE'
+futurescode = 'IF'
 ############################################################################################
 # Eval Settings
 evalDate = datetime.date(2017, 12, 22)
 hist_date = datetime.date(2016, 1, 1)
 
 #############################################################################################
-data = w.wsd(futurescode, "trade_hiscode", hist_date.strftime('%Y-%m-%d'), evalDate.strftime('%Y-%m-%d'), "")
+data = w.wsd(futurescode+'.CFE', "trade_hiscode", hist_date.strftime('%Y-%m-%d'), evalDate.strftime('%Y-%m-%d'), "")
 id_cores = []
 for idx,dt in enumerate(data.Times):
     name = data.Data[0][idx]
     id_core = name[0:2] + "_" + name[2:6]
     id_cores.append({'dt_date':dt,'id_instrument':id_core})
 future_df = pd.DataFrame(id_cores)
-print(future_df)
 query_index = sess.query(IndexMkt.id_instrument,IndexMkt.dt_date,IndexMkt.amt_close)\
     .filter(IndexMkt.dt_date >= hist_date)\
-    .filter(IndexMkt.dt_date <= evalDate)\
+    .filter(IndexMkt.dt_date <= evalDate)
+
+query_future = sess.query(FutureMkt.id_instrument,FutureMkt.dt_date,FutureMkt.amt_close)\
+    .filter(FutureMkt.dt_date >= hist_date)\
+    .filter(FutureMkt.dt_date <= evalDate)\
+    .filter(FutureMkt.flag_night == -1)\
+    .filter(FutureMkt.datasource == 'wind')\
+    .filter(FutureMkt.name_code == futurescode[0:2])
 
 
 index_df = pd.read_sql(query_index.statement,query_index.session.bind)
-
+futuremkt_df = pd.read_sql(query_future.statement,query_future.session.bind)
 indexsh_df = index_df[index_df['id_instrument']==indexid].reset_index()
+indexsh_df = indexsh_df.rename(columns = {'id_instrument':'id_index','amt_close':'amt_index_price'})
 
-print(indexsh_df.set_index('dt_date'))
-merged_df = future_df.merge(indexsh_df,left_on='dt_date',right_on='dt_date',how='left')
-print(merged_df)
-merged_df2 = future_df.join(indexsh_df.set_index('dt_date'),on='dt_date',how='left')
-print(merged_df2)
+future_df = future_df.merge(futuremkt_df,left_on=['id_instrument','dt_date'],right_on=['id_instrument','dt_date'],
+                            how='left')
+future_df = future_df.rename(columns = {'id_instrument':'id_future','amt_close':'amt_future_price'})
+
+basis_df = future_df.join(indexsh_df.set_index('dt_date'),on='dt_date',how='left')
+basis_df['basis'] = basis_df['amt_future_price']-basis_df['amt_index_price']
+
+x = basis_df['dt_date'].tolist()
+basis_set = [
+    basis_df['amt_future_price'].tolist(),
+    basis_df['amt_index_price'].tolist(),
+    basis_df['basis'].tolist(),
+             ]
+# f2, ax2 = plt.subplots()
+ldgs = [futurescode+'主力合约价格', '标的指数价格', '基差(右)']
+# for cont2, y in enumerate(basis_set):
+#     pu.plot_line(ax2, cont2, x, y, ldgs[cont2], '日期', '波动率（%）')
+#
+
+fig1 = plt.figure('houhou')
+host = host_subplot(111)
+
+par = host.twinx()
+
+host.set_xlabel("日期")
+# host.set_ylabel("Density")
+# par.set_ylabel("Temperature")
+p1, = host.plot(x, basis_set[0], label=ldgs[0],color=pu.colors[0],linestyle=pu.lines[0], linewidth=2)
+p2, = host.plot(x, basis_set[1], label=ldgs[1],color=pu.colors[1],linestyle=pu.lines[1], linewidth=2)
+p3, = par.plot(x, basis_set[2], label=ldgs[2],color=pu.colors[2],linestyle=pu.lines[2], linewidth=2)
+
+
+host.legend(bbox_to_anchor=(0., 1.02, 1., .202), loc=3,
+           ncol=3, mode="expand", borderaxespad=0.)
+fig1.savefig('../save_figure/otc_basis_' + indexid + '_' + str(hist_date) + ' - ' + str(evalDate) + '.png', dpi=300,
+           format='png')
+
+plt.show()
