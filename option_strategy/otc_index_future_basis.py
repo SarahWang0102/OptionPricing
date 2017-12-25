@@ -92,8 +92,9 @@ host.set_xlabel("日期")
 # par.set_ylabel("Temperature")
 p1, = host.plot(x, basis_set[0], label=ldgs[0],color=pu.colors[0],linestyle=pu.lines[0], linewidth=2)
 p2, = host.plot(x, basis_set[1], label=ldgs[1],color=pu.colors[1],linestyle=pu.lines[1], linewidth=2)
-p3, = par.plot(x, basis_set[2], label=ldgs[2],color=pu.colors[2],linestyle=pu.lines[2], linewidth=2)
-
+# p3, = par.plot(x, basis_set[2], label=ldgs[2],color=pu.colors[2],linestyle=pu.lines[2], linewidth=2)
+basis_max = max(basis_set[2])
+par.fill_between(x, basis_max, basis_set[2],label=ldgs[2],color=pu.colors[2])
 
 host.legend(bbox_to_anchor=(0., 1.02, 1., .202), loc=3,
            ncol=3, mode="expand", borderaxespad=0.)
