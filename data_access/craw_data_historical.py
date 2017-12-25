@@ -13,7 +13,7 @@ from data_access.db_data_collection import DataCollection
 
 w.start()
 # tradetype = 0  # 0:期货，1：期权
-beg_date = datetime.date(2015, 1, 1)
+beg_date = datetime.date(2015, 6, 1)
 end_date = datetime.date(2017, 12, 22)
 
 # beg_date = datetime.date(2017, 11, 16)
@@ -26,7 +26,7 @@ options_mktdata_daily = Table('options_mktdata', metadata, autoload=True)
 futures_mktdata_daily = Table('futures_mktdata', metadata, autoload=True)
 futures_dominants = Table('futures_dominants', metadata, autoload=True)
 index_daily = Table('indexes_mktdata', metadata, autoload=True)
-dc =  DataCollection()
+dc = DataCollection()
 
 # futures_institution_positions = Table('futures_institution_positions', metadata, autoload=True)
 
@@ -57,20 +57,19 @@ for dt in date_range:
     print(dt_date)
 
     # equity index futures
-    res = futures_mktdata_daily.select((futures_mktdata_daily.c.dt_date == dt_date)
-                                       & (futures_mktdata_daily.c.cd_exchange == 'cfe')).execute()
-    if res.rowcount == 0:
-        df = dc.table_future_contracts().get_future_contract_ids(dt_date)
-        for (idx_oc, row) in df.iterrows():
-            print(row)
-            db_data = dc.table_futures().wind_index_future_daily(dt_date, row['id_instrument'], row['windcode'])
-            try:
-                conn.execute(futures_mktdata_daily.insert(), db_data)
-                print('equity index futures -- inserted into data base succefully')
-            except Exception as e:
-                print(e)
-    else:
-        print('equity index futures -- already exists')
+    # res = futures_mktdata_daily.select((futures_mktdata_daily.c.dt_date == dt_date)
+    #                                    & (futures_mktdata_daily.c.cd_exchange == 'cfe')).execute()
+    # if res.rowcount == 0:
+    df = dc.table_future_contracts().get_future_contract_ids(dt_date)
+    for (idx_oc, row) in df.iterrows():
+        db_data = dc.table_futures().wind_index_future_daily(dt_date, row['id_instrument'], row['windcode'])
+        try:
+            conn.execute(futures_mktdata_daily.insert(), db_data)
+            print('equity index futures -- inserted into data base succefully')
+        except Exception as e:
+            print(e)
+    # else:
+    #     print('equity index futures -- already exists')
 
 
     # res = options_mktdata_daily.select((options_mktdata_daily.c.dt_date == dt_date)
@@ -112,8 +111,7 @@ for dt in date_range:
     #     conn.execute(index_daily.insert(), db_data)
     #     print('equity_index-50etf -- inserted into data base succefully')
     # except Exception as e:
-    #     print(e)
-#
+    #     print(e)  #
 # i = 0
 # while i < len(date_range):
 #     # crawd and insert into db 5-day data at a time

@@ -228,6 +228,15 @@ if res.rowcount == 0:
         print('equity_index-50etf -- inserted into data base succefully')
     except Exception as e:
         print(e)
+
+    windcode = "000905.SH"
+    id_instrument = 'index_500sh'
+    db_data = dc.table_index().wind_data_index(windcode, dt_date, id_instrument)
+    try:
+        conn.execute(index_daily.insert(), db_data)
+        print('equity_index-50etf -- inserted into data base succefully')
+    except Exception as e:
+        print(e)
 else:
     print('index daily -- already exists')
 
@@ -258,6 +267,15 @@ if res.rowcount == 0:
     try:
         conn_intraday.execute(equity_index_intraday.insert(), db_data)
         print('equity_index_intraday-300sh -- inserted into data base succefully')
+    except Exception as e:
+        print(e)
+
+    windcode = "000905.SH"
+    id_instrument = 'index_500sh'
+    db_data = dc.table_index_intraday().wind_data_equity_index(windcode, dt_date, id_instrument)
+    try:
+        conn_intraday.execute(equity_index_intraday.insert(), db_data)
+        print('equity_index_intraday-500zz -- inserted into data base succefully')
     except Exception as e:
         print(e)
 else:

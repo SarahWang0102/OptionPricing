@@ -4,6 +4,7 @@ from data_access.db_tables import DataBaseTables as dbt
 from WindPy import w
 import datetime
 import pandas as pd
+import numpy as np
 from data_access import db_utilities as du
 import math
 
@@ -804,6 +805,7 @@ class DataCollection():
             for i, f in enumerate(data.Fields):
                 df[f] = data.Data[i]
             df['times'] = data.Times
+            df.fillna(0.0)
             for (idx, row) in df.iterrows():
                 open_price = row['OPEN']
                 dt = row['times']
@@ -812,6 +814,11 @@ class DataCollection():
                 close = row['CLOSE']
                 volume = row['VOLUME']
                 amt = row['AMT']
+                if np.isnan(volume): volume = 0.0
+                if np.isnan(amt): amt = 0.0
+                if np.isnan(low): low = -1.0
+                if np.isnan(high): high = -1.0
+                if np.isnan(open_price): open_price = -1.0
                 db_row = {'dt_date': dt,
                           'id_instrument': id_instrument,
                           'datasource': datasource,
