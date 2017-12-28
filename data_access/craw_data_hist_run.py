@@ -31,8 +31,8 @@ future_tick_data = Table('future_tick_data', metadata_intraday, autoload=True)
 index_daily = Table('indexes_mktdata', metadata, autoload=True)
 dc = DataCollection()
 #####################################################################################
-beg_date = datetime.date(2016, 1, 1)
-end_date = datetime.date(2017, 1, 1)
+beg_date = datetime.date(2015, 1, 1)
+end_date = datetime.date(2016, 1, 1)
 
 date_range = w.tdays(beg_date, end_date, "").Data[0]
 for dt in date_range:
@@ -276,8 +276,8 @@ for dt in date_range:
     if res.rowcount == 0:
         windcode = "000188.SH"
         id_instrument = 'index_cvix'
-        db_data = dc.table_index().wind_data_index(windcode, dt_date, id_instrument)
         try:
+            db_data = dc.table_index().wind_data_index(windcode, dt_date, id_instrument)
             conn.execute(index_daily.insert(), db_data)
             print('equity_index-cvix -- inserted into data base succefully')
         except Exception as e:

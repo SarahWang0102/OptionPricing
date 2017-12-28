@@ -29,7 +29,9 @@ indexmkt_table = dbt.IndexMkt
 index_ids = ['index_300sh','index_50sh','index_500sh']
 ############################################################################################
 # Eval Settings
-evalDate = datetime.date(2017, 12, 22).strftime("%Y-%m-%d")
+eval_date = datetime.date(2017, 12, 26)
+evalDate = eval_date.strftime("%Y-%m-%d")
+
 hist_date = datetime.date(2016, 1, 1).strftime("%Y-%m-%d")
 
 #############################################################################################
@@ -77,14 +79,16 @@ for indexid in index_ids:
                 np.percentile(histvols_20, 75), np.percentile(histvols_10, 75), np.percentile(histvols_5, 75)]
     p25_vols = [np.percentile(histvols_60, 25), np.percentile(histvols_30, 25),
                 np.percentile(histvols_20, 25), np.percentile(histvols_10, 25), np.percentile(histvols_5, 25)]
-
-    index300sh_df_c = index300sh_df[index300sh_df['dt_date']==datetime.date(2017, 12, 22)]
+    print(evalDate)
+    index300sh_df_c = index300sh_df[index300sh_df['dt_date']==eval_date]
+    print(index300sh_df_c)
+    print(index300sh_df_c['histvol_120'])
     current_vols = [float(index300sh_df_c['histvol_120']),
                     float(index300sh_df_c['histvol_60']),
                     float(index300sh_df_c['histvol_20']),
                     float(index300sh_df_c['histvol_10']),
                     float(index300sh_df_c['histvol_5'])]
-    print('current_vols : ', current_vols)
+    print(indexid,' current_vols : ', current_vols)
     histvolcone = [current_vols, max_vols, min_vols, median_vols, p75_vols, p25_vols]
     x = [120, 60, 20, 10, 5]
     x_labels = ['1W', '2W', '1M', '3M', '6M']
@@ -97,6 +101,7 @@ for indexid in index_ids:
                ncol=4, mode="expand", borderaxespad=0.)
     ax2.set_xticks([5,10,20,60,120])
     ax2.set_xticklabels(x_labels)
+    f2.set_size_inches((8, 6))
     f2.savefig('../save_figure/otc_histvols_'+indexid+'_' + str(hist_date)+' - '+ str(evalDate) + '.png', dpi=300, format='png')
 
 
