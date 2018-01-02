@@ -29,7 +29,7 @@ indexmkt_table = dbt.IndexMkt
 index_ids = ['index_300sh','index_50sh','index_500sh']
 ############################################################################################
 # Eval Settings
-eval_date = datetime.date(2017, 12, 26)
+eval_date = datetime.date(2017, 12, 28)
 evalDate = eval_date.strftime("%Y-%m-%d")
 
 hist_date = datetime.date(2016, 1, 1).strftime("%Y-%m-%d")
@@ -64,7 +64,7 @@ for indexid in index_ids:
         if idx_v >= 5:
             index300sh_df.loc[idx_v,'histvol_5'] = np.std(index300sh_df['yield'][idx_v-5:idx_v])*np.sqrt(252)*100
 
-    print(index300sh_df)
+    # print(index300sh_df)
     volcone_df = pd.DataFrame()
     histvols_60 = index300sh_df['histvol_120'].dropna().tolist()
     histvols_30 = index300sh_df['histvol_60'].dropna().tolist()
@@ -79,10 +79,8 @@ for indexid in index_ids:
                 np.percentile(histvols_20, 75), np.percentile(histvols_10, 75), np.percentile(histvols_5, 75)]
     p25_vols = [np.percentile(histvols_60, 25), np.percentile(histvols_30, 25),
                 np.percentile(histvols_20, 25), np.percentile(histvols_10, 25), np.percentile(histvols_5, 25)]
-    print(evalDate)
+    # print(evalDate)
     index300sh_df_c = index300sh_df[index300sh_df['dt_date']==eval_date]
-    print(index300sh_df_c)
-    print(index300sh_df_c['histvol_120'])
     current_vols = [float(index300sh_df_c['histvol_120']),
                     float(index300sh_df_c['histvol_60']),
                     float(index300sh_df_c['histvol_20']),

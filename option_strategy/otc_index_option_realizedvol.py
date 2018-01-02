@@ -31,7 +31,7 @@ EquityIndexIntraday = dbt.EquityIndexIntraday
 IndexMkt = dbt.IndexMkt
 ############################################################################################
 # Eval Settings
-evalDate = datetime.date(2017, 12, 26)
+evalDate = datetime.date(2017, 12, 28)
 startDate = datetime.date(2016, 1, 1)
 # startDate = datetime.date(2017, 12, 1)
 hist_date = w.tdaysoffset(-7, startDate, "Period=M").Data[0][0].date()
@@ -119,6 +119,7 @@ for indexid in index_ids:
                merged_df['histvol_20'].tolist(),
                mergedvix_df['amt_close'].tolist()
                ]
+    print(indexid,' histvol_60 : ',merged_df['histvol_60'].tolist()[-1])
     f2, ax2 = plt.subplots()
     ldgs = ['已实现波动率RV', '历史波动率6M', '历史波动率3M', '历史波动率1M', '中国波指IVIX']
     for cont2, y in enumerate(vol_set):

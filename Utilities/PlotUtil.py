@@ -75,7 +75,7 @@ class PlotUtil:
         for idx,y in enumerate(Y):
             lgd = legends[idx]
             self.plot_line(ax,idx,x,y,lgd)
-        ax.legend()
+        ax.legend(frameon=False)
         ax.set_xlabel(x_label)
         ax.set_ylabel(y_label)
         self.set_frame([ax])
