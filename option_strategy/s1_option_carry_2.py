@@ -16,16 +16,23 @@ from OptionStrategyLib.calibration import SVICalibration
 from OptionStrategyLib.OptionPricing.Evaluation import Evaluation
 from OptionStrategyLib.OptionPricing.OptionMetrics import OptionMetrics
 from OptionStrategyLib.OptionPricing.Options import OptionPlainEuropean
+
 w.start()
 
+
+def get_black_vol_surface():
+    balck_vol_surface = None
+    return balck_vol_surface
+
+
 ##################################################################################################
-start_date = datetime.date(2017,3,8)
-end_date = datetime.date(2017,6,8)
+start_date = datetime.date(2017, 6, 21)
+end_date = datetime.date(2017, 12, 22)
 # evalDate = datetime.date(2017,12,8)
 
 rf = 0.03
 engineType = 'AnalyticEuropeanEngine'
-dt = 1.0/12
+dt = 1.0 / 12
 init_fund = 10000
 
 ##################################################################################################
@@ -50,8 +57,9 @@ df_open_trades = pd.DataFrame()
 date_rage = w.tdays(start_date.strftime("%Y-%m-%d"), end_date.strftime("%Y-%m-%d"), "Period=W").Data[0]
 for idx_date,date in enumerate(date_rage):
     evalDate = date.date()
+    # evalDate = datetime.date(2017, 11, 28)
     ql_evalDate = ql.Date(evalDate.day, evalDate.month, evalDate.year)
-    evaluation = Evaluation(ql_evalDate,daycounter,calendar)
+    evaluation = Evaluation(ql_evalDate, daycounter, calendar)
     print(evalDate)
     fund = init_fund
     open_trades = []
@@ -62,78 +70,96 @@ for idx_date,date in enumerate(date_rage):
                               Option_mkt.amt_close,
                               Option_mkt.amt_holding_volume,
                               Option_mkt.pct_implied_vol,
-                              Option_contracts.nbr_multiplier)\
-                        .join(Option_contracts,Option_mkt.id_instrument==Option_contracts.id_instrument)\
-                        .filter(Option_mkt.dt_date == evalDate)\
-                        .filter(Option_mkt.flag_night == -1)\
-                        .filter(Option_mkt.datasource == 'wind')
-    query_etf = sess.query(Index_mkt.amt_close)\
-                    .filter(Index_mkt.dt_date == evalDate)\
-                    .filter(Index_mkt.id_instrument == 'index_50etf')
+                              Option_contracts.nbr_multiplier) \
+        .join(Option_contracts, Option_mkt.id_instrument == Option_contracts.id_instrument) \
+        .filter(Option_mkt.dt_date == evalDate) \
+        .filter(Option_mkt.flag_night == -1) \
+        .filter(Option_mkt.datasource == 'wind')
+    query_etf = sess.query(Index_mkt.amt_close) \
+        .filter(Index_mkt.dt_date == evalDate) \
+        .filter(Index_mkt.id_instrument == 'index_50etf')
 
-    df_option = pd.read_sql(query_option.statement,query_option.session.bind)
-    print('No of options : ',len(df_option))
-    df_50etf = pd.read_sql(query_etf.statement,query_etf.session.bind)
-    df_option['underlying_price'] = [df_50etf['amt_close'].iloc[0]]*len(df_option)
-    df_option['risk_free_rate'] = [rf]*len(df_option)
-    for (idx,row) in df_option.iterrows():
+    df_option = pd.read_sql(query_option.statement, query_option.session.bind)
+    df_50etf = pd.read_sql(query_etf.statement, query_etf.session.bind)
+    df_option['underlying_price'] = [df_50etf['amt_close'].iloc[0]] * len(df_option)
+    df_option['risk_free_rate'] = [rf] * len(df_option)
+    for (idx, row) in df_option.iterrows():
         optiontype = row['cd_option_type']
-        if optiontype == 'call': ql_optiontype = ql.Option.Call
-        else: ql_optiontype = ql.Option.Put
+        if optiontype == 'call':
+            ql_optiontype = ql.Option.Call
+        else:
+            ql_optiontype = ql.Option.Put
         id = row['id_instrument']
         mdt = row['dt_maturity']
-        ql_mdt = ql.Date(mdt.day,mdt.month,mdt.year)
-        strike = row['amt_strike']
+        ql_mdt = ql.Date(mdt.day, mdt.month, mdt.year)
+        nbr_multiplier = row['nbr_multiplier']
+        strike = round(row['amt_strike'] * nbr_multiplier / 10000, 2)
         spot = row['underlying_price']
         close = row['amt_close']
-        euro_option = OptionPlainEuropean(strike,ql_mdt,ql_optiontype)
+        euro_option = OptionPlainEuropean(strike, ql_mdt, ql_optiontype)
         option_metrics = OptionMetrics(euro_option)
         implied_vol = option_metrics.implied_vol(evaluation, rf, spot, close)
         df_option['pct_implied_vol'].loc[idx] = implied_vol
         df_option['amt_strike'].loc[idx] = strike
-    # print(len(df_option))
+    df_option = df_option[df_option['dt_maturity'] > evalDate]
+    df_option = df_option[df_option['cd_option_type'] == 'call'].reset_index()
 
-    # df = df_option[df_option['pct_implied_vol'] > 0 ].reset_index()
-    # print(len(df))
-    df = df_option
-    df_option_call = df[df['cd_option_type'] == 'call' ].reset_index()
-    print('No of calls : ',len(df_option_call))
-
-    print('df_option_call : ')
-    print(df_option_call)
-    # df_option_call = df_option_call[df_option_call['id_instrument'].str[-1] != 'A']
-    df_option_call = df_option_call[df_option_call['nbr_multiplier']==10000]
-    print('df_option_call : ')
-    print(df_option_call)
     ##############################################################################################
-
     ql_maturities = []
-    volset = []
-    strikes = []
-    maturity_dates = df_option_call['dt_maturity'].unique().tolist()
-    print('maturity_dates : ',maturity_dates)
+    maturity_dates = df_option['dt_maturity'].unique().tolist()
 
+    name_columes = ['dt_maturity', 'pct_implied_vol', 'amt_strike','amt_holding_volume']
+
+    df_mdt1 = df_option[df_option['dt_maturity'] == maturity_dates[0]][name_columes] \
+        .rename(columns={'pct_implied_vol': 'pct_implied_vol_1'})\
+        .sort_values(by='amt_holding_volume', ascending=False)\
+        .drop_duplicates(subset='amt_strike')\
+        .set_index('amt_strike').sort_index()
+    df_mdt2 = df_option[df_option['dt_maturity'] == maturity_dates[1]][name_columes] \
+        .rename(columns={'pct_implied_vol': 'pct_implied_vol_2'})\
+        .sort_values(by='amt_holding_volume', ascending=False)\
+        .drop_duplicates(subset='amt_strike')\
+        .set_index('amt_strike').sort_index()
+    df_mdt3 = df_option[df_option['dt_maturity'] == maturity_dates[2]][name_columes] \
+        .rename(columns={'pct_implied_vol': 'pct_implied_vol_3'})\
+        .sort_values(by='amt_holding_volume', ascending=False)\
+        .drop_duplicates(subset='amt_strike')\
+        .set_index('amt_strike').sort_index()
+    if len(maturity_dates) == 4:
+        df_mdt4 = df_option[df_option['dt_maturity'] == maturity_dates[3]][name_columes] \
+            .rename(columns={'pct_implied_vol': 'pct_implied_vol_4'})\
+            .sort_values(by='amt_holding_volume', ascending=False)\
+            .drop_duplicates(subset='amt_strike')\
+            .set_index('amt_strike').sort_index()
+    if len(maturity_dates) == 4:
+        df_vol = pd.concat([df_mdt1, df_mdt2, df_mdt3, df_mdt4], axis=1, join='inner')
+    else:
+        df_vol = pd.concat([df_mdt1, df_mdt2, df_mdt3], axis=1, join='inner')
+    strikes = df_vol.index.tolist()
+    volset = [df_vol['pct_implied_vol_1'].tolist(),
+              df_vol['pct_implied_vol_2'].tolist(),
+              df_vol['pct_implied_vol_3'].tolist()]
+    if len(maturity_dates) == 4:
+        volset.append(df_vol['pct_implied_vol_4'].tolist())
     for mdate in maturity_dates:
-        c1 = df_option_call['dt_maturity'] == mdate
-        implied_vols = df_option_call[c1]['pct_implied_vol'].tolist()
-        if len(strikes) == 0 : strikes = df_option_call[c1]['amt_strike'].tolist()
-        ql_maturities.append(ql.Date(mdate.day,mdate.month,mdate.year))
-        volset.append(implied_vols)
-    matrix = ql.Matrix(len(strikes), len(maturity_dates))
-    vol_bvs = []
-    for i in range(matrix.rows()):
-        for j in range(matrix.columns()):
-            matrix[i][j] = volset[j][i]
+        ql_maturities.append(ql.Date(mdate.day, mdate.month, mdate.year))
+    vol_matrix = ql.Matrix(len(strikes), len(maturity_dates))
+    for i in range(vol_matrix.rows()):
+        for j in range(vol_matrix.columns()):
+            vol_matrix[i][j] = volset[j][i]
+    print(ql_maturities)
+    print(vol_matrix)
 
-    black_var_surface = ql.BlackVarianceSurface(ql_evalDate, calendar,ql_maturities,strikes,matrix, daycounter)
+    black_var_surface = ql.BlackVarianceSurface(
+        ql_evalDate, calendar, ql_maturities, strikes, vol_matrix, daycounter)  #
 
     ##############################################################################################
-    # print(df_option_call)
     carry_results = []
-    for (idx,row) in df_option_call.iterrows():
+    for (idx,row) in df_option.iterrows():
         optiontype = row['cd_option_type']
         if optiontype == 'call': ql_optiontype = ql.Option.Call
         else: ql_optiontype = ql.Option.Put
+        if row['amt_strike'] not in strikes : continue
         mdt = row['dt_maturity']
         ql_mdt = ql.Date(mdt.day, mdt.month, mdt.year)
         strike = row['amt_strike']
@@ -149,19 +175,13 @@ for idx_date,date in enumerate(date_rage):
         try:
             implied_vol_t1 = black_var_surface.blackVol(ttm-dt,strike)
             option_carry = (-theta + vega * (implied_vol_t1 - implied_vol)) / close - rf
-            df_option_call.loc[idx,'option_carry'] = option_carry
+            df_option.loc[idx,'option_carry'] = option_carry
         except Exception as e :
             print(e)
-    # print('df_option_call')
-    # print(df_option_call)
-    df_call_carry = df_option_call.dropna().sort_values(by='option_carry', ascending=False)
-
-    # print(df_call_carry)
+    df_call_carry = df_option.dropna().sort_values(by='option_carry', ascending=False)
 
     df_buy = df_call_carry[:4]
     df_sell = df_call_carry[-4:]
-    # print(df_buy)
-    # print(df_sell)
 
     # 平仓
     total_earning = 0
@@ -170,10 +190,13 @@ for idx_date,date in enumerate(date_rage):
             df = df_option[df_option['id_instrument'] == row['id_instrument']]
             # close = df['close']
             # print(df)
-            earning = df['amt_close'] - row['amt_cost']
+            # print(df['amt_close'].values[0])
+            # print(row['amt_cost'])
+            earning = (df['amt_close'].values[0] - row['amt_cost'])*row['amt_unit']*row['cd_trade_type']
             # df_open_trades.loc[idx,'amt_earning'] = earning
             total_earning += earning
     # total_earning = sum(df_open_trades['amt_earning'])
+    # print(total_earning)
     fund += total_earning
     # print('df_open_trades')
     # print(df_open_trades)
@@ -211,8 +234,3 @@ for idx_date,date in enumerate(date_rage):
 
 for tb in trading_book:
     print(tb['dt_date'],' : ',tb['net_value'])
-
-
-
-
-

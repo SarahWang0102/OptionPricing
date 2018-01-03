@@ -10,10 +10,6 @@ import os
 from data_access.db_data_collection import DataCollection
 
 w.start()
-# tradetype = 0  # 0:期货，1：期权
-# beg_date = datetime.date(2017, 11, 1)
-# end_date = datetime.date(2017, 12, 4)
-
 engine = create_engine('mysql+pymysql://root:liz1128@101.132.148.152/mktdata',
                        echo=False)
 conn = engine.connect()
