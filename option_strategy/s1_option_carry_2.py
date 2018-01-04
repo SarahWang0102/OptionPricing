@@ -52,7 +52,8 @@ calendar = ql.China()
 daycounter = ql.ActualActual()
 
 ##################################################################################################
-trading_book = []
+net_values = []
+df_trading_book = pd.DataFrame()
 df_open_trades = pd.DataFrame()
 date_rage = w.tdays(start_date.strftime("%Y-%m-%d"), end_date.strftime("%Y-%m-%d"), "Period=W").Data[0]
 for idx_date,date in enumerate(date_rage):
@@ -147,9 +148,8 @@ for idx_date,date in enumerate(date_rage):
     for i in range(vol_matrix.rows()):
         for j in range(vol_matrix.columns()):
             vol_matrix[i][j] = volset[j][i]
-    print(ql_maturities)
-    print(vol_matrix)
-
+    # print(ql_maturities)
+    # print(vol_matrix)
     black_var_surface = ql.BlackVarianceSurface(
         ql_evalDate, calendar, ql_maturities, strikes, vol_matrix, daycounter)  #
 
@@ -188,19 +188,16 @@ for idx_date,date in enumerate(date_rage):
     if len(df_open_trades) != 0:
         for (idx,row) in df_open_trades.iterrows():
             df = df_option[df_option['id_instrument'] == row['id_instrument']]
-            # close = df['close']
-            # print(df)
-            # print(df['amt_close'].values[0])
-            # print(row['amt_cost'])
             earning = (df['amt_close'].values[0] - row['amt_cost'])*row['amt_unit']*row['cd_trade_type']
-            # df_open_trades.loc[idx,'amt_earning'] = earning
+            df_open_trades.loc[idx,'amt_earning'] = earning
+            df_open_trades.loc[idx,'dt_trade_end'] = evalDate
+            df_open_trades.loc[idx,'flag_open'] = False
+            df_open_trades.loc[idx,'amt_price'] = df['amt_close'].values[0]
             total_earning += earning
-    # total_earning = sum(df_open_trades['amt_earning'])
-    # print(total_earning)
     fund += total_earning
-    # print('df_open_trades')
-    # print(df_open_trades)
-
+    print('df_open_trades : ')
+    print(df_open_trades)
+    df_trading_book = df_trading_book.append(df_open_trades,ignore_index=True)
     # 开仓
     amt_weight = fund / 8.0
     for (i,row) in df_buy.iterrows():
@@ -226,11 +223,8 @@ for idx_date,date in enumerate(date_rage):
         }
         open_trades.append(trade)
     df_open_trades = pd.DataFrame(open_trades)
-    # print(df_open_trades)
-    trading_book.append({'dt_date':evalDate,'net_value':fund/init_fund})
-    # trading_book.loc[idx_date,'dt_date'] = evalDate
-    # trading_book.loc[idx_date,'net_value'] = fund/init_fund
-# print(trading_book)
 
-for tb in trading_book:
+    net_values.append({'dt_date':evalDate,'net_value':fund/init_fund})
+print(df_trading_book)
+for tb in net_values:
     print(tb['dt_date'],' : ',tb['net_value'])
