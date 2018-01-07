@@ -52,7 +52,7 @@ class TradeUtil():
                                 'money_utilization']
 
 
-class BackTestOption():
+class Account(object):
 
     def __init__(self,leverage=0.5,margin_rate=0.1,init_fund=1000000,tick_size=0.0001,
                  contract_multiplier=10000,fee_rate=1.0/1000, nbr_slippage=0):
