@@ -163,17 +163,17 @@ class DataBaseTables():
         id_instrument = Column(VARCHAR(45), nullable=True , primary_key=True)
         datasource = Column(VARCHAR(45), nullable=True, primary_key=True)
         code_instrument = Column(VARCHAR(45))
-        amt_price = Column(DECIMAL(18, 4))
+        amt_close = Column(DECIMAL(18, 4))
         amt_trading_volume = Column(DECIMAL(18, 4))
         amt_trading_value = Column(DECIMAL(18, 4))
         timestamp = Column(TIMESTAMP)
 
         def __repr__(self):
             return "<EquityIndexIntraday(dt_datetime='%s', id_instrument='%s',datasource='%s'," \
-                   "code_instrument='%s',amt_price='%s',amt_trading_volume='%s',amt_trading_value='%s'," \
+                   "code_instrument='%s',amt_close='%s',amt_trading_volume='%s',amt_trading_value='%s'," \
                    "timestamp='%s')" % \
                    (self.dt_datetime,self.id_instrument,self.datasource,self.code_instrument,
-                    self.amt_price, self.amt_trading_volume,self.amt_trading_value,
+                    self.amt_close, self.amt_trading_volume,self.amt_trading_value,
                     self.timestamp)
 
     class FutureMktIntraday(Base):
@@ -182,17 +182,17 @@ class DataBaseTables():
         id_instrument = Column(VARCHAR(45), nullable=True , primary_key=True)
         datasource = Column(VARCHAR(45), nullable=True, primary_key=True)
         code_instrument = Column(VARCHAR(45))
-        amt_price = Column(DECIMAL(18, 4))
+        amt_close = Column(DECIMAL(18, 4))
         amt_trading_volume = Column(DECIMAL(18, 4))
         amt_trading_value = Column(DECIMAL(18, 4))
         timestamp = Column(TIMESTAMP)
 
         def __repr__(self):
             return "<FutureMktIntraday(dt_datetime='%s', id_instrument='%s',datasource='%s'," \
-                   "code_instrument='%s',amt_price='%s',amt_trading_volume='%s',amt_trading_value='%s'," \
+                   "code_instrument='%s',amt_close='%s',amt_trading_volume='%s',amt_trading_value='%s'," \
                    "timestamp='%s')" % \
                    (self.dt_datetime,self.id_instrument,self.datasource,self.code_instrument,
-                    self.amt_price, self.amt_trading_volume,self.amt_trading_value,
+                    self.amt_close, self.amt_trading_volume,self.amt_trading_value,
                     self.timestamp)
 
     class OptionMktIntraday(Base):
@@ -201,15 +201,15 @@ class DataBaseTables():
         id_instrument = Column(VARCHAR(45), nullable=True , primary_key=True)
         datasource = Column(VARCHAR(45), nullable=True, primary_key=True)
         code_instrument = Column(VARCHAR(45))
-        amt_price = Column(DECIMAL(18, 4))
+        amt_close = Column(DECIMAL(18, 4))
         amt_trading_volume = Column(DECIMAL(18, 4))
         amt_trading_value = Column(DECIMAL(18, 4))
         timestamp = Column(TIMESTAMP)
 
         def __repr__(self):
             return "<OptionMktIntraday(dt_datetime='%s', id_instrument='%s',datasource='%s'," \
-                   "code_instrument='%s',amt_price='%s',amt_trading_volume='%s',amt_trading_value='%s'," \
+                   "code_instrument='%s',amt_close='%s',amt_trading_volume='%s',amt_trading_value='%s'," \
                    "timestamp='%s')" % \
                    (self.dt_datetime,self.id_instrument,self.datasource,self.code_instrument,
-                    self.amt_price, self.amt_trading_volume,self.amt_trading_value,
+                    self.amt_close, self.amt_trading_volume,self.amt_trading_value,
                     self.timestamp)

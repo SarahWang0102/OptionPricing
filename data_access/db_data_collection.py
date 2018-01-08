@@ -853,7 +853,7 @@ class DataCollection():
                           'id_instrument': id_instrument,
                           'datasource': datasource,
                           'code_instrument': windcode,
-                          'amt_price': price,
+                          'amt_close': price,
                           'amt_trading_volume': volume,
                           'amt_trading_value': trading_value,
                           'timestamp': datetime.datetime.today()
@@ -895,7 +895,7 @@ class DataCollection():
                           'id_instrument': id_instrument,
                           'datasource': datasource,
                           'code_instrument': windcode,
-                          'amt_price': price,
+                          'amt_close': price,
                           'amt_trading_volume': volume,
                           'amt_trading_value': trading_value,
                           'timestamp': datetime.datetime.today()

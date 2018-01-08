@@ -6,7 +6,7 @@ class OptionMetrics:
     def __init__(self, option):
         self.Option = option
 
-    def implied_vol(self,evaluation,rf, spot_price, option_price):
+    def implied_vol(self,evaluation,rf, spot_price, option_price,engineType):
         ql_evalDate = evaluation.evalDate
         calendar = evaluation.calendar
         daycounter = evaluation.daycounter
@@ -17,8 +17,8 @@ class OptionMetrics:
         yield_ts = ql.YieldTermStructureHandle(ql.FlatForward(ql_evalDate, rf, daycounter))
         process = ql.BlackScholesMertonProcess(ql.QuoteHandle(ql.SimpleQuote(spot_price)), dividend_ts, yield_ts,
                                                flat_vol_ts)
-        option.setPricingEngine(ql.AnalyticEuropeanEngine(process))
-
+        engine = util.get_engine(process, engineType)
+        option.setPricingEngine(engine)
         try:
             implied_vol = option.impliedVolatility(option_price, process, 1.0e-4, 300, 0.0, 10.0)
         except RuntimeError:
