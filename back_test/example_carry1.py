@@ -95,7 +95,15 @@ df_option = df_option.join(df_50etf.set_index('dt_date'),how='left',on='dt_date'
 # bkt_option.reset()
 # df = bkt_option.current_state
 # print(df)
+class Strategy1():
+    self.bkt_optionset = None
 
+    def get_implied_vol(self):
+        return self.bkt_optionset.get_implied_vol()
+        ret = {}
+        for bkt in bkt_optionset.bktoption_list:
+            ret[bkt.id_instrument] = bkt.implied_vol(engineType)
+        return ret
 
 bkt_optionset = OptionSet('daily',df_option)
 
@@ -107,6 +115,11 @@ print('end_date : ',bkt_optionset.end_date)
 print('eval_date : ',bkt_optionset.eval_date)
 # print(bktoption_list)
 while bkt_optionset.index < len(bkt_optionset.dt_list):
+    df = pd.DataFrame()
+    idx = 0
+    for option in bkt_optionset.bktoption_list_mdt1:
+        df.loc[idx,'iv'] = option.implied_vol('AnalyticEuropeanEngine')
+        idx += 1
     metric = bkt_optionset.get_implied_vol('AnalyticEuropeanEngine')
     print('='*100)
     print(bkt_optionset.eval_date)

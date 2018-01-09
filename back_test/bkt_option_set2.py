@@ -13,6 +13,7 @@ class OptionSet(object):
         self.frequency = cd_frequency
         self.df_metrics = df_option_metrics
         self.bktoption_list = []
+        self.bktoption_list_mdt1 = []
         self.index = 0
         if self.frequency in self.bktutil.cd_frequency_intraday:
             self.datetime_list = sorted(self.df_metrics[col_datetime].unique())
