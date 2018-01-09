@@ -156,7 +156,7 @@ df_pcr = pd.DataFrame(pc_ratio)
 
 df_pcr = df_pcr.join(df_future.set_index('dt_date'), on='dt_date')
 print(df_pcr[df_pcr['dt_date'] == dt_date])
-
+print(df_pcr)
 dates  =df_pcr['dt_date'].tolist()
 datesnum = [date2num(date) for date in dates]
 dates = [date.strftime("%d/%m/%Y") for date in dates]

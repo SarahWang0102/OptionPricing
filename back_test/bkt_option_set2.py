@@ -13,6 +13,7 @@ class OptionSet(object):
         self.frequency = cd_frequency
         self.df_metrics = df_option_metrics
         self.bktoption_list = []
+        self.index = 0
         if self.frequency in self.bktutil.cd_frequency_intraday:
             self.datetime_list = sorted(self.df_metrics[col_datetime].unique())
             self.eval_datetime = self.datetime_list[0]
@@ -22,11 +23,11 @@ class OptionSet(object):
 
     def start(self, col_date='dt_date',col_datetime='dt_datetime',col_id='id_instrument'):
         self.dt_list = sorted(self.df_metrics[col_date].unique())
-        self.start_date = self.dt_list[0]
-        self.end_date = self.dt_list[-1]
+        self.start_date = self.dt_list[0] #0
+        self.end_date = self.dt_list[-1] # len(self.dt_list)-1
         self.eval_date = self.start_date
         self.update_bktoption_list()
-        for bkt in self.bktoption_list: bkt.start()
+        # for bkt in self.bktoption_list: bkt.start()
 
 
     def next(self):
@@ -41,9 +42,10 @@ class OptionSet(object):
                 self.update_bktoption_list()
             for bkt in self.bktoption_list: bkt.next()
 
-
     def update_eval_date(self):
-        self.eval_date = self.dt_list[min(self.dt_list.index(self.eval_date)+1,len(self.dt_list)-1)]
+        self.index += 1
+        self.eval_date = self.dt_list[min(self.dt_list.index(self.eval_date)+1
+                            ,len(self.dt_list)-1)]
 
 
     def update_eval_datetime(self):
@@ -62,11 +64,11 @@ class OptionSet(object):
             df_current = self.df_metrics[self.df_metrics[col_date] == self.eval_date].reset_index()
         else:
             df_current = self.df_metrics[self.df_metrics[col_datetime] == self.eval_datetime].reset_index()
-        print('before drop duplicate')
-        print(df_current)
+        # print('before drop duplicate')
+        # print(df_current)
         df_current = self.drop_duplicate_strikes(df_current)
-        print('after drop duplicate')
-        print(df_current)
+        # print('after drop duplicate')
+        # print(df_current)
         option_ids = df_current[col_id].unique()
         bkt_ids = []
         for bktoption in self.bktoption_list:
@@ -108,6 +110,12 @@ class OptionSet(object):
         return df
 
     # def get_volsurface_squre(self):
+
+    def get_implied_vol(self,engineType):
+        ret = {}
+        for bkt in self.bktoption_list:
+            ret[bkt.id_instrument] = bkt.implied_vol(engineType)
+        return ret
 
 
 

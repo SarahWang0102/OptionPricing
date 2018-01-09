@@ -78,7 +78,6 @@ class OptionSet(object):
             dt_date = datetime.date(dt.year,dt.month,dt.day)
         self.eval_date = dt_date
 
-
     def get_state_by_index(self,nbr_index, col_date='dt_date'):
         dt = self.dt_list[nbr_index]
         return self.df_metrics[self.df_metrics[col_date] == dt].reset_index()

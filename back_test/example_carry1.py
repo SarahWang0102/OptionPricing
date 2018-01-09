@@ -106,11 +106,14 @@ print('start_date : ',bkt_optionset.start_date)
 print('end_date : ',bkt_optionset.end_date)
 print('eval_date : ',bkt_optionset.eval_date)
 # print(bktoption_list)
+while bkt_optionset.index < len(bkt_optionset.dt_list):
+    metric = bkt_optionset.get_implied_vol('AnalyticEuropeanEngine')
+    print('='*100)
+    print(bkt_optionset.eval_date)
+    print(metric)
+    bkt_optionset.next()
 
-
-bkt_optionset.next()
-
-print('eval_date : ',bkt_optionset.eval_date)
+# print('eval_date : ',bkt_optionset.eval_date)
 # print(bktoption_list)
 # for bktoption in bkt_optionset.bktoption_list:
 #     print(bktoption.carry())

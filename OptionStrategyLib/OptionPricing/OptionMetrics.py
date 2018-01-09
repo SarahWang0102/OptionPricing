@@ -13,7 +13,8 @@ class OptionMetrics:
         option = self.Option.option_ql
         flat_vol_ts = ql.BlackVolTermStructureHandle(
             ql.BlackConstantVol(ql_evalDate, calendar, 0.0, daycounter))
-        dividend_ts = ql.YieldTermStructureHandle(ql.FlatForward(ql_evalDate, 0.0, daycounter))
+        dividend_ts = ql.YieldTermStructureHandle(
+            ql.FlatForward(ql_evalDate, 0.0, daycounter))
         yield_ts = ql.YieldTermStructureHandle(ql.FlatForward(ql_evalDate, rf, daycounter))
         process = ql.BlackScholesMertonProcess(ql.QuoteHandle(ql.SimpleQuote(spot_price)), dividend_ts, yield_ts,
                                                flat_vol_ts)

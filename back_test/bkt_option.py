@@ -18,14 +18,17 @@ class BktOption(object):
         self.nbr_index = len(df_option_metrics)
         self.current_index = 0
         self.last_index = len(df_option_metrics)-1
-        self.daycounter = ql.China()
-        self.calendar = ql.ActualActual()
-
+        self.daycounter = ql.ActualActual()
+        self.calendar = ql.China()
+        self.pricing_type = 'OptionPlainEuropean'
+        self.start()
 
     def start(self):
         self.start_state = self.df_metrics.loc[0]
         self.current_index = 0
         self.update_current_state()
+        self.set_option_basics()
+        self.set_pricing_metrics()
         if self.frequency in self.bktutil.cd_frequency_intraday:
             self.update_current_datetime()
             # Remove datetime data before 09:30
@@ -41,11 +44,14 @@ class BktOption(object):
     def next(self):
         self.current_index = min(self.current_index+1,self.last_index)
         self.update_current_state()
+        self.set_pricing_metrics()
 
 
     def reset(self):
         self.current_index = self.start_index
         self.update_current_state()
+        self.set_pricing_metrics()
+
 
 
     def update_current_state(self):
@@ -84,9 +90,23 @@ class BktOption(object):
         self.update_current_state()
 
 
-    def set_pricing_metrics(self,optionType):
-        if optionType == 'OptionPlainEuropean':
-            option = OptionPlainEuropean(self.strike,self.maturitydt,self.option_type)
+    def set_pricing_metrics(self):
+        if self.pricing_type == 'OptionPlainEuropean':
+            try:
+                ql_maturitydt = ql.Date(self.maturitydt.day,
+                                    self.maturitydt.month,
+                                    self.maturitydt.year)
+            except Exception as e:
+                print(e)
+                print(self.current_state)
+                print(self.maturitydt)
+                # ql_maturitydt = ql.Date()
+                exit(1)
+            if self.option_type == 'call':
+                ql_optiontype = ql.Option.Call
+            else:
+                ql_optiontype = ql.Option.Put
+            option = OptionPlainEuropean(self.strike,ql_maturitydt,ql_optiontype)
         else:
             print('Unsupported Option Type !')
             option = None
@@ -107,6 +127,7 @@ class BktOption(object):
             maturitydt = self.current_state[col_maturitydt]
         except Exception as e:
             print(e)
+            print(self.current_state)
             maturitydt = None
         self.maturitydt = maturitydt
 
@@ -161,19 +182,21 @@ class BktOption(object):
         try:
             rf = self.current_state[col_rf]
         except Exception as e:
-            print(e)
-            rf = None
+            rf = 0.03
         self.rf = rf
 
 
     def implied_vol(self,engineType):
         try:
+            self.update_rf()
+            self.update_underlying_price()
+            self.update_option_price()
             implied_vol = self.pricing_metrics.implied_vol(self.evaluation,self.rf,
-                                    self.underlying_price, self.underlying_price,engineType)
+                                    self.underlying_price, self.option_price,engineType)
         except Exception as e:
             print(e)
             implied_vol = None
-        self.implied_vol = implied_vol
+        # self.implied_vol = implied_vol
         return implied_vol
 
 
@@ -183,7 +206,7 @@ class BktOption(object):
         except Exception as e:
             print(e)
             implied_vol = None
-        self.implied_vol_given = implied_vol
+        # self.implied_vol_given = implied_vol
         return implied_vol
 
 
@@ -205,7 +228,7 @@ class BktOption(object):
         except Exception as e:
             print(e)
             theta = None
-        self.theta = theta
+        # self.theta = theta
         return theta
 
 
