@@ -2,14 +2,18 @@ from OptionStrategyLib.OptionPricing.Options import OptionPlainEuropean
 
 from OptionStrategyLib.OptionPricing.OptionMetrics import OptionMetrics
 from OptionStrategyLib.OptionPricing.Evaluation import Evaluation
+from back_test.bkt_util import BktUtil
+
 import datetime
 import QuantLib as ql
 
 
 class BktOption(object):
 
-    def __init__(self,cd_frequency,df_option_metrics):
+    def __init__(self,cd_frequency,df_option_metrics,id_instrument=''):
+        self.bktutil = BktUtil()
         self.frequency = cd_frequency
+        self.id_instrument = id_instrument
         self.df_metrics = df_option_metrics # Sorted ascending by date/datetime
         self.nbr_index = len(df_option_metrics)
         self.current_index = 0
@@ -22,13 +26,15 @@ class BktOption(object):
         self.start_state = self.df_metrics.loc[0]
         self.current_index = 0
         self.update_current_state()
-        self.update_current_datetime()
-        dt = datetime.datetime(self.evalDate.year,self.evalDate.month,self.evalDate.day,9,30,00)
-        while self.dt_datetime < dt:
-            self.current_index += 1
-            self.update_current_state()
+        if self.frequency in self.bktutil.cd_frequency_intraday:
             self.update_current_datetime()
-        self.start_index = self.current_index
+            # Remove datetime data before 09:30
+            dt = datetime.datetime(self.evalDate.year,self.evalDate.month,self.evalDate.day,9,30,00)
+            while self.dt_datetime < dt:
+                self.current_index += 1
+                self.update_current_state()
+                self.update_current_datetime()
+            self.start_index = self.current_index
 
 
 
@@ -45,10 +51,29 @@ class BktOption(object):
     def update_current_state(self):
         self.current_state = self.df_metrics.loc[self.current_index]
         self.update_current_date()
+        if self.frequency in self.bktutil.cd_frequency_intraday:
+            self.update_current_datetime()
         if self.frequency in ['daily','weekly','monthly','yearly']:
             ql_evalDate = ql.Date(self.evalDate.day, self.evalDate.month, self.evalDate.year)
             evaluation = Evaluation(ql_evalDate, self.daycounter, self.calendar)
             self.evaluation = evaluation
+
+
+    def update_current_datetime(self,col_datetime='dt_datetime'):
+        try:
+            dt_datetime = self.current_state[col_datetime]
+        except Exception:
+            dt_datetime = None
+        self.dt_datetime = dt_datetime
+
+
+    def update_current_date(self,column_date='dt_date',col_datetime='dt_datetime'):
+        try:
+            dt_date = self.current_state[column_date]
+        except:
+            dt = self.current_state[col_datetime]
+            dt_date = datetime.date(dt.year,dt.month,dt.day)
+        self.evalDate = dt_date
 
 
     def set_option_basics(self,col_option_type='cd_option_type',col_strike='amt_strike',
@@ -66,24 +91,6 @@ class BktOption(object):
             print('Unsupported Option Type !')
             option = None
         self.pricing_metrics = OptionMetrics(option)
-
-
-    def update_current_datetime(self,col_datetime='dt_datetime'):
-        try:
-            dt_datetime = self.current_state[col_datetime]
-        except Exception as e:
-            print(e)
-            dt_datetime = None
-        self.dt_datetime = dt_datetime
-
-
-    def update_current_date(self,column_date='dt_date',col_datetime='dt_datetime'):
-        try:
-            dt_date = self.current_state[column_date]
-        except:
-            dt = self.current_state[col_datetime]
-            dt_date = datetime.date(dt.year,dt.month,dt.day)
-        self.evalDate = dt_date
 
 
     def update_strike(self,col_strike='amt_strike'):

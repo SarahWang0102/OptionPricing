@@ -174,7 +174,7 @@ for idx_date,date in enumerate(date_rage):
         if ttm <= dt : continue
         try:
             implied_vol_t1 = black_var_surface.blackVol(ttm-dt,strike)
-            option_carry = (-theta + vega * (implied_vol_t1 - implied_vol)) / close - rf
+            option_carry = (-theta+vega*(implied_vol_t1-implied_vol))/close - rf
             df_option.loc[idx,'option_carry'] = option_carry
         except Exception as e :
             print(e)

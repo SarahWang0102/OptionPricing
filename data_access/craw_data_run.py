@@ -14,7 +14,7 @@ from data_access.db_data_collection import DataCollection
 w.start()
 
 # date = datetime.datetime.today().date()
-date = datetime.date(2018, 1, 5)
+date = datetime.date(2018, 1, 8)
 dt_date = date.strftime("%Y-%m-%d")
 print(dt_date)
 

@@ -48,14 +48,15 @@ daycounter = ql.ActualActual()
 
 fund = init_fund
 open_trades = []
-query_intd = sess2.query(option_intd.dt_datetime,
-                          option_intd.id_instrument,
-                          option_intd.amt_close,
-                          option_intd.amt_trading_volume
+query_mkt = sess.query(Option_mkt.dt_date,
+                        Option_mkt.id_instrument,
+                        Option_mkt.code_instrument,
+                        Option_mkt.amt_close,
+                        Option_mkt.amt_trading_volume
                           ) \
-    .filter(option_intd.dt_datetime >= start_date) \
-    .filter(option_intd.dt_datetime <= end_date) \
-    .filter(option_intd.datasource == 'wind')
+    .filter(Option_mkt.dt_date >= start_date) \
+    .filter(Option_mkt.dt_date <= end_date) \
+    .filter(Option_mkt.datasource == 'wind')
 
 query_option = sess.query(options.id_instrument,
                           options.cd_option_type,
@@ -70,14 +71,14 @@ query_etf = sess.query(Index_mkt.dt_date,Index_mkt.amt_close) \
     .filter(Index_mkt.dt_date <= end_date) \
     .filter(Index_mkt.id_instrument == 'index_50etf')
 
-df_mkt = pd.read_sql(query_intd.statement, query_intd.session.bind)
+df_mkt = pd.read_sql(query_mkt.statement, query_mkt.session.bind)
 df_contract = pd.read_sql(query_option.statement, query_option.session.bind)
 df_50etf = pd.read_sql(query_etf.statement, query_etf.session.bind).rename(columns={'amt_close':'underlying_price'})
 df_option = df_mkt.join(df_contract.set_index('id_instrument'),how='left',on='id_instrument')
-for (idx,row) in df_option.iterrows():
-    df_option.loc[idx,'dt_date'] = row['dt_datetime'].date()
+# for (idx,row) in df_option.iterrows():
+#     df_option.loc[idx,'dt_date'] = row['dt_datetime'].date()
 df_option = df_option.join(df_50etf.set_index('dt_date'),how='left',on='dt_date')
-print(df_option)
+# print(df_option)
 
 # id_list = df_option['id_instrument'].unique()
 # df_option1 = df_option[df_option['id_instrument'] == id_list[0]].reset_index()
@@ -101,22 +102,18 @@ bkt_optionset = OptionSet('daily',df_option)
 bkt_optionset.start()
 
 bktoption_list = bkt_optionset.bktoption_list
-print(bktoption_list)
-print(bkt_optionset.start_date)
-print(bkt_optionset.end_date)
+print('start_date : ',bkt_optionset.start_date)
+print('end_date : ',bkt_optionset.end_date)
+print('eval_date : ',bkt_optionset.eval_date)
+# print(bktoption_list)
 
 
 bkt_optionset.next()
 
-
-bktoption_list = bkt_optionset.bktoption_list
-print(bktoption_list)
-
-print(bkt_optionset.start_date)
-print(bkt_optionset.end_date)
-
-
-
+print('eval_date : ',bkt_optionset.eval_date)
+# print(bktoption_list)
+# for bktoption in bkt_optionset.bktoption_list:
+#     print(bktoption.carry())
 
 
 
