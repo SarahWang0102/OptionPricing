@@ -28,7 +28,7 @@ class OptionSet(object):
             self.datetime_list = sorted(self.df_metrics[col_datetime].unique())
             self.eval_datetime = self.datetime_list[0]
             self.add_dtdate_column(col_date,col_datetime)
-        self.add_multiplier_column()
+        self.update_multiplier_adjustment()
 
 
     def start(self, col_date='dt_date',col_datetime='dt_datetime',col_id='id_instrument'):
@@ -37,12 +37,13 @@ class OptionSet(object):
         self.end_date = self.dt_list[-1] # len(self.dt_list)-1
         self.eval_date = self.start_date
         self.update_bktoption_list()
-
+        self.update_current_daily_state()
 
     def next(self):
         if self.frequency in self.bktutil.cd_frequency_low:
             self.update_eval_date()
             self.update_bktoption_list()
+            self.update_current_daily_state()
             for bkt in self.bktoption_list: bkt.next()
         else:
             self.update_eval_datetime()
@@ -90,41 +91,48 @@ class OptionSet(object):
         if n < 1:
             print('要求合约剩余期限大于1日！')
             return []
-        maturity_dates = sorted(self.df_metrics['dt_maturity'].unique())
+        maturity_dates = sorted(self.df_daily_state['dt_maturity'].unique())
         ttm0 = (maturity_dates[0]-self.eval_date).days
         if ttm0 < n: maturity_dates.remove(maturity_dates[0])
         self.eligible_maturities = maturity_dates
 
 
-    def get_volsurface_squre(self,option_type):
+    def get_volsurface_squre(self,option_type,n,col_adj_strike='adj_strike',
+                             col_option_type='cd_option_type',col_maturitydt='dt_maturity',
+                             col_implied_vol = 'implied_vol'):
         ql_maturities = []
-        if len(self.eligible_maturities) == 0: self.update_eligible_maturities(1)
-        df = self.collect_implied_vol(self.bktoption_list)
-        df_mdt0 = df[(df['dt_maturity']==self.eligible_maturities[0])&(df['cd_option_type']==option_type)] \
-            .rename(columns={'implied_vol': 'implied_vol_0'}).set_index('amt_strike')
-        df_mdt1 = df[(df['dt_maturity']==self.eligible_maturities[1])&(df['cd_option_type']==option_type)] \
-            .rename(columns={'implied_vol': 'implied_vol_1'}).set_index('amt_strike')
-        df_mdt2 = df[(df['dt_maturity']==self.eligible_maturities[2])&(df['cd_option_type']==option_type)] \
-            .rename(columns={'implied_vol': 'implied_vol_2'}).set_index('amt_strike')
-        if len(self.eligible_maturities)==4:
-            df_mdt3 = df[(df['dt_maturity']==self.eligible_maturities[3])&(df['cd_option_type']==option_type)] \
-                .rename(columns={'implied_vol': 'implied_vol_3'}).set_index('amt_strike')
-            df_vol = pd.concat([df_mdt0, df_mdt1, df_mdt2, df_mdt3], axis=1, join='inner')
-        else:
-            df_vol = pd.concat([df_mdt0, df_mdt1, df_mdt2], axis=1, join='inner')
-        strikes = df_vol.index.tolist()
-        volset = [df_vol['implied_vol_0'].tolist(),
-                  df_vol['implied_vol_1'].tolist(),
-                  df_vol['implied_vol_2'].tolist()]
-        if len(self.eligible_maturities) == 4:
-            volset.append(df_vol['implied_vol_3'].tolist())
-        for mdate in self.eligible_maturities:
+        if len(self.eligible_maturities) == 0: self.update_eligible_maturities(n)
+        df = self.get_duplicate_strikes_dropped(self.collect_implied_vol(self.bktoption_list))
+        df_mdt_list = []
+        iv_name_list = []
+        maturity_list = []
+        for idx,mdt in enumerate(self.eligible_maturities):
+            iv_rename = 'implied_vol_'+str(idx)
+            df_mkt = df[(df[col_maturitydt]==mdt)&(df[col_option_type]==option_type)] \
+            .rename(columns={col_implied_vol: iv_rename}).set_index(col_adj_strike)
+            if len(df_mkt) == 0: continue
+            df_mdt_list.append(df_mkt)
+            iv_name_list.append(iv_rename)
+            maturity_list.append(mdt)
+        df_vol = pd.concat(df_mdt_list, axis=1, join='inner')
+        strikes = []
+        for k in df_vol.index:
+            strikes.append(float(k))
+        volset = []
+        for name in iv_name_list:
+            volset.append(df_vol[name].tolist())
+        for mdate in maturity_list:
             ql_maturities.append(ql.Date(mdate.day, mdate.month, mdate.year))
-        vol_matrix = ql.Matrix(len(strikes), len(self.eligible_maturities))
+        vol_matrix = ql.Matrix(len(strikes), len(maturity_list))
         for i in range(vol_matrix.rows()):
             for j in range(vol_matrix.columns()):
                 vol_matrix[i][j] = volset[j][i]
         ql_evalDate = self.to_ql_date(self.eval_date)
+        print('-'*100)
+        print(option_type)
+        print(vol_matrix)
+        print('-'*100)
+
         black_var_surface = ql.BlackVarianceSurface(
             ql_evalDate, self.calendar, ql_maturities, strikes, vol_matrix, self.daycounter)
         return black_var_surface
@@ -169,25 +177,32 @@ class OptionSet(object):
         return bktoption_list_mdt
 
 
-    def get_duplicate_strikes_dropped(self,df_metrics):
+    def get_duplicate_strikes_dropped(self,df_metrics,col_adj_strike='adj_strike',
+                                      col_trading_volume='amt_trading_volume'):
         maturities = sorted(df_metrics['dt_maturity'].unique())
         df = pd.DataFrame()
         for mdt in maturities:
             df_mdt_call = df_metrics[(df_metrics['dt_maturity']==mdt) &
                                      (df_metrics['cd_option_type']=='call')]\
-                            .sort_values(by='amt_trading_volume', ascending=False) \
-                            .drop_duplicates(subset=['adjusted_strike'])
+                            .sort_values(by=col_trading_volume, ascending=False) \
+                            .drop_duplicates(subset=[col_adj_strike])
             df_mdt_put = df_metrics[(df_metrics['dt_maturity'] == mdt) &
                                     (df_metrics['cd_option_type'] == 'put')]\
-                            .sort_values(by='amt_trading_volume', ascending=False) \
-                            .drop_duplicates(subset=['adjusted_strike'])
+                            .sort_values(by=col_trading_volume, ascending=False) \
+                            .drop_duplicates(subset=[col_adj_strike])
             df = df.append(df_mdt_call,ignore_index=True)
             df = df.append(df_mdt_put,ignore_index=True)
         return df
 
-    def add_multiplier_column(self):
+    def update_multiplier_adjustment(self,col_adj_option_price = 'adj_option_price',
+                                     col_adj_strike = 'adj_strike',
+                                     col_option_price='amt_close',
+                                     col_multiplier='nbr_multiplier',
+                                     col_strike='amt_strike'):
         for (idx,row) in self.df_metrics.iterrows():
-            self.df_metrics.loc[idx,'adjusted_strike'] = round(row['amt_strike']*row['nbr_multiplier']/10000,2)
+            self.df_metrics.loc[idx,col_adj_strike] = round(row[col_strike]*row[col_multiplier]/10000,2)
+            # self.df_metrics.loc[idx,'adj_underlying_price'] = round(row[col_underlying_price]*row[col_multiplier]/10000,2)
+            self.df_metrics.loc[idx,col_adj_option_price] = round(row[col_option_price]*row[col_multiplier]/10000,2)
 
 
     def add_dtdate_column(self,col_date='dt_date',col_datetime='dt_datetime'):
@@ -195,7 +210,7 @@ class OptionSet(object):
             for (idx,row) in self.df_metrics.iterrows():
                 self.df_metrics.loc[idx, col_date] = row[col_datetime].date()
 
-    def collect_implied_vol(self,bktoption_list):
+    def collect_implied_vol(self,bktoption_list,col_adj_strike = 'adj_strike'):
         df = pd.DataFrame()
         for idx,option in enumerate(bktoption_list):
             if self.frequency in self.bktutil.cd_frequency_low:
@@ -203,13 +218,16 @@ class OptionSet(object):
             else:
                 df.loc[idx, 'dt_datetime'] = self.eval_datetime
             df.loc[idx, 'id_instrument'] = option.id_instrument
-            df.loc[idx, 'amt_strike'] = option.strike
+            df.loc[idx, col_adj_strike] = option.adj_strike
             df.loc[idx, 'cd_option_type'] = option.option_type
             df.loc[idx, 'dt_maturity'] = option.maturitydt
-            df.loc[idx, 'implied_vol'] = option.get_implied_vol()
+            iv = option.get_implied_vol()
+            df.loc[idx, 'implied_vol'] = iv
+            df.loc[idx, 'amt_trading_volume'] = option.get_trading_volume()
+            # print(option.id_instrument, '   ', option.strike, '  ',option.option_type, '  ',iv )
         return df
 
-    def collect_delta(self,bktoption_list):
+    def collect_delta(self,bktoption_list,col_adj_strike = 'adj_strike'):
         df = pd.DataFrame()
         for idx,option in enumerate(bktoption_list):
             if self.frequency in self.bktutil.cd_frequency_low:
@@ -217,14 +235,14 @@ class OptionSet(object):
             else:
                 df.loc[idx, 'dt_datetime'] = self.eval_datetime
             df.loc[idx, 'id_instrument'] = option.id_instrument
-            df.loc[idx, 'amt_strike'] = option.strike
+            df.loc[idx, col_adj_strike] = option.adj_strike
             df.loc[idx, 'cd_option_type'] = option.option_type
             df.loc[idx, 'dt_maturity'] = option.maturitydt
             df.loc[idx, 'implied_vol'] = option.get_implied_vol()
             df.loc[idx, 'amt_delta'] = option.get_delta()
         return df
 
-    def collect_theta(self,bktoption_list):
+    def collect_theta(self,bktoption_list,col_adj_strike = 'adj_strike'):
         df = pd.DataFrame()
         for idx,option in enumerate(bktoption_list):
             if self.frequency in self.bktutil.cd_frequency_low:
@@ -232,7 +250,7 @@ class OptionSet(object):
             else:
                 df.loc[idx, 'dt_datetime'] = self.eval_datetime
             df.loc[idx, 'id_instrument'] = option.id_instrument
-            df.loc[idx, 'amt_strike'] = option.strike
+            df.loc[idx, col_adj_strike] = option.adj_strike
             df.loc[idx, 'cd_option_type'] = option.option_type
             df.loc[idx, 'dt_maturity'] = option.maturitydt
             df.loc[idx, 'implied_vol'] = option.get_implied_vol()
@@ -240,7 +258,7 @@ class OptionSet(object):
             df.loc[idx, 'amt_theta'] = option.get_theta()
         return df
 
-    def collect_vega(self,bktoption_list):
+    def collect_vega(self,bktoption_list,col_adj_strike = 'adj_strike'):
         df = pd.DataFrame()
         for idx,option in enumerate(bktoption_list):
             if self.frequency in self.bktutil.cd_frequency_low:
@@ -248,7 +266,7 @@ class OptionSet(object):
             else:
                 df.loc[idx, 'dt_datetime'] = self.eval_datetime
             df.loc[idx, 'id_instrument'] = option.id_instrument
-            df.loc[idx, 'amt_strike'] = option.strike
+            df.loc[idx, col_adj_strike] = option.adj_strike
             df.loc[idx, 'cd_option_type'] = option.option_type
             df.loc[idx, 'dt_maturity'] = option.maturitydt
             df.loc[idx, 'implied_vol'] = option.get_implied_vol()
@@ -257,17 +275,17 @@ class OptionSet(object):
         return df
 
 
-    def collect_carry(self,bktoption_list):
+    def collect_carry(self,bktoption_list,n,col_adj_strike = 'adj_strike'):
         df = pd.DataFrame()
-        bvs_call = self.get_volsurface_squre('call')
-        bvs_put = self.get_volsurface_squre('put')
+        bvs_call = self.get_volsurface_squre('call',n)
+        bvs_put = self.get_volsurface_squre('put',n)
         for idx,option in enumerate(bktoption_list):
             if self.frequency in self.bktutil.cd_frequency_low:
                 df.loc[idx, 'dt_date'] = self.eval_date
             else:
                 df.loc[idx, 'dt_datetime'] = self.eval_datetime
             df.loc[idx, 'id_instrument'] = option.id_instrument
-            df.loc[idx, 'amt_strike'] = option.strike
+            df.loc[idx, col_adj_strike] = option.adj_strike
             df.loc[idx, 'cd_option_type'] = option.option_type
             df.loc[idx, 'dt_maturity'] = option.maturitydt
             df.loc[idx, 'implied_vol'] = option.get_implied_vol()

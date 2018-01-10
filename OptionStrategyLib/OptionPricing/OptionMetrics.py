@@ -23,10 +23,12 @@ class OptionMetrics:
         engine = util.get_engine(process, engineType)
         option.setPricingEngine(engine)
         try:
-            implied_vol = option.impliedVolatility(option_price, process, 1.0e-4, 300, 0.0, 10.0)
+            implied_vol = option.impliedVolatility(option_price, process, 1.0e-3, 300, 0.05, 1.0)
         except RuntimeError as e:
             print('calculate iv failed : ', e)
             implied_vol = 0.0
+        option = None
+        engine = None
         return implied_vol
 
     def delta(self,evaluation,rf, spot_price, option_price,engineType,implied_vol):

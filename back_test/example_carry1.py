@@ -20,7 +20,7 @@ from back_test.bkt_option import BktOption
 from back_test.bkt_option_set2 import OptionSet
 
 
-start_date = datetime.date(2017, 12, 28)
+start_date = datetime.date(2017, 12, 21)
 end_date = datetime.date(2017, 12, 31)
 evalDate = datetime.date(2017, 6, 21)
 
@@ -107,14 +107,15 @@ print('eval_date : ',bkt_optionset.eval_date)
 # print(bktoption_list)
 while bkt_optionset.index < len(bkt_optionset.dt_list):
     # df = pd.DataFrame()
+    print('='*100)
+    print(bkt_optionset.eval_date)
     bkt_optionset.set_bktoptions_mdt1(7)
-    df = bkt_optionset.collect_carry(bkt_optionset.bktoption_list_mdt1)
+    df = bkt_optionset.collect_carry(bkt_optionset.bktoption_list_mdt1,7)
     # df = bkt_optionset.collect_theta(bkt_optionset.bktoption_list_mdt1)
     # df = bkt_optionset.collect_vega(bkt_optionset.bktoption_list_mdt1)
     # bvs = bkt_optionset.get_volsurface_squre('call')
     # print(bvs)
-    print('='*100)
-    print(bkt_optionset.eval_date)
+
     print(df)
     bkt_optionset.next()
 

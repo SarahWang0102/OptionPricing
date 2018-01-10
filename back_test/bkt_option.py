@@ -104,8 +104,11 @@ class BktOption(object):
 
             if self.option_type == 'call':
                 ql_optiontype = ql.Option.Call
-            else:
+            elif self.option_type == 'put':
                 ql_optiontype = ql.Option.Put
+            else:
+                print('No option type!')
+                return
             option = OptionPlainEuropean(self.strike,ql_maturitydt,ql_optiontype)
         else:
             print('Unsupported Option Type !')
@@ -113,13 +116,19 @@ class BktOption(object):
         self.pricing_metrics = OptionMetrics(option)
 
 
-    def update_strike(self,col_strike='amt_strike'):
+    def update_strike(self,col_strike='amt_strike',col_adj_strike = 'adj_strike'):
         try:
             strike = self.current_state[col_strike]
         except Exception as e:
             print(e)
             strike = None
+        try:
+            adj_strike = self.current_state[col_adj_strike]
+        except Exception as e:
+            print(e)
+            adj_strike = None
         self.strike = strike
+        self.adj_strike = adj_strike
 
 
     def update_maturitydt(self,col_maturitydt='dt_maturity'):
@@ -141,13 +150,19 @@ class BktOption(object):
         self.option_type = option_type
 
 
-    def update_option_price(self,col_option_price='amt_close'):
+    def update_option_price(self,col_option_price='amt_close',col_adj_option_price = 'adj_option_price'):
         try:
             option_price = self.current_state[col_option_price]
         except Exception as e:
             print(e)
             option_price = None
+        try:
+            adj_option_price = self.current_state[col_adj_option_price]
+        except Exception as e:
+            print(e)
+            adj_option_price = None
         self.option_price = option_price
+        self.adj_option_price = adj_option_price
 
 
     def update_underlying_price(self,col_underlying_price='underlying_price'):
@@ -188,6 +203,13 @@ class BktOption(object):
             holding_volume = None
         return holding_volume
 
+    def get_trading_volume(self,col_trading_volume='amt_trading_volume'):
+        try:
+            trading_volume = self.current_state[col_trading_volume]
+        except Exception as e:
+            print(e)
+            trading_volume = None
+        return trading_volume
 
     def get_multiplier(self,col_multiplier='nbr_multiplier'):
         try:
@@ -197,9 +219,9 @@ class BktOption(object):
             multiplier = None
         return multiplier
 
-    def get_implied_vol_given(self,col_implied_vol='pct_implied_vol'):
+    def get_implied_vol_given(self,col_implied_vol_given='pct_implied_vol'):
         try:
-            implied_vol = self.current_state[col_implied_vol]
+            implied_vol = self.current_state[col_implied_vol_given]
         except Exception as e:
             print(e)
             implied_vol = None
@@ -250,8 +272,13 @@ class BktOption(object):
         evalDate = self.evalDate
         ttm = (mdt-evalDate).days/365.0
         k = self.strike
-        if k > black_var_surface.maxStrike() : k = black_var_surface.maxStrike()
-        if k < black_var_surface.minStrike() : k = black_var_surface.minStrike()
+        max_strike = max(black_var_surface.maxStrike(),black_var_surface.minStrike())
+        # min_strike = min(black_var_surface.maxStrike(),black_var_surface.minStrike())
+        # if k >= max_strike : k = max_strike-0.01
+        # if k <= min_strike : k = min_strike+0.01
+        # print(min_strike,max_strike,k)
+        # print(min_strike,max_strike,k)
+        black_var_surface.enableExtrapolation()
         implied_vol_t1 = black_var_surface.blackVol(ttm-dt, k)
         iv_roll_down = implied_vol_t1 - self.implied_vol
         return iv_roll_down
