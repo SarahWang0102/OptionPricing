@@ -10,7 +10,8 @@ import QuantLib as ql
 
 class BktOption(object):
 
-    def __init__(self,cd_frequency,df_option_metrics,id_instrument=''):
+    def __init__(self,cd_frequency,df_option_metrics,id_instrument='',
+                 pricing_type = 'OptionPlainEuropean',engine_type = 'AnalyticEuropeanEngine'):
         self.bktutil = BktUtil()
         self.frequency = cd_frequency
         self.id_instrument = id_instrument
@@ -20,7 +21,9 @@ class BktOption(object):
         self.last_index = len(df_option_metrics)-1
         self.daycounter = ql.ActualActual()
         self.calendar = ql.China()
-        self.pricing_type = 'OptionPlainEuropean'
+        self.pricing_type = pricing_type
+        self.engine_type = engine_type
+        self.implied_vol = None
         self.start()
 
     def start(self):
@@ -91,17 +94,14 @@ class BktOption(object):
 
 
     def set_pricing_metrics(self):
+        self.update_rf()
+        self.update_option_price()
+        self.update_underlying_price()
         if self.pricing_type == 'OptionPlainEuropean':
-            try:
-                ql_maturitydt = ql.Date(self.maturitydt.day,
+            ql_maturitydt = ql.Date(self.maturitydt.day,
                                     self.maturitydt.month,
                                     self.maturitydt.year)
-            except Exception as e:
-                print(e)
-                print(self.current_state)
-                print(self.maturitydt)
-                # ql_maturitydt = ql.Date()
-                exit(1)
+
             if self.option_type == 'call':
                 ql_optiontype = ql.Option.Call
             else:
@@ -150,24 +150,6 @@ class BktOption(object):
         self.option_price = option_price
 
 
-    def update_holding_volume(self,col_holding_volume='amt_holding_volume'):
-        try:
-            holding_volume = self.current_state[col_holding_volume]
-        except Exception as e:
-            print(e)
-            holding_volume = None
-        self.holding_volume = holding_volume
-
-
-    def update_multiplier(self,col_multiplier='nbr_multiplier'):
-        try:
-            multiplier = self.current_state[col_multiplier]
-        except Exception as e:
-            print(e)
-            multiplier = None
-        self.multiplier = multiplier
-
-
     def update_underlying_price(self,col_underlying_price='underlying_price'):
         try:
             underlying_price = self.current_state[col_underlying_price]
@@ -185,76 +167,109 @@ class BktOption(object):
             rf = 0.03
         self.rf = rf
 
-
-    def implied_vol(self,engineType):
+    def update_implied_vol(self):
         try:
             self.update_rf()
             self.update_underlying_price()
             self.update_option_price()
             implied_vol = self.pricing_metrics.implied_vol(self.evaluation,self.rf,
-                                    self.underlying_price, self.option_price,engineType)
+                                    self.underlying_price, self.option_price,self.engine_type)
         except Exception as e:
             print(e)
             implied_vol = None
-        # self.implied_vol = implied_vol
-        return implied_vol
+        self.implied_vol = implied_vol
 
 
-    def implied_vol_given(self,col_implied_vol='pct_implied_vol'):
+    def get_holding_volume(self,col_holding_volume='amt_holding_volume'):
+        try:
+            holding_volume = self.current_state[col_holding_volume]
+        except Exception as e:
+            print(e)
+            holding_volume = None
+        return holding_volume
+
+
+    def get_multiplier(self,col_multiplier='nbr_multiplier'):
+        try:
+            multiplier = self.current_state[col_multiplier]
+        except Exception as e:
+            print(e)
+            multiplier = None
+        return multiplier
+
+    def get_implied_vol_given(self,col_implied_vol='pct_implied_vol'):
         try:
             implied_vol = self.current_state[col_implied_vol]
         except Exception as e:
             print(e)
             implied_vol = None
-        # self.implied_vol_given = implied_vol
         return implied_vol
 
+    def get_implied_vol(self):
+        if self.implied_vol == None : self.update_implied_vol()
+        return self.implied_vol
 
-    def delta(self,engineType):
+    def get_delta(self):
         try:
+            if self.implied_vol == None: self.update_implied_vol()
+
             delta = self.pricing_metrics.delta(self.evaluation, self.rf,self.underlying_price,
-                                               self.underlying_price,engineType)
+                                               self.underlying_price,self.engine_type,self.implied_vol)
         except Exception as e:
             print(e)
             delta = None
-        self.delta = delta
         return delta
 
 
-    def theta(self,engineType):
+    def get_theta(self):
         try:
+            if self.implied_vol == None: self.update_implied_vol()
+
             theta = self.pricing_metrics.theta(self.evaluation, self.rf,self.underlying_price,
-                                               self.underlying_price,engineType)
+                                               self.underlying_price,self.engine_type,self.implied_vol)
         except Exception as e:
             print(e)
             theta = None
-        # self.theta = theta
         return theta
 
 
-    def vega(self,engineType):
+    def get_vega(self):
+        if self.implied_vol == None : self.update_implied_vol()
         try:
             vega = self.pricing_metrics.vega(self.evaluation, self.rf,self.underlying_price,
-                                               self.underlying_price,engineType)
+                                               self.underlying_price,self.engine_type,self.implied_vol)
         except Exception as e:
             print(e)
             vega = None
-        self.vega = vega
         return vega
 
 
-    def iv_roll_down(self,black_var_surface,dt=1.0/365.0): # iv(tao-1)-iv(tao), tao:maturity
+    def get_iv_roll_down(self,black_var_surface,dt): # iv(tao-1)-iv(tao), tao:maturity
+        if self.implied_vol == None : self.update_implied_vol()
         mdt = self.maturitydt
         evalDate = self.evalDate
         ttm = (mdt-evalDate).days/365.0
-        implied_vol_t1 = black_var_surface.blackVol(ttm-dt, self.strike)
+        k = self.strike
+        if k > black_var_surface.maxStrike() : k = black_var_surface.maxStrike()
+        if k < black_var_surface.minStrike() : k = black_var_surface.minStrike()
+        implied_vol_t1 = black_var_surface.blackVol(ttm-dt, k)
         iv_roll_down = implied_vol_t1 - self.implied_vol
         return iv_roll_down
 
 
-    def carry(self,black_var_surface,dt=1.0/365.0):
-        iv_roll_down = self.iv_roll_down(black_var_surface,dt)
-        option_carry = (-self.theta+self.vega*iv_roll_down)/self.option_price-self.rf
+    def get_carry(self,bvs_call,bvs_put,dt=1.0/365.0):
+        # if self.implied_vol == None : self.update_implied_vol()
+
+        if self.option_type == 'call':
+            iv_roll_down = self.get_iv_roll_down(bvs_call,dt)
+        else:
+            iv_roll_down = self.get_iv_roll_down(bvs_put,dt)
+        vega = self.get_vega()
+        theta = self.get_theta()
+        # print(vega)
+        # print(theta)
+        option_carry = (vega*iv_roll_down-theta)/self.option_price-self.rf
+        # print(option_carry)
         return option_carry
 
 
