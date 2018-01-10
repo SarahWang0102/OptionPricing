@@ -4,6 +4,7 @@ from data_access.db_tables import DataBaseTables as dbt
 from WindPy import w
 import datetime
 import pandas as pd
+import numpy as np
 from data_access import db_utilities as du
 import math
 
@@ -298,10 +299,11 @@ class DataCollection():
 
         def dce_night(self,dt, data):
             db_data = []
-            cd_exchange = 'dce'
+            datasource = cd_exchange = 'dce'
             for column in data.columns.values:
                 product = data[column]
-                codename = du.get_codename(product.loc['商品名称']).lower()
+                code_instrument = du.get_codename(product.loc['商品名称']).replace(',', '').replace(' ', '')
+                codename = code_instrument.lower()
                 id_instrument = codename + '_' + product.loc['交割月份']
                 dt_date = dt
                 flag_night = 1
@@ -319,6 +321,8 @@ class DataCollection():
                 db_row = {'dt_date': dt_date,
                           'id_instrument': id_instrument,
                           'flag_night': flag_night,
+                          'datasource': datasource,
+                          'code_instrument': code_instrument,
                           'name_code': name_code,
                           'amt_last_close': amt_last_close,
                           'amt_last_settlement': amt_last_settlement,
@@ -338,10 +342,11 @@ class DataCollection():
 
         def dce_day(self,dt, data):
             db_data = []
-            cd_exchange = 'dce'
+            datasource = cd_exchange = 'dce'
             for column in data.columns.values:
                 product = data[column]
-                codename = du.get_codename(product.loc['商品名称']).lower()
+                code_instrument = du.get_codename(product.loc['商品名称']).replace(',', '').replace(' ', '')
+                codename = code_instrument.lower()
                 id_instrument = codename + '_' + product.loc['交割月份']
                 dt_date = dt
                 flag_night = 0
@@ -359,6 +364,8 @@ class DataCollection():
                 db_row = {'dt_date': dt_date,
                           'id_instrument': id_instrument,
                           'flag_night': flag_night,
+                          'datasource': datasource,
+                          'code_instrument': code_instrument,
                           'name_code': name_code,
                           'amt_last_close': amt_last_close,
                           'amt_last_settlement': amt_last_settlement,
@@ -380,7 +387,7 @@ class DataCollection():
             key_map = du.key_map_sfe()
             data_dict1 = data['o_curinstrument']
             db_data = []
-            cd_exchange = 'sfe'
+            datasource = cd_exchange = 'sfe'
             for dict in data_dict1:
                 name = dict[key_map['codename']].replace(' ', '')
                 contractmonth = dict[key_map['contractmonth']].replace(' ', '')
@@ -417,6 +424,8 @@ class DataCollection():
                 db_row = {'dt_date': dt_date,
                           'id_instrument': id_instrument,
                           'flag_night': flag_night,
+                          'datasource': datasource,
+                          'code_instrument': name,
                           'name_code': name_code,
                           'amt_last_close': amt_last_close,
                           'amt_last_settlement': amt_last_settlement,
@@ -437,11 +446,12 @@ class DataCollection():
         def czce_daily(self,dt, data):
             db_data = []
             # print(data)
-            cd_exchange = 'czce'
+            datasource = cd_exchange = 'czce'
             # datasource = 'czce'
             flag_night = -1
             for column in data.columns.values:
                 product = data[column]
+                code_instrument = product.loc['品种月份'].replace(',', '').replace(' ', '')
                 product_name = product.loc['品种月份'].lower().replace(',', '').replace(' ', '')
                 dt_date = dt
                 name_code = product_name[:-3]
@@ -460,6 +470,8 @@ class DataCollection():
                 db_row = {'dt_date': dt_date,
                           'id_instrument': id_instrument,
                           'flag_night': flag_night,
+                          'datasource': datasource,
+                          'code_instrument': code_instrument,
                           'name_code': name_code,
                           'amt_last_close': amt_last_close,
                           'amt_last_settlement': amt_last_settlement,
@@ -478,6 +490,309 @@ class DataCollection():
                 db_data.append(db_row)
             return db_data
 
+        def wind_index_future_daily(self,datestr, id_instrument, windcode):
+            db_data = []
+            datasource = 'wind'
+            flag_night = -1
+            cd_exchange = 'cfe'
+            name_code = id_instrument[0:2]
+            tickdata = w.wsd(windcode,
+                             "pre_close,open,high,low,close,volume,amt,oi,pre_settle,settle",
+                             datestr , datestr , "Fill=Previous")
+            if tickdata.ErrorCode != 0:
+                print('wind get data error ', datestr, ',errorcode : ', tickdata.ErrorCode)
+                return []
+            df = pd.DataFrame()
+            for i, f in enumerate(tickdata.Fields):
+                df[f] = tickdata.Data[i]
+            df['dt_datetime'] = tickdata.Times
+            for (idx, row) in df.iterrows():
+                dt = row['dt_datetime']
+                dt_date = datetime.date(dt.year, dt.month, dt.day)
+                open_price = row['OPEN']
+                high = row['HIGH']
+                low = row['LOW']
+                close = row['CLOSE']
+                volume = row['VOLUME']
+                amt = row['AMT']
+                amt_holding_volume = row['OI']
+                amt_last_close = row['PRE_CLOSE']
+                amt_last_settlement = row['PRE_SETTLE']
+                amt_settlement = row['SETTLE']
+
+                db_row = {'dt_date': dt_date,
+                          'id_instrument': id_instrument,
+                          'flag_night': flag_night,
+                          'datasource': datasource,
+                          'code_instrument': windcode,
+                          'name_code': name_code,
+                          'amt_last_close': amt_last_close,
+                          'amt_last_settlement': amt_last_settlement,
+                          'amt_open': open_price,
+                          'amt_high': high,
+                          'amt_low': low,
+                          'amt_close': close,
+                          'amt_settlement': amt_settlement,
+                          'amt_trading_volume': volume,
+                          'amt_trading_value': amt,
+                          'amt_holding_volume': amt_holding_volume,
+                          'cd_exchange': cd_exchange,
+                          'timestamp': datetime.datetime.today()
+                          }
+                db_data.append(db_row)
+            return db_data
+
+    class table_future_contracts():
+
+        def get_future_contract_ids(self,datestr):
+            engine = create_engine('mysql+pymysql://root:liz1128@101.132.148.152/mktdata',
+                                   echo=False)
+            FutureContracts = dbt.Futures
+            Session = sessionmaker(bind=engine)
+            sess = Session()
+            query = sess.query(FutureContracts.id_instrument, FutureContracts.windcode) \
+                .filter(datestr >= FutureContracts.dt_listed) \
+                .filter(datestr <= FutureContracts.dt_maturity)
+            df_windcode = pd.read_sql(query.statement, query.session.bind)
+            return df_windcode
+
+
+        def wind_future_contracts(self,category_code, nbr_multiplier):
+            db_data = []
+
+            cd_exchange = 'cfe'
+            data = w.wset("futurecc", "wind_code=" + category_code)
+            df_contracts = pd.DataFrame()
+            for i1, f1 in enumerate(data.Fields):
+                df_contracts[f1] = data.Data[i1]
+            df_contracts = df_contracts.fillna(-999.0)
+            for (idx, df) in df_contracts.iterrows():
+                windcode = df['wind_code']
+                name_instrument = df['sec_name'].encode('utf-8')
+                name_code = df['code'][0:2]
+                name_contract_month = df['code'][2:]
+                pct_margin = df['target_margin']
+                pct_change_limit = df['change_limit']
+                dt_listed = df['contract_issue_date'].date()
+                dt_maturity = df['last_trade_date'].date()
+                dt_settlement = df['last_delivery_mouth'].date()
+                id_instrument = name_code + '_' + name_contract_month
+
+                db_row = {'id_instrument': id_instrument,
+                          'windcode': windcode,
+                          'name_instrument': name_instrument,
+                          'name_code': name_code,
+                          'name_contract_month': name_contract_month,
+                          'pct_margin': pct_margin,
+                          'pct_change_limit': pct_change_limit,
+                          'dt_listed': dt_listed,
+                          'dt_maturity': dt_maturity,
+                          'dt_settlement': dt_settlement,
+                          'nbr_multiplier': nbr_multiplier,
+                          'cd_exchange': cd_exchange,
+                          'timestamp': datetime.datetime.today()
+                          }
+                db_data.append(db_row)
+            return db_data
+
+
+    class table_option_contracts():
+
+        def wind_options_50etf(self):
+            db_data = []
+            id_underlying = 'index_50etf'
+            windcode_underlying = '510050.SH'
+
+            cd_exchange = 'sse'
+            data = w.wset("optioncontractbasicinfo", "exchange=sse;windcode=510050.SH;status=all")
+            optionData = data.Data
+            optionFlds = data.Fields
+
+            wind_code = optionData[optionFlds.index('wind_code')]
+            trade_code = optionData[optionFlds.index('trade_code')]
+            sec_name = optionData[optionFlds.index('sec_name')]
+            option_mark_code = optionData[optionFlds.index('option_mark_code')]
+            call_or_put = optionData[optionFlds.index('call_or_put')]
+            exercise_mode = optionData[optionFlds.index('exercise_mode')]
+            exercise_price = optionData[optionFlds.index('exercise_price')]
+            contract_unit = optionData[optionFlds.index('contract_unit')]
+            limit_month = optionData[optionFlds.index('limit_month')]
+            listed_date = optionData[optionFlds.index('listed_date')]
+            expire_date = optionData[optionFlds.index('expire_date')]
+            exercise_date = optionData[optionFlds.index('exercise_date')]
+            settlement_date = optionData[optionFlds.index('settlement_date')]
+            settle_mode = optionData[optionFlds.index('settle_mode')]
+
+            for idx, windcode in enumerate(wind_code):
+                windcode = windcode + '.SH'
+                name_option = sec_name[idx].encode('utf-8')
+                if call_or_put[idx] == '认购':
+                    cd_option_type = 'call'
+                elif call_or_put[idx] == '认沽':
+                    cd_option_type = 'put'
+                else:
+                    cd_option_type = 'none'
+                    print('error in call_or_put')
+                cd_exercise_type = exercise_mode[idx].encode('utf-8')
+                dt_maturity = expire_date[idx].date()
+                name_contract_month = dt_maturity.strftime("%y%m")
+                amt_strike = exercise_price[idx]
+                if sec_name[idx][-1] == 'A':
+                    id_instrument = '50etf_' + name_contract_month + '_' + cd_option_type[0] + '_' + str(amt_strike)[
+                                                                                                     :6] + '_A'
+                else:
+                    id_instrument = '50etf_' + name_contract_month + '_' + cd_option_type[0] + '_' + str(amt_strike)[:6]
+
+                dt_listed = listed_date[idx]
+                dt_maturity = expire_date[idx]
+                dt_exercise = datetime.datetime.strptime(exercise_date[idx], "%Y-%m-%d").date()
+                dt_settlement = datetime.datetime.strptime(settlement_date[idx], "%Y-%m-%d").date()
+                cd_settle_method = settle_mode[idx].encode('utf-8')
+                nbr_multiplier = contract_unit[idx]
+
+                db_row = {'id_instrument': id_instrument,
+                          'windcode': windcode,
+                          'name_option': name_option,
+                          'id_underlying': id_underlying,
+                          'windcode_underlying': windcode_underlying,
+                          'cd_option_type': cd_option_type,
+                          'cd_exercise_type': cd_exercise_type,
+                          'amt_strike': amt_strike,
+                          'name_contract_month': name_contract_month,
+                          'dt_listed': dt_listed,
+                          'dt_maturity': dt_maturity,
+                          'dt_exercise': dt_exercise,
+                          'dt_settlement': dt_settlement,
+                          'cd_settle_method': cd_settle_method,
+                          'nbr_multiplier': nbr_multiplier,
+                          'cd_exchange': cd_exchange,
+                          'timestamp': datetime.datetime.today()
+                          }
+                db_data.append(db_row)
+            return db_data
+
+        def wind_options_m(self):
+            db_data = []
+            name_code = 'm'
+            cd_exchange = 'dce'
+            data = w.wset("optionfuturescontractbasicinfo", "exchange=DCE;productcode=M;contract=all")
+            optionData = data.Data
+            optionFlds = data.Fields
+
+            wind_code = optionData[optionFlds.index('wind_code')]
+            sec_name = optionData[optionFlds.index('sec_name')]
+            option_mark_code = optionData[optionFlds.index('option_mark_code')]
+            call_or_put = optionData[optionFlds.index('call_or_put')]
+            exercise_mode = optionData[optionFlds.index('exercise_mode')]
+            exercise_price = optionData[optionFlds.index('exercise_price')]
+            contract_unit = optionData[optionFlds.index('contract_unit')]
+            limit_month = optionData[optionFlds.index('limit_month')]
+            listed_date = optionData[optionFlds.index('listed_date')]
+            expire_date = optionData[optionFlds.index('expire_date')]
+            settle_mode = optionData[optionFlds.index('settle_mode')]
+
+            for idx, windcode in enumerate(wind_code):
+                windcode = windcode + '.DCE'
+                name_option = sec_name[idx].encode('utf-8')
+                if call_or_put[idx] == '认购':
+                    cd_option_type = 'call'
+                elif call_or_put[idx] == '认沽':
+                    cd_option_type = 'put'
+                else:
+                    cd_option_type = 'none'
+                    print('error in call_or_put')
+                cd_exercise_type = exercise_mode[idx].encode('utf-8')
+                name_contract_month = datetime.datetime.strptime(limit_month[idx], "%Y-%m").date().strftime("%y%m")
+                amt_strike = exercise_price[idx]
+                id_instrument = name_code + '_' + name_contract_month + '_' + cd_option_type[0] + '_' + str(
+                    int(amt_strike))
+                id_underlying = name_code + '_' + name_contract_month
+                windcode_underlying = option_mark_code[idx]
+                dt_listed = listed_date[idx]
+                dt_maturity = expire_date[idx]
+                cd_settle_method = settle_mode[idx].encode('utf-8')
+                nbr_multiplier = contract_unit[idx]
+
+                db_row = {'id_instrument': id_instrument,
+                          'windcode': windcode,
+                          'name_option': name_option,
+                          'id_underlying': id_underlying,
+                          'windcode_underlying': windcode_underlying,
+                          'cd_option_type': cd_option_type,
+                          'cd_exercise_type': cd_exercise_type,
+                          'amt_strike': amt_strike,
+                          'name_contract_month': name_contract_month,
+                          'dt_listed': dt_listed,
+                          'dt_maturity': dt_maturity,
+                          'cd_settle_method': cd_settle_method,
+                          'nbr_multiplier': nbr_multiplier,
+                          'cd_exchange': cd_exchange,
+                          'timestamp': datetime.datetime.today()
+                          }
+                db_data.append(db_row)
+            return db_data
+
+        def wind_options_sr(self):
+            db_data = []
+            name_code = 'sr'
+            cd_exchange = 'czce'
+            data = w.wset("optionfuturescontractbasicinfo", "exchange=CZCE;productcode=SR;contract=all")
+            optionData = data.Data
+            optionFlds = data.Fields
+
+            wind_code = optionData[optionFlds.index('wind_code')]
+            sec_name = optionData[optionFlds.index('sec_name')]
+            option_mark_code = optionData[optionFlds.index('option_mark_code')]
+            call_or_put = optionData[optionFlds.index('call_or_put')]
+            exercise_mode = optionData[optionFlds.index('exercise_mode')]
+            exercise_price = optionData[optionFlds.index('exercise_price')]
+            contract_unit = optionData[optionFlds.index('contract_unit')]
+            limit_month = optionData[optionFlds.index('limit_month')]
+            listed_date = optionData[optionFlds.index('listed_date')]
+            expire_date = optionData[optionFlds.index('expire_date')]
+            settle_mode = optionData[optionFlds.index('settle_mode')]
+
+            for idx, windcode in enumerate(wind_code):
+                windcode = windcode + '.CZC'
+                name_option = sec_name[idx].encode('utf-8')
+                if call_or_put[idx] == '认购':
+                    cd_option_type = 'call'
+                elif call_or_put[idx] == '认沽':
+                    cd_option_type = 'put'
+                else:
+                    cd_option_type = 'none'
+                    print('error in call_or_put')
+                cd_exercise_type = exercise_mode[idx].encode('utf-8')
+                name_contract_month = datetime.datetime.strptime(limit_month[idx], "%Y-%m").date().strftime("%y%m")
+                amt_strike = exercise_price[idx]
+                id_instrument = name_code + '_' + name_contract_month + '_' + cd_option_type[0] + '_' + str(
+                    int(amt_strike))
+                id_underlying = name_code + '_' + name_contract_month
+                windcode_underlying = option_mark_code[idx]
+                dt_listed = listed_date[idx]
+                dt_maturity = expire_date[idx]
+                cd_settle_method = settle_mode[idx].encode('utf-8')
+                nbr_multiplier = contract_unit[idx]
+
+                db_row = {'id_instrument': id_instrument,
+                          'windcode': windcode,
+                          'name_option': name_option,
+                          'id_underlying': id_underlying,
+                          'windcode_underlying': windcode_underlying,
+                          'cd_option_type': cd_option_type,
+                          'cd_exercise_type': cd_exercise_type,
+                          'amt_strike': amt_strike,
+                          'name_contract_month': name_contract_month,
+                          'dt_listed': dt_listed,
+                          'dt_maturity': dt_maturity,
+                          'cd_settle_method': cd_settle_method,
+                          'nbr_multiplier': nbr_multiplier,
+                          'cd_exchange': cd_exchange,
+                          'timestamp': datetime.datetime.today()
+                          }
+                db_data.append(db_row)
+            return db_data
+
 
     class table_index():
 
@@ -490,6 +805,7 @@ class DataCollection():
             for i, f in enumerate(data.Fields):
                 df[f] = data.Data[i]
             df['times'] = data.Times
+            df.fillna(0.0)
             for (idx, row) in df.iterrows():
                 open_price = row['OPEN']
                 dt = row['times']
@@ -498,11 +814,16 @@ class DataCollection():
                 close = row['CLOSE']
                 volume = row['VOLUME']
                 amt = row['AMT']
+                if np.isnan(volume): volume = 0.0
+                if np.isnan(amt): amt = 0.0
+                if np.isnan(low): low = -1.0
+                if np.isnan(high): high = -1.0
+                if np.isnan(open_price): open_price = -1.0
                 db_row = {'dt_date': dt,
                           'id_instrument': id_instrument,
                           'datasource': datasource,
                           'code_instrument': windcode,
-                          'amt_last_close': close,
+                          'amt_close': close,
                           'amt_open': open_price,
                           'amt_high': high,
                           'amt_low': low,
@@ -532,7 +853,7 @@ class DataCollection():
                           'id_instrument': id_instrument,
                           'datasource': datasource,
                           'code_instrument': windcode,
-                          'amt_price': price,
+                          'amt_close': price,
                           'amt_trading_volume': volume,
                           'amt_trading_value': trading_value,
                           'timestamp': datetime.datetime.today()
@@ -574,7 +895,7 @@ class DataCollection():
                           'id_instrument': id_instrument,
                           'datasource': datasource,
                           'code_instrument': windcode,
-                          'amt_price': price,
+                          'amt_close': price,
                           'amt_trading_volume': volume,
                           'amt_trading_value': trading_value,
                           'timestamp': datetime.datetime.today()
@@ -664,17 +985,6 @@ class DataCollection():
 
     class table_future_tick():
 
-        def wind_option_codes(self,datestr):
-            engine = create_engine('mysql+pymysql://root:liz1128@101.132.148.152/mktdata',
-                                   echo=False)
-            FutureContracts = dbt.Futures
-            Session = sessionmaker(bind=engine)
-            sess = Session()
-            query = sess.query(FutureContracts.id_instrument, FutureContracts.windcode) \
-                .filter(datestr >= FutureContracts.dt_listed) \
-                .filter(datestr <= FutureContracts.dt_maturity)
-            df_windcode = pd.read_sql(query.statement, query.session.bind)
-            return df_windcode
 
         def wind_index_future_tick(self,datestr, id_instrument, windcode):
             db_data = []

@@ -14,7 +14,7 @@ from data_access.db_data_collection import DataCollection
 w.start()
 
 # date = datetime.datetime.today().date()
-date = datetime.date(2018, 1, 8)
+date = datetime.date(2017, 11, 10)
 dt_date = date.strftime("%Y-%m-%d")
 print(dt_date)
 
@@ -37,18 +37,14 @@ dc = DataCollection()
 
 #####################table_options_mktdata_daily######################################
 # wind 50ETF option
-res = options_mktdata_daily.select((options_mktdata_daily.c.dt_date == dt_date)
-                                   & (options_mktdata_daily.c.name_code == '50etf')).execute()
-if res.rowcount == 0:
-    db_data = dc.table_options().wind_data_50etf_option(dt_date)
-    if len(db_data) == 0: print('no data')
-    try:
-        conn.execute(options_mktdata_daily.insert(), db_data)
-        print('wind 50ETF option -- inserted into data base succefully')
-    except Exception as e:
-        print(e)
-else:
-    print('wind 50ETF option -- already exists')
+
+db_data = dc.table_options().wind_data_50etf_option(dt_date)
+if len(db_data) == 0: print('no data')
+try:
+    conn.execute(options_mktdata_daily.insert(), db_data)
+    print('wind 50ETF option -- inserted into data base succefully')
+except Exception as e:
+    print(e)
 
 # dce option data
 res = options_mktdata_daily.select((options_mktdata_daily.c.dt_date == dt_date)
@@ -146,8 +142,8 @@ else:
     print('dce future 0 -- already exists')
 # dce futures data (type = 0), night
 res = futures_mktdata_daily.select((futures_mktdata_daily.c.dt_date == dt_date)
-                                       & (futures_mktdata_daily.c.cd_exchange == 'dce')
-                                        & (futures_mktdata_daily.c.flag_night == 1)).execute()
+                                   & (futures_mktdata_daily.c.cd_exchange == 'dce')
+                                   & (futures_mktdata_daily.c.flag_night == 1)).execute()
 if res.rowcount == 0:
     ds = dce.spider_mktdata_night(date, date, 0)
     for dt in ds.keys():

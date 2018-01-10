@@ -52,7 +52,7 @@ class PlotUtil:
                 tmp, = ax.plot(x, y, color=c, linestyle=l, linewidth=2)
                 tmp.set_dashes(self.dash)
             elif count == 0:
-                ax.plot(x, y, color=c, linestyle=l, linewidth=3)
+                ax.plot(x, y, color=c, linestyle=l, linewidth=2)
             else:
                 ax.plot(x, y, color=c, linestyle=l, linewidth=2)
         else:
@@ -60,7 +60,7 @@ class PlotUtil:
                 tmp, = ax.plot(x, y, color=c, linestyle=l, linewidth=2, label=lgd)
                 tmp.set_dashes(self.dash)
             elif count == 0:
-                ax.plot(x, y, color=c, linestyle=l, linewidth=2.3, label=lgd)
+                ax.plot(x, y, color=c, linestyle=l, linewidth=2, label=lgd)
             else:
                 ax.plot(x, y, color=c, linestyle=l, linewidth=2, label=lgd)
         # ax.legend(bbox_to_anchor=(0.5, 1.,.1,.1), loc=3, mode="expand")
@@ -75,7 +75,7 @@ class PlotUtil:
         for idx,y in enumerate(Y):
             lgd = legends[idx]
             self.plot_line(ax,idx,x,y,lgd)
-        ax.legend()
+        ax.legend(frameon=False)
         ax.set_xlabel(x_label)
         ax.set_ylabel(y_label)
         self.set_frame([ax])

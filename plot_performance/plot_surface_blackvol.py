@@ -85,8 +85,8 @@ black_var_surface = ql.BlackVarianceSurface(
     evalDate, calendar,
     expiration_dates, strikes,
     matrix, daycounter)
-yield_ts = ql.YieldTermStructureHandle(curve)
-dividend_ts = ql.YieldTermStructureHandle(ql.FlatForward(evalDate, 0.0, daycounter))
+# yield_ts = ql.YieldTermStructureHandle(curve)
+# dividend_ts = ql.YieldTermStructureHandle(ql.FlatForward(evalDate, 0.0, daycounter))
 #local_vol_surface = ql.LocalVolSurface(ql.BlackVolTermStructureHandle(black_var_surface),yield_ts,dividend_ts,spot_c)
 # Plot
 plt.rcParams['font.sans-serif'] = ['STKaiti']

@@ -52,6 +52,7 @@ class DataBaseTables():
         dt_date = Column(Date, nullable=False , primary_key=True)
         id_instrument = Column(VARCHAR(45), nullable=False , primary_key=True)
         flag_night = Column(INT, nullable=False , primary_key=True)
+        datasource = Column(VARCHAR(45), nullable=False , primary_key=True)
         name_code = Column(VARCHAR(45))
         amt_last_close = Column(DECIMAL(18, 4))
         amt_last_settlement = Column(DECIMAL(18, 4))
@@ -67,12 +68,34 @@ class DataBaseTables():
         timestamp = Column(TIMESTAMP)
 
         def __repr__(self):
-            return "<OptionMktdata(dt_date='%s',id_instrument='%s',flag_night='%s',name_code='%s',amt_last_close='%s',amt_last_settlement='%s',amt_open='%s'," \
+            return "<FutureMktdata(dt_date='%s',id_instrument='%s',flag_night='%s',name_code='%s',amt_last_close='%s',amt_last_settlement='%s',amt_open='%s'," \
                    "amt_high='%s',amt_low='%s',amt_close='%s',amt_settlement='%s',amt_trading_volume='%s',amt_trading_value='%s',amt_holding_volume='%s'," \
                    "cd_exchange='%s',timestamp='%s')" % \
                    (self.dt_date,self.id_instrument,self.flag_night,self.name_code,self.amt_last_close,self.amt_last_settlement,self.amt_open,
                     self.amt_high,self.amt_low,self.amt_close,self.amt_settlement,self.amt_trading_volume,self.amt_trading_value,self.amt_holding_volume,
                     self.cd_exchange,self.timestamp)
+
+    class IndexMkt(Base):
+        __tablename__ = 'indexes_mktdata'
+        dt_date = Column(Date, nullable=False , primary_key=True)
+        id_instrument = Column(VARCHAR(45), nullable=False , primary_key=True)
+        datasource = Column(VARCHAR(45), nullable=False , primary_key=True)
+        code_instrument = Column(VARCHAR(45))
+        amt_open = Column(DECIMAL(18, 4))
+        amt_high = Column(DECIMAL(18, 4))
+        amt_low = Column(DECIMAL(18, 4))
+        amt_close = Column(DECIMAL(18, 4))
+        amt_trading_volume = Column(DECIMAL(18, 4))
+        amt_trading_value = Column(DECIMAL(18, 4))
+        timestamp = Column(TIMESTAMP)
+
+        def __repr__(self):
+            return "<IndexMktdata(dt_date='%s',id_instrument='%s',datasource='%s',amt_open='%s'," \
+                   "amt_high='%s',amt_low='%s',amt_close='%s',amt_trading_volume='%s',amt_trading_value='%s'" \
+                   ",amt_holding_volume='%s',timestamp='%s')" % \
+                   (self.dt_date,self.id_instrument,self.datasource,self.code_instrument,
+                    self.amt_open,self.amt_high,self.amt_low,self.amt_close,
+                    self.amt_trading_volume,self.amt_trading_value,self.timestamp)
 
 
     class Options(Base):
@@ -140,17 +163,17 @@ class DataBaseTables():
         id_instrument = Column(VARCHAR(45), nullable=True , primary_key=True)
         datasource = Column(VARCHAR(45), nullable=True, primary_key=True)
         code_instrument = Column(VARCHAR(45))
-        amt_price = Column(DECIMAL(18, 4))
+        amt_close = Column(DECIMAL(18, 4))
         amt_trading_volume = Column(DECIMAL(18, 4))
         amt_trading_value = Column(DECIMAL(18, 4))
         timestamp = Column(TIMESTAMP)
 
         def __repr__(self):
             return "<EquityIndexIntraday(dt_datetime='%s', id_instrument='%s',datasource='%s'," \
-                   "code_instrument='%s',amt_price='%s',amt_trading_volume='%s',amt_trading_value='%s'," \
+                   "code_instrument='%s',amt_close='%s',amt_trading_volume='%s',amt_trading_value='%s'," \
                    "timestamp='%s')" % \
                    (self.dt_datetime,self.id_instrument,self.datasource,self.code_instrument,
-                    self.amt_price, self.amt_trading_volume,self.amt_trading_value,
+                    self.amt_close, self.amt_trading_volume,self.amt_trading_value,
                     self.timestamp)
 
     class FutureMktIntraday(Base):
@@ -159,17 +182,17 @@ class DataBaseTables():
         id_instrument = Column(VARCHAR(45), nullable=True , primary_key=True)
         datasource = Column(VARCHAR(45), nullable=True, primary_key=True)
         code_instrument = Column(VARCHAR(45))
-        amt_price = Column(DECIMAL(18, 4))
+        amt_close = Column(DECIMAL(18, 4))
         amt_trading_volume = Column(DECIMAL(18, 4))
         amt_trading_value = Column(DECIMAL(18, 4))
         timestamp = Column(TIMESTAMP)
 
         def __repr__(self):
             return "<FutureMktIntraday(dt_datetime='%s', id_instrument='%s',datasource='%s'," \
-                   "code_instrument='%s',amt_price='%s',amt_trading_volume='%s',amt_trading_value='%s'," \
+                   "code_instrument='%s',amt_close='%s',amt_trading_volume='%s',amt_trading_value='%s'," \
                    "timestamp='%s')" % \
                    (self.dt_datetime,self.id_instrument,self.datasource,self.code_instrument,
-                    self.amt_price, self.amt_trading_volume,self.amt_trading_value,
+                    self.amt_close, self.amt_trading_volume,self.amt_trading_value,
                     self.timestamp)
 
     class OptionMktIntraday(Base):
@@ -178,15 +201,15 @@ class DataBaseTables():
         id_instrument = Column(VARCHAR(45), nullable=True , primary_key=True)
         datasource = Column(VARCHAR(45), nullable=True, primary_key=True)
         code_instrument = Column(VARCHAR(45))
-        amt_price = Column(DECIMAL(18, 4))
+        amt_close = Column(DECIMAL(18, 4))
         amt_trading_volume = Column(DECIMAL(18, 4))
         amt_trading_value = Column(DECIMAL(18, 4))
         timestamp = Column(TIMESTAMP)
 
         def __repr__(self):
             return "<OptionMktIntraday(dt_datetime='%s', id_instrument='%s',datasource='%s'," \
-                   "code_instrument='%s',amt_price='%s',amt_trading_volume='%s',amt_trading_value='%s'," \
+                   "code_instrument='%s',amt_close='%s',amt_trading_volume='%s',amt_trading_value='%s'," \
                    "timestamp='%s')" % \
                    (self.dt_datetime,self.id_instrument,self.datasource,self.code_instrument,
-                    self.amt_price, self.amt_trading_volume,self.amt_trading_value,
+                    self.amt_close, self.amt_trading_volume,self.amt_trading_value,
                     self.timestamp)

@@ -29,7 +29,7 @@ optionmkt_table = dbt.OptionMkt
 options_table = dbt.Options
 
 # Eval Settings
-evalDate = datetime.date(2017, 12, 15).strftime("%Y-%m-%d")  # Set as Friday
+evalDate = datetime.date(2018, 1, 5).strftime("%Y-%m-%d")  # Set as Friday
 start_date = w.tdaysoffset(-1, evalDate, "Period=M").Data[0][0].strftime("%Y-%m-%d")
 # hist_date = w.tdaysoffset(-60, start_date, "").Data[0][0].strftime("%Y-%m-%d")
 hist_date = datetime.date(2017, 1, 1).strftime("%Y-%m-%d")
@@ -37,7 +37,7 @@ evalDate_1week = w.tdaysoffset(-1, evalDate, "Period=W").Data[0][0].strftime("%Y
 evalDate_2week = w.tdaysoffset(-2, evalDate, "Period=W").Data[0][0].strftime("%Y-%m-%d")
 evalDate_3week = w.tdaysoffset(-3, evalDate, "Period=W").Data[0][0].strftime("%Y-%m-%d")
 plt.rcParams['font.sans-serif'] = ['STKaiti']
-plt.rcParams.update({'font.size': 11})
+plt.rcParams.update({'font.size': 13})
 flagNight = 0
 nameCode = 'sr'
 contracts = ['1803', '1805', '1807', '1809']
@@ -99,7 +99,7 @@ for d in dates:
     pu.plot_line(ax1, cont, df['contract_month'], df['implied_vol'], d, '合约月份', '波动率(%)')
     cont += 1
 ax1.legend(bbox_to_anchor=(0., 1.02, 1., .202), loc=3,
-           ncol=4, mode="expand", borderaxespad=0.)
+           ncol=3, mode="expand", borderaxespad=0.,frameon=False)
 f1.savefig('../save_figure/implied_vols_' + str(evalDate) + '.png', dpi=300, format='png')
 
 #################### Futures and Realised Vol
@@ -137,7 +137,7 @@ for idx_c, price in enumerate(future_closes):
         r = np.log(float(price) / float(future_closes[idx_c - 1]))
     future_yields.append(r)
 underlying_df['yield'] = future_yields
-print(underlying_df)
+# print(underlying_df)
 
 histvols_60 = []
 histvols_20 = []
@@ -155,7 +155,7 @@ underlying_df.loc[61:, 'histvol_60'] = histvols_60
 underlying_df.loc[61:, 'histvol_30'] = histvols_30
 underlying_df.loc[61:, 'histvol_20'] = histvols_20
 underlying_df.loc[61:, 'histvol_10'] = histvols_10
-print(underlying_df)
+# print(underlying_df)
 volcone_df = pd.DataFrame()
 max_vols = [max(histvols_60), max(histvols_30), max(histvols_20), max(histvols_10)]
 min_vols = [min(histvols_60), min(histvols_30), min(histvols_20), min(histvols_10)]
@@ -174,7 +174,7 @@ ldgs = ['当前水平', '最大值', '最小值', '中位数', '75分位数', '2
 for cont2, y in enumerate(histvolcone):
     pu.plot_line(ax2, cont2, x, y, ldgs[cont2], '时间窗口', '波动率（%）')
 ax2.legend(bbox_to_anchor=(0., 1.02, 1., .202), loc=3,
-           ncol=4, mode="expand", borderaxespad=0.)
+           ncol=4, mode="expand", borderaxespad=0.,frameon=False)
 f2.savefig('../save_figure/hist_vols_' + str(evalDate) + '.png', dpi=300, format='png')
 
 ################ #Implied Vol Surface
