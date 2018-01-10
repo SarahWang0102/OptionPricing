@@ -152,7 +152,6 @@ for idx_date,date in enumerate(date_rage):
     # print(vol_matrix)
     black_var_surface = ql.BlackVarianceSurface(
         ql_evalDate, calendar, ql_maturities, strikes, vol_matrix, daycounter)  #
-
     ##############################################################################################
     carry_results = []
     for (idx,row) in df_option.iterrows():
