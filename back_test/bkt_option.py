@@ -86,11 +86,12 @@ class BktOption(object):
 
 
     def set_option_basics(self,col_option_type='cd_option_type',col_strike='amt_strike',
-                          col_maturitydt='dt_maturity'):
+                          col_maturitydt='dt_maturity',col_code = 'code_instrument'):
         self.update_option_type(col_option_type)
         self.update_strike(col_strike)
         self.update_maturitydt(col_maturitydt)
-        self.update_current_state()
+        self.update_code_instrument(col_code)
+        # self.update_current_state()
 
 
     def set_pricing_metrics(self):
@@ -149,6 +150,13 @@ class BktOption(object):
             option_type = None
         self.option_type = option_type
 
+    def update_code_instrument(self,col_code = 'code_instrument'):
+        try:
+            code_instrument = self.current_state[col_code]
+        except Exception as e:
+            print(e)
+            code_instrument = None
+        self.code_instrument = code_instrument
 
     def update_option_price(self,col_option_price='amt_close',col_adj_option_price = 'adj_option_price'):
         try:

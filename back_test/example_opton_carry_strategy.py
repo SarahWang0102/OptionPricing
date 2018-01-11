@@ -17,7 +17,7 @@ from OptionStrategyLib.OptionPricing.Evaluation import Evaluation
 from OptionStrategyLib.OptionPricing.OptionMetrics import OptionMetrics
 from OptionStrategyLib.OptionPricing.Options import OptionPlainEuropean
 from back_test.bkt_option import BktOption
-from back_test.bkt_option_set2 import OptionSet
+from back_test.bkt_option_set import OptionSet
 
 
 start_date = datetime.date(2017, 12, 28)

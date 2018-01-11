@@ -17,7 +17,7 @@ from OptionStrategyLib.OptionPricing.Evaluation import Evaluation
 from OptionStrategyLib.OptionPricing.OptionMetrics import OptionMetrics
 from OptionStrategyLib.OptionPricing.Options import OptionPlainEuropean
 from back_test.bkt_option import BktOption
-from back_test.bkt_option_set2 import OptionSet
+from back_test.bkt_option_set import OptionSet
 
 
 start_date = datetime.date(2017, 12, 21)
@@ -75,54 +75,34 @@ df_mkt = pd.read_sql(query_mkt.statement, query_mkt.session.bind)
 df_contract = pd.read_sql(query_option.statement, query_option.session.bind)
 df_50etf = pd.read_sql(query_etf.statement, query_etf.session.bind).rename(columns={'amt_close':'underlying_price'})
 df_option = df_mkt.join(df_contract.set_index('id_instrument'),how='left',on='id_instrument')
-# for (idx,row) in df_option.iterrows():
-#     df_option.loc[idx,'dt_date'] = row['dt_datetime'].date()
 df_option = df_option.join(df_50etf.set_index('dt_date'),how='left',on='dt_date')
-# print(df_option)
-
-# id_list = df_option['id_instrument'].unique()
-# df_option1 = df_option[df_option['id_instrument'] == id_list[0]].reset_index()
-# bkt_option = BktOption('daily', df_option1)
-#
-# bkt_option.start()
-# df = bkt_option.current_state
-# print(df)
-#
-# bkt_option.next()
-# df = bkt_option.current_state
-# print(df)
-#
-# bkt_option.reset()
-# df = bkt_option.current_state
-# print(df)
 
 bkt_optionset = OptionSet('daily',df_option)
-
 bkt_optionset.start()
 
 bktoption_list = bkt_optionset.bktoption_list
 print('start_date : ',bkt_optionset.start_date)
 print('end_date : ',bkt_optionset.end_date)
-print('eval_date : ',bkt_optionset.eval_date)
-# print(bktoption_list)
+df_carry = pd.DataFrame()
+
 while bkt_optionset.index < len(bkt_optionset.dt_list):
-    # df = pd.DataFrame()
-    print('='*100)
     print(bkt_optionset.eval_date)
     bkt_optionset.set_bktoptions_mdt1(7)
     df = bkt_optionset.collect_carry(bkt_optionset.bktoption_list_mdt1,7)
+    df = df.sort_values(by='code_instrument')
+    df_carry = df_carry.append(df,ignore_index=True)
     # df = bkt_optionset.collect_theta(bkt_optionset.bktoption_list_mdt1)
     # df = bkt_optionset.collect_vega(bkt_optionset.bktoption_list_mdt1)
     # bvs = bkt_optionset.get_volsurface_squre('call')
     # print(bvs)
-
-    print(df)
     bkt_optionset.next()
 
-# print('eval_date : ',bkt_optionset.eval_date)
-# print(bktoption_list)
-# for bktoption in bkt_optionset.bktoption_list:
-#     print(bktoption.carry())
+# print(len(df_carry['code_instrument'].unique()),df_carry['code_instrument'].unique())
+# print(len(df_carry['id_instrument'].unique()),df_carry['id_instrument'].unique())
+df_carry = df_carry.sort_values(by=['code_instrument','dt_date'])
+print(df_carry)
+
+print('')
 
 
 
