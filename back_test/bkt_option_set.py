@@ -36,39 +36,48 @@ class OptionSet(object):
         self.start_date = self.dt_list[0] #0
         self.end_date = self.dt_list[-1] # len(self.dt_list)-1
         self.eval_date = self.start_date
-        self.update_bktoption_list()
         self.update_current_daily_state()
+        if self.frequency in self.bktutil.cd_frequency_intraday:
+            self.update_current_datetime_state()
+        self.update_bktoption_list()
+
 
     def next(self):
         if self.frequency in self.bktutil.cd_frequency_low:
             self.update_eval_date()
-            self.update_bktoption_list()
             self.update_current_daily_state()
-            for bkt in self.bktoption_list: bkt.next()
+            # self.update_bktoption_list()
+            # for bkt in self.bktoption_list: bkt.next()
         else:
             self.update_eval_datetime()
+            self.update_current_datetime_state()
             if self.eval_datetime.date() != self.eval_date:
                 self.eval_date = self.eval_datetime.date()
-                self.update_bktoption_list()
-            for bkt in self.bktoption_list: bkt.next()
+
+        self.update_bktoption_list()
+        for bkt in self.bktoption_list: bkt.next()
 
     def update_bktoption_list(self,col_date='dt_date',col_datetime='dt_datetime',col_id='id_instrument'):
         if self.frequency in self.bktutil.cd_frequency_low:
-            df_current = self.df_metrics[self.df_metrics[col_date] == self.eval_date].reset_index()
+            df_current = self.df_daily_state
         else:
-            df_current = self.df_metrics[self.df_metrics[col_datetime] == self.eval_datetime].reset_index()
+            df_current = self.df_datetime_state
         df_current = self.get_duplicate_strikes_dropped(df_current)
         option_ids = df_current[col_id].unique()
         bkt_ids = []
+        bktoption_list = []
         for bktoption in self.bktoption_list:
-            if bktoption.id_instrument not in option_ids:
-                self.bktoption_list.remove(bktoption)
-            bkt_ids.append(bktoption.id_instrument)
+            if bktoption.id_instrument in option_ids:
+                bktoption_list.append(bktoption)
+                bkt_ids.append(bktoption.id_instrument)
+
         for optionid in option_ids:
             if optionid in bkt_ids: continue
             df_option = self.df_metrics[self.df_metrics[col_id] == optionid].reset_index()
             bktoption = BktOption(self.frequency, df_option, optionid)
-            self.bktoption_list.append(bktoption)
+            bktoption_list.append(bktoption)
+            bkt_ids.append(optionid)
+        self.bktoption_list = bktoption_list
 
     def update_eval_date(self):
         self.index += 1
@@ -77,15 +86,23 @@ class OptionSet(object):
 
 
     def update_eval_datetime(self):
+        self.index += 1
         self.eval_datetime = self.datetime_list[min(self.datetime_list.index(self.eval_datetime)+1,
                                                len(self.datetime_list)-1)]
 
 
-    def update_current_daily_state(self):
+    def update_current_daily_state(self,col_date='dt_date'):
         if self.frequency in self.bktutil.cd_frequency_low:
-            self.df_daily_state = self.df_metrics[self.df_metrics['dt_date']==self.eval_date].reset_index()
+            self.df_daily_state = self.df_metrics[self.df_metrics[col_date]==self.eval_date].reset_index()
         else:
             self.df_daily_state = None
+
+
+    def update_current_datetime_state(self,col_datetime='dt_datetime'):
+        if self.frequency in self.bktutil.cd_frequency_intraday:
+            self.df_datetime_state = self.df_metrics[self.df_metrics[col_datetime]==self.eval_datetime].reset_index()
+        else:
+            self.df_datetime_state = None
 
     def update_eligible_maturities(self,n): # n: 要求合约剩余期限大于n（天）
         if n < 1:
