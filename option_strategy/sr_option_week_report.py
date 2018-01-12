@@ -29,13 +29,16 @@ optionmkt_table = dbt.OptionMkt
 options_table = dbt.Options
 
 # Eval Settings
-evalDate = datetime.date(2018, 1, 5).strftime("%Y-%m-%d")  # Set as Friday
+evalDate = datetime.date(2018, 1, 12).strftime("%Y-%m-%d")  # Set as Friday
 start_date = w.tdaysoffset(-1, evalDate, "Period=M").Data[0][0].strftime("%Y-%m-%d")
+hist_date = w.tdaysoffset(-2, evalDate, "Period=Y").Data[0][0].strftime("%Y-%m-%d")
 # hist_date = w.tdaysoffset(-60, start_date, "").Data[0][0].strftime("%Y-%m-%d")
-hist_date = datetime.date(2017, 1, 1).strftime("%Y-%m-%d")
+# hist_date = datetime.date(2017, 1, 1).strftime("%Y-%m-%d")
 evalDate_1week = w.tdaysoffset(-1, evalDate, "Period=W").Data[0][0].strftime("%Y-%m-%d")
 evalDate_2week = w.tdaysoffset(-2, evalDate, "Period=W").Data[0][0].strftime("%Y-%m-%d")
 evalDate_3week = w.tdaysoffset(-3, evalDate, "Period=W").Data[0][0].strftime("%Y-%m-%d")
+evalDate_4week = w.tdaysoffset(-4, evalDate, "Period=W").Data[0][0].strftime("%Y-%m-%d")
+evalDate_5week = w.tdaysoffset(-5, evalDate, "Period=W").Data[0][0].strftime("%Y-%m-%d")
 plt.rcParams['font.sans-serif'] = ['STKaiti']
 plt.rcParams.update({'font.size': 13})
 flagNight = 0
@@ -46,7 +49,7 @@ contracts = ['1803', '1805', '1807', '1809']
 
 ################ # ATM Implied Vols
 
-dates = [evalDate, evalDate_1week, evalDate_2week, evalDate_3week]
+dates = [evalDate, evalDate_1week, evalDate_2week, evalDate_3week,evalDate_4week,evalDate_5week]
 optiondata_df = pd.DataFrame()
 columns = [
     'date', 'id_instrument', 'implied_vol', 'contract_month',
@@ -134,45 +137,47 @@ for idx_c, price in enumerate(future_closes):
     if idx_c == 0:
         r = 0.0
     else:
-        r = np.log(float(price) / float(future_closes[idx_c - 1]))
+        price = float(price)
+        future_close = float(future_closes[idx_c - 1])
+        if price == 0.0 or future_close == 0.0: r = 0.0
+        else : r = np.log(price/future_close)
     future_yields.append(r)
 underlying_df['yield'] = future_yields
+underlying_df = underlying_df[underlying_df['yield'] != 0.0].reset_index()
 # print(underlying_df)
 
-histvols_60 = []
-histvols_20 = []
-histvols_30 = []
-histvols_10 = []
-histvols_5 = []
-for idx_v in range(61, len(underlying_df['price'])):
-    histvols_60.append(np.std(underlying_df['yield'][idx_v - 60:idx_v]) * np.sqrt(252) * 100)
-    histvols_30.append(np.std(underlying_df['yield'][idx_v - 30:idx_v]) * np.sqrt(252) * 100)
-    histvols_20.append(np.std(underlying_df['yield'][idx_v - 20:idx_v]) * np.sqrt(252) * 100)
-    histvols_10.append(np.std(underlying_df['yield'][idx_v - 10:idx_v]) * np.sqrt(252) * 100)
-    histvols_5.append(np.std(underlying_df['yield'][idx_v - 5:idx_v]) * np.sqrt(252) * 100)
-# print(len(histvols_60))
-underlying_df.loc[61:, 'histvol_60'] = histvols_60
-underlying_df.loc[61:, 'histvol_30'] = histvols_30
-underlying_df.loc[61:, 'histvol_20'] = histvols_20
-underlying_df.loc[61:, 'histvol_10'] = histvols_10
+histvols_6 = []
+histvols_3 = []
+histvols_2 = []
+histvols_1 = []
+for idx_v in range(121, len(underlying_df['price'])):
+    histvols_6.append(np.std(underlying_df['yield'][idx_v - 120:idx_v]) * np.sqrt(252) * 100)
+    histvols_3.append(np.std(underlying_df['yield'][idx_v - 60:idx_v]) * np.sqrt(252) * 100)
+    histvols_2.append(np.std(underlying_df['yield'][idx_v - 40:idx_v]) * np.sqrt(252) * 100)
+    histvols_1.append(np.std(underlying_df['yield'][idx_v - 20:idx_v]) * np.sqrt(252) * 100)
+underlying_df.loc[121:, 'histvol_6'] = histvols_6
+underlying_df.loc[121:, 'histvol_3'] = histvols_3
+underlying_df.loc[121:, 'histvol_2'] = histvols_2
+underlying_df.loc[121:, 'histvol_1'] = histvols_1
 # print(underlying_df)
 volcone_df = pd.DataFrame()
-max_vols = [max(histvols_60), max(histvols_30), max(histvols_20), max(histvols_10)]
-min_vols = [min(histvols_60), min(histvols_30), min(histvols_20), min(histvols_10)]
-median_vols = [np.median(histvols_60), np.median(histvols_30), np.median(histvols_20), np.median(histvols_10)]
-p75_vols = [np.percentile(histvols_60, 75), np.percentile(histvols_30, 75),
-            np.percentile(histvols_20, 75), np.percentile(histvols_10, 75)]
-p25_vols = [np.percentile(histvols_60, 25), np.percentile(histvols_30, 25),
-            np.percentile(histvols_20, 25), np.percentile(histvols_10, 25)]
-current_vols = [histvols_60[-1], histvols_30[-1], histvols_20[-1], histvols_10[-1]]
+max_vols = [max(histvols_6), max(histvols_3), max(histvols_2), max(histvols_1)]
+min_vols = [min(histvols_6), min(histvols_3), min(histvols_2), min(histvols_1)]
+median_vols = [np.median(histvols_6), np.median(histvols_3), np.median(histvols_2),
+               np.median(histvols_1)]
+p75_vols = [np.percentile(histvols_6, 75), np.percentile(histvols_3, 75),
+            np.percentile(histvols_2, 75), np.percentile(histvols_1, 75)]
+p25_vols = [np.percentile(histvols_6, 25), np.percentile(histvols_3, 25),
+            np.percentile(histvols_2, 25), np.percentile(histvols_1, 25)]
+current_vols = [histvols_6[-1], histvols_3[-1], histvols_2[-1], histvols_1[-1]]
 print('current_vols : ', current_vols)
 histvolcone = [current_vols, max_vols, min_vols, median_vols, p75_vols, p25_vols]
-x = [60, 30, 20, 10]
+x = [6, 3, 2, 1]
 histvols = []
 f2, ax2 = plt.subplots()
 ldgs = ['当前水平', '最大值', '最小值', '中位数', '75分位数', '25分位数']
 for cont2, y in enumerate(histvolcone):
-    pu.plot_line(ax2, cont2, x, y, ldgs[cont2], '时间窗口', '波动率（%）')
+    pu.plot_line(ax2, cont2, x, y, ldgs[cont2], '时间：月', '波动率（%）')
 ax2.legend(bbox_to_anchor=(0., 1.02, 1., .202), loc=3,
            ncol=4, mode="expand", borderaxespad=0.,frameon=False)
 f2.savefig('../save_figure/hist_vols_' + str(evalDate) + '.png', dpi=300, format='png')
