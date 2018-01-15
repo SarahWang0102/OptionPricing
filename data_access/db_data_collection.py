@@ -219,10 +219,22 @@ class DataCollection():
             cd_exchange = 'sse'
             flag_night = -1
 
-            optionchain = w.wset("optionchain", "date=" + datestr + ";us_code=510050.SH;option_var=全部;call_put=全部")
-            df_optionchain = pd.DataFrame()
-            for i, f in enumerate(optionchain.Fields):
-                df_optionchain[f] = optionchain.Data[i]
+            engine = create_engine('mysql+pymysql://root:liz1128@101.132.148.152/mktdata',
+                                   echo=False)
+            conn = engine.connect()
+            metadata = MetaData(engine)
+            option_contracts = Table('option_contracts', metadata, autoload=True)
+            Session = sessionmaker(bind=engine)
+            sess = Session()
+            query = sess.query(option_contracts).filter(option_contracts.c.dt_listed <= datestr)\
+                    .filter(option_contracts.c.dt_maturity >= datestr)
+
+            df_optionchain = pd.read_sql(query.statement,query.session.bind)
+
+            # optionchain = w.wset("optionchain", "date=" + datestr + ";us_code=510050.SH;option_var=全部;call_put=全部")
+            # df_optionchain = pd.DataFrame()
+            # for i, f in enumerate(optionchain.Fields):
+            #     df_optionchain[f] = optionchain.Data[i]
 
             data = w.wset("optiondailyquotationstastics",
                           "startdate=" + datestr + ";enddate=" + datestr + ";exchange=sse;windcode=510050.SH")
@@ -233,23 +245,11 @@ class DataCollection():
             for (i2, df_mktdata) in df_mktdatas.iterrows():
                 dt_date = datetime.datetime.strptime(datestr, "%Y-%m-%d").date()
                 windcode = df_mktdata['option_code'] + '.SH'
-                criterion = df_optionchain['option_code'].map(lambda x: x == windcode)
-                option_info = df_optionchain[criterion]
-                amt_strike = option_info['strike_price'].values[0]
-                contract_month = str(option_info['month'].values[0])[-4:]
-                sec_name = option_info['option_name'].values[0]
-                if option_info['call_put'].values[0] == '认购':
-                    cd_option_type = 'call'
-                elif option_info['call_put'].values[0] == '认沽':
-                    cd_option_type = 'put'
-                else:
-                    cd_option_type = 'none'
-                    print('error in call_or_put')
-                if sec_name[-1] == 'A':
-                    id_instrument = '50etf_' + contract_month + '_' + cd_option_type[0] + '_' + str(amt_strike)[
-                                                                                                :6] + '_A'
-                else:
-                    id_instrument = '50etf_' + contract_month + '_' + cd_option_type[0] + '_' + str(amt_strike)[:6]
+                # criterion = df_optionchain['windcode'].map(lambda x: x == windcode)
+                option_info = df_optionchain[df_optionchain['windcode']==windcode]
+                id_instrument = option_info['id_instrument'].values[0]
+                amt_strike = option_info['amt_strike'].values[0]
+                cd_option_type = option_info['cd_option_type'].values[0]
 
                 amt_last_settlement = df_mktdata['pre_settle']
                 amt_open = df_mktdata['open']

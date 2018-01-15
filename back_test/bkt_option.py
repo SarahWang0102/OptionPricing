@@ -32,16 +32,7 @@ class BktOption(object):
         self.update_current_state()
         self.set_option_basics()
         self.set_pricing_metrics()
-        if self.frequency in self.bktutil.cd_frequency_intraday:
-            self.update_current_datetime()
-            # Remove datetime data before 09:30
-            dt = datetime.datetime(self.evalDate.year,self.evalDate.month,self.evalDate.day,9,30,00)
-            while self.dt_datetime < dt:
-                self.current_index += 1
-                self.update_current_state()
-                self.update_current_datetime()
-            self.start_index = self.current_index
-
+        self.start_index = self.current_index
 
 
     def next(self):
@@ -59,13 +50,29 @@ class BktOption(object):
 
     def update_current_state(self):
         self.current_state = self.df_metrics.loc[self.current_index]
-        self.update_current_date()
-        if self.frequency in self.bktutil.cd_frequency_intraday:
+
+        if self.frequency in self.bktutil.cd_frequency_low:
+            self.update_current_date()
+            self.update_evaluation()
+        else:
             self.update_current_datetime()
-        if self.frequency in ['daily','weekly','monthly','yearly']:
-            ql_evalDate = ql.Date(self.evalDate.day, self.evalDate.month, self.evalDate.year)
-            evaluation = Evaluation(ql_evalDate, self.daycounter, self.calendar)
-            self.evaluation = evaluation
+            # Remove datetime data before 09:30
+            dt = datetime.datetime(self.dt_datetime.year, self.dt_datetime.month, self.dt_datetime.day, 9, 30, 00)
+            while self.dt_datetime < dt:
+                self.current_index += 1
+                self.update_current_state()
+                self.update_current_datetime()
+            # set evaluation date
+            if self.dt_datetime.date() != self.dt_date:
+                self.update_current_date()
+                self.update_evaluation()
+
+
+    def update_evaluation(self):
+        ql_evalDate = ql.Date(self.dt_date.day, self.dt_date.month, self.dt_date.year)
+        # if ql_evalDate != self.evaluation.evalDate:
+        evaluation = Evaluation(ql_evalDate, self.daycounter, self.calendar)
+        self.evaluation = evaluation
 
 
     def update_current_datetime(self,col_datetime='dt_datetime'):
@@ -82,7 +89,7 @@ class BktOption(object):
         except:
             dt = self.current_state[col_datetime]
             dt_date = datetime.date(dt.year,dt.month,dt.day)
-        self.evalDate = dt_date
+        self.dt_date = dt_date
 
 
     def set_option_basics(self,col_option_type='cd_option_type',col_strike='amt_strike',
@@ -102,7 +109,6 @@ class BktOption(object):
             ql_maturitydt = ql.Date(self.maturitydt.day,
                                     self.maturitydt.month,
                                     self.maturitydt.year)
-
             if self.option_type == 'call':
                 ql_optiontype = ql.Option.Call
             elif self.option_type == 'put':
@@ -242,7 +248,6 @@ class BktOption(object):
     def get_delta(self):
         try:
             if self.implied_vol == None: self.update_implied_vol()
-
             delta = self.pricing_metrics.delta(self.evaluation, self.rf,self.underlying_price,
                                                self.underlying_price,self.engine_type,self.implied_vol)
         except Exception as e:
@@ -254,7 +259,6 @@ class BktOption(object):
     def get_theta(self):
         try:
             if self.implied_vol == None: self.update_implied_vol()
-
             theta = self.pricing_metrics.theta(self.evaluation, self.rf,self.underlying_price,
                                                self.underlying_price,self.engine_type,self.implied_vol)
         except Exception as e:
@@ -277,34 +281,23 @@ class BktOption(object):
     def get_iv_roll_down(self,black_var_surface,dt): # iv(tao-1)-iv(tao), tao:maturity
         if self.implied_vol == None : self.update_implied_vol()
         mdt = self.maturitydt
-        evalDate = self.evalDate
+        evalDate = self.dt_date
         ttm = (mdt-evalDate).days/365.0
-        k = self.strike
-        max_strike = max(black_var_surface.maxStrike(),black_var_surface.minStrike())
-        # min_strike = min(black_var_surface.maxStrike(),black_var_surface.minStrike())
-        # if k >= max_strike : k = max_strike-0.01
-        # if k <= min_strike : k = min_strike+0.01
-        # print(min_strike,max_strike,k)
-        # print(min_strike,max_strike,k)
         black_var_surface.enableExtrapolation()
-        implied_vol_t1 = black_var_surface.blackVol(ttm-dt, k)
+        implied_vol_t1 = black_var_surface.blackVol(ttm-dt, self.strike)
         iv_roll_down = implied_vol_t1 - self.implied_vol
         return iv_roll_down
 
 
-    def get_carry(self,bvs_call,bvs_put,dt=1.0/365.0):
-        # if self.implied_vol == None : self.update_implied_vol()
-
+    def get_carry(self,bvs_call,bvs_put,n=1):
+        dt = n/365.0
         if self.option_type == 'call':
             iv_roll_down = self.get_iv_roll_down(bvs_call,dt)
         else:
             iv_roll_down = self.get_iv_roll_down(bvs_put,dt)
         vega = self.get_vega()
         theta = self.get_theta()
-        # print(vega)
-        # print(theta)
         option_carry = (vega*iv_roll_down-theta)/self.option_price-self.rf
-        # print(option_carry)
         return option_carry
 
 

@@ -20,9 +20,11 @@ from back_test.bkt_option import BktOption
 from back_test.bkt_option_set import OptionSet
 
 
-start_date = datetime.date(2017, 12, 21)
+start_date = datetime.date(2015, 12, 31)
+# start_date = datetime.date(2016, 4, 27)
+# end_date = datetime.date(2016, 5, 31)
 end_date = datetime.date(2017, 12, 31)
-evalDate = datetime.date(2017, 6, 21)
+# evalDate = datetime.date(2017, 6, 21)
 
 rf = 0.03
 engineType = 'AnalyticEuropeanEngine'
@@ -34,7 +36,7 @@ conn = engine.connect()
 metadata = MetaData(engine)
 Session = sessionmaker(bind=engine)
 sess = Session()
-engine2 = create_engine('mysql+pymysql://guest:passw0rd@101.132.148.152/mktdata_intraday', echo=False)
+engine2 = create_engine('mysql+pymysql://root:liz1128@101.132.148.152/metrics', echo=False)
 conn2 = engine2.connect()
 metadata2 = MetaData(engine2)
 Session2 = sessionmaker(bind=engine2)
@@ -42,6 +44,7 @@ sess2 = Session2()
 Index_mkt = dbt.IndexMkt
 Option_mkt = dbt.OptionMkt
 option_intd = dbt.OptionMktIntraday
+carry = Table('carry', metadata2, autoload=True)
 options = dbt.Options
 calendar = ql.China()
 daycounter = ql.ActualActual()
@@ -77,7 +80,7 @@ df_50etf = pd.read_sql(query_etf.statement, query_etf.session.bind).rename(colum
 df_option = df_mkt.join(df_contract.set_index('id_instrument'),how='left',on='id_instrument')
 df_option = df_option.join(df_50etf.set_index('dt_date'),how='left',on='dt_date')
 
-bkt_optionset = OptionSet('daily',df_option)
+bkt_optionset = OptionSet('daily',df_option,7)
 bkt_optionset.start()
 
 bktoption_list = bkt_optionset.bktoption_list
@@ -87,22 +90,51 @@ df_carry = pd.DataFrame()
 
 while bkt_optionset.index < len(bkt_optionset.dt_list):
     print(bkt_optionset.eval_date)
-    bkt_optionset.set_bktoptions_mdt1(7)
-    df = bkt_optionset.collect_carry(bkt_optionset.bktoption_list_mdt1,7)
-    df = df.sort_values(by='code_instrument')
-    df_carry = df_carry.append(df,ignore_index=True)
-    # df = bkt_optionset.collect_theta(bkt_optionset.bktoption_list_mdt1)
-    # df = bkt_optionset.collect_vega(bkt_optionset.bktoption_list_mdt1)
-    # bvs = bkt_optionset.get_volsurface_squre('call')
-    # print(bvs)
+    option_list = bkt_optionset.bktoption_list
+    if len(option_list) == 0:
+        bkt_optionset.next()
+        continue
+    df,res = bkt_optionset.collect_carry(option_list)
+    # print(df)
+    for r in res:
+        try:
+            conn2.execute(carry.insert(), r)
+        except Exception as e:
+            print(e)
+            print(r)
+    # df.to_sql(name='option_carry', con=conn2, if_exists = 'append', index=False)
+    # inserted = pd.read_sql('select count(*) from %s' %('carry'),engine2)
+    # print(inserted)
+    # df_carry = df_carry.append(df,ignore_index=True)
     bkt_optionset.next()
 
-# print(len(df_carry['code_instrument'].unique()),df_carry['code_instrument'].unique())
-# print(len(df_carry['id_instrument'].unique()),df_carry['id_instrument'].unique())
-df_carry = df_carry.sort_values(by=['code_instrument','dt_date'])
-print(df_carry)
+# df_carry = df_carry.sort_values(by=['code_instrument','dt_date'])
+# print(df_carry)
+#
+#
+# with open(os.path.abspath('..')+'/save_results/df_carry.pickle','wb') as f:
+#     pickle.dump([df_carry],f)
 
-print('')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

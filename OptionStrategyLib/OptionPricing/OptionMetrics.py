@@ -9,7 +9,7 @@ class OptionMetrics:
     def implied_vol(self,evaluation,rf, spot_price, option_price,engineType):
 
         ql_evalDate = evaluation.evalDate
-        ql.Settings.instance().evaluationDate = ql_evalDate
+        # ql.Settings.instance().evaluationDate = ql_evalDate
         calendar = evaluation.calendar
         daycounter = evaluation.daycounter
         option = self.Option.option_ql

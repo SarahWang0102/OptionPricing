@@ -198,6 +198,7 @@ for idx_date,date in enumerate(date_rage):
     print('df_open_trades : ')
     print(df_open_trades)
     df_trading_book = df_trading_book.append(df_open_trades,ignore_index=True)
+
     # 开仓
     amt_weight = fund / 8.0
     for (i,row) in df_buy.iterrows():
