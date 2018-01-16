@@ -281,7 +281,7 @@ class Account(object):
         self.df_trading_records = self.df_trading_records.append(record, ignore_index=True)
         self.df_trading_book = self.df_trading_book.append(position, ignore_index=True)
         self.cash = self.cash + margin_capital - close_trading_cost
-        self.df_holdings = self.df_holdings[self.df_holdings[self.util.id_instrument]!=id_instrument].reset_index()
+        self.df_holdings = self.df_holdings[self.df_holdings[self.util.id_instrument]!=id_instrument]
         self.nbr_trade += 1
         self.realized_pnl += pnl_amt
 

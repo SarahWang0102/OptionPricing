@@ -79,8 +79,8 @@ while evalDate < end_date:
                 .sort_values(by='amt_carry',ascending=False).reset_index()
     df_call_t5 = df_call.loc[0:4]
     df_call_b5 = df_call.loc[len(df_call)-5:]
-    print(df_call_t5)
-    print(df_call_b5)
+    # print(df_call_t5)
+    # print(df_call_b5)
 
     # 平仓：持有期限为hp
     realized_earning = 0.0
@@ -90,7 +90,7 @@ while evalDate < end_date:
             long_short = row['long_short']
             idx_carry = (df_carry['id_instrument']==id_instrument)&(df_carry['dt_date']==evalDate)
             mkt_price = df_carry[idx_carry]['amt_option_price'].values[0]
-            mdt = df_carry[idx_carry]['dt_maturity']
+            mdt = df_carry[idx_carry]['dt_maturity'].values[0]
             multiplier = df_optioninfo[df_optioninfo['id_instrument']==id_instrument]['nbr_multiplier'].values[0]
             if mdt <= mdt_next or mdt_next>=end_date:
                 bkt.liquidite_position(evalDate, id_instrument,mkt_price)
@@ -123,6 +123,7 @@ while evalDate < end_date:
 
     df_metric = df_carry[df_carry['dt_date']==evalDate]
     bkt.mkm_update(evalDate,df_metric)
+    print('account : ',evalDate)
     print(bkt.df_account)
 
 
