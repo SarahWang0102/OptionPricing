@@ -113,7 +113,7 @@ class Account(object):
         return id_position
 
 
-    def open_long(self,dt,id_instrument,mkt_price,trade_fund,multiplier=None):# 多空开仓
+    def open_long(self,dt,id_instrument,mkt_price,trade_fund,multiplier=None):# 多开
         long_short = self.util.long
         trade_type = '多开'
         position = pd.Series()
@@ -153,6 +153,7 @@ class Account(object):
         unit = np.floor(trade_fund*self.leverage/(mkt_price*multiplier))
         fee = unit * mkt_price * self.fee * multiplier
         cost = unit * mkt_price * (1 + self.fee) * multiplier
+        # TODO: calculate_margin()
         margin_capital = unit*mkt_price*multiplier*self.margin
         position[self.util.id_instrument] = id_instrument
         position[self.util.dt_open] = dt
@@ -216,6 +217,7 @@ class Account(object):
     def adjust_unit(self,dt,id_instrument,mkt_price,trade_fund):
         idx = self.df_holdings[self.util.id_instrument] == id_instrument
         position = self.df_holdings[idx]
+        # TODO: change to loc
         holding_unit = position[self.util.unit].values[0]
         long_short = position[self.util.long_short].values[0]
         margin_capital = position[self.util.margin_capital].values[0]

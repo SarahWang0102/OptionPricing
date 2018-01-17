@@ -20,9 +20,9 @@ from back_test.bkt_option import BktOption
 from back_test.bkt_option_set import OptionSet
 
 
-# start_date = datetime.date(2015, 12, 31)
-start_date = datetime.date(2016, 4, 22)
-# end_date = datetime.date(2016, 5, 31)
+start_date = datetime.date(2015, 12, 31)
+# start_date = datetime.date(2017, 10, 1)
+# end_date = datetime.date(2017, 10, 10)
 end_date = datetime.date(2017, 12, 31)
 # evalDate = datetime.date(2017, 6, 21)
 
@@ -44,7 +44,7 @@ sess2 = Session2()
 Index_mkt = dbt.IndexMkt
 Option_mkt = dbt.OptionMkt
 option_intd = dbt.OptionMktIntraday
-carry = Table('carry', metadata2, autoload=True)
+carry1 = Table('carry1', metadata2, autoload=True)
 options = dbt.Options
 calendar = ql.China()
 daycounter = ql.ActualActual()
@@ -95,10 +95,17 @@ while bkt_optionset.index < len(bkt_optionset.dt_list):
         bkt_optionset.next()
         continue
     df,res = bkt_optionset.collect_carry(option_list)
-    print(df)
+    init_price = df_option.loc[(df_option['dt_date']==df.loc[0,'dt_date'])&(
+        df_option['id_instrument']==df.loc[0,'id_instrument']),'amt_close'].values[0]
+    price = df.loc[0, 'amt_option_price']
+    if price != init_price:
+        print(df.loc[0,'id_instrument'])
+        print(df.loc[0,'amt_option_price'],init_price)
+    # print(df)
     for r in res:
         try:
-            conn2.execute(carry.insert(), r)
+            # print(r)
+            conn2.execute(carry1.insert(), r)
         except Exception as e:
             print(e)
             print(r)

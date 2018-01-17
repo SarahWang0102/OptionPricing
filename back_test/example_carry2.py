@@ -9,7 +9,7 @@ from back_test.account import Account
 
 
 # start_date = datetime.date(2015, 12, 31)
-start_date = datetime.date(2017, 6, 30)
+start_date = datetime.date(2017, 9, 30)
 # end_date = datetime.date(2016, 5, 31)
 end_date = datetime.date(2017, 12, 31)
 # evalDate = datetime.date(2017, 6, 21)
@@ -37,8 +37,6 @@ Option_mkt = dbt.OptionMkt
 carry = Table('carry', metadata2, autoload=True)
 options = dbt.Options
 
-
-
 query = sess2.query(carry)
 df_carry = pd.read_sql(query.statement,query.session.bind)
 query_optioninfo = sess.query(options)
@@ -52,7 +50,8 @@ print('=' * 50)
 print("%20s %20s %20s" % ("eval date", 'NPV','cash'))
 date_range = w.tdays(start_date.strftime("%Y-%m-%d"), end_date.strftime("%Y-%m-%d")).Data[0]
 i = 0
-while i < len(date_range)-hp:
+last_trading_date = date_range[-1].date()
+while i < len(date_range):
     evalDate = date_range[i].date()
     mdt_next = w.tdaysoffset(hp, evalDate).Data[0][0].date()
     df_carry_today = df_carry[(df_carry['dt_date']==evalDate)&(df_carry['dt_maturity']>mdt_next)]
@@ -65,7 +64,7 @@ while i < len(date_range)-hp:
     df_put = df_carry_today[df_carry_today['cd_option_type']=='put'] \
                 .sort_values(by='amt_carry', ascending=False).reset_index()
     df_put_t5 = df_put.loc[0:4]
-    df_put_b5 = df_put.loc[len(df_call) - 5:]
+    df_put_b5 = df_put.loc[len(df_put) - 5:]
     df_metric_today = df_metric[df_metric['dt_date'] == evalDate]
     df_buy = pd.DataFrame()
     df_sell = pd.DataFrame()
@@ -88,7 +87,7 @@ while i < len(date_range)-hp:
                     print(id_instrument,evalDate)
                     print(e)
 
-                if mdt<=mdt_next or mdt>=end_date or mdt_next>=end_date:
+                if mdt<=mdt_next or mdt>=last_trading_date or mdt_next>=last_trading_date:
                     bkt.liquidite_position(evalDate, id_instrument,mkt_price)
                 else:
                     if long_short==1 and id_instrument in df_buy['id_instrument']:continue
@@ -100,10 +99,11 @@ while i < len(date_range)-hp:
                         print(e)
 
         # 开仓/调仓：
-        if mdt_next < end_date:
+        if mdt_next < last_trading_date:
             for (idx,row) in df_buy.iterrows():
                 id_instrument = row['id_instrument']
-                mkt_price = row['amt_option_price']
+                # mkt_price = row['amt_option_price']
+                mkt_price = df_metric_today[df_metric_today['id_instrument'] == id_instrument]['amt_close'].values[0]
                 multiplier = df_optioninfo[df_optioninfo['id_instrument']==id_instrument]['nbr_multiplier'].values[0]
                 trading_fund = cash*(1/20)
                 if id_instrument in bkt.df_holdings['id_instrument']:
@@ -113,7 +113,8 @@ while i < len(date_range)-hp:
 
             for (idx,row) in df_sell.iterrows():
                 id_instrument = row['id_instrument']
-                mkt_price = row['amt_option_price']
+                # mkt_price = row['amt_option_price']
+                mkt_price = df_metric_today[df_metric_today['id_instrument'] == id_instrument]['amt_close'].values[0]
                 multiplier = df_optioninfo[df_optioninfo['id_instrument']==id_instrument]['nbr_multiplier'].values[0]
                 trading_fund = cash*(1/20)
                 if id_instrument in bkt.df_holdings['id_instrument']:
@@ -126,7 +127,8 @@ while i < len(date_range)-hp:
     i += 1
 
 
-
+print(evalDate)
+print(mdt_next)
 print(bkt.df_holdings)
 
 

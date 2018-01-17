@@ -186,7 +186,7 @@ class BktOption(object):
             print(e)
             underlying_price = None
         self.underlying_price = underlying_price
-        return  underlying_price
+        # return  underlying_price
 
 
     def update_rf(self,col_rf='risk_free_rate'):

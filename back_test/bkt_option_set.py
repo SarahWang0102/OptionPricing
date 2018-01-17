@@ -59,7 +59,7 @@ class OptionSet(object):
                 self.update_eligible_maturities()
 
         self.update_bktoption_list()
-        for bkt in self.bktoption_list: bkt.next()
+        # for bkt in self.bktoption_list: bkt.next()
 
     def update_bktoption_list(self,col_date='dt_date',col_datetime='dt_datetime',col_id='id_instrument'):
         if self.frequency in self.bktutil.cd_frequency_low:
@@ -72,6 +72,7 @@ class OptionSet(object):
         bktoption_list = []
         for bktoption in self.bktoption_list:
             if bktoption.id_instrument in option_ids and bktoption.maturitydt in self.eligible_maturities:
+                bktoption.next()
                 bktoption_list.append(bktoption)
                 bkt_ids.append(bktoption.id_instrument)
 
@@ -227,6 +228,7 @@ class OptionSet(object):
                                      col_option_price='amt_close',
                                      col_multiplier='nbr_multiplier',
                                      col_strike='amt_strike'):
+        # TODO: no need for interation
         for (idx,row) in self.df_metrics.iterrows():
             self.df_metrics.loc[idx,col_adj_strike] = round(row[col_strike]*row[col_multiplier]/10000,2)
             # self.df_metrics.loc[idx,'adj_underlying_price'] = round(row[col_underlying_price]*row[col_multiplier]/10000,2)
@@ -336,6 +338,7 @@ class OptionSet(object):
                 'amt_carry':float(carry)
             }
             res.append(db_row)
+            # print(self.eval_date,' , ',option.id_instrument,' ,', option.option_price)
         return df,res
 
 
