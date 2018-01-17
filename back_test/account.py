@@ -287,7 +287,10 @@ class Account(object):
         if len(df_open_trades) != 0:
             for (idx,row) in df_open_trades.iterrows():
                 id_instrument = row[self.util.id_instrument]
-                mkt_price = df_metric[df_metric['id_instrument']==id_instrument][col_option_price].values[0]
+                try:
+                    mkt_price = df_metric[df_metric['id_instrument']==id_instrument][col_option_price].values[0]
+                except Exception as e:
+                    print(e)
                 margin = mkt_price*row[self.util.unit]*row[self.util.multiplier]*self.margin
                 margin_call = margin-row[self.util.margin_capital]
                 self.cash -= margin_call

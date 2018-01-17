@@ -55,7 +55,7 @@ i = 0
 while i < len(date_range)-hp:
     evalDate = date_range[i].date()
     mdt_next = w.tdaysoffset(hp, evalDate).Data[0][0].date()
-    df_carry_today = df_carry[df_carry['dt_date']==evalDate]
+    df_carry_today = df_carry[(df_carry['dt_date']==evalDate)&(df_carry['dt_maturity']>mdt_next)]
     df_carry_today = df_carry_today[df_carry_today['amt_carry'] != -999.0]
 
     df_call = df_carry_today[df_carry_today['cd_option_type']=='call']\
@@ -123,7 +123,10 @@ while i < len(date_range)-hp:
                     bkt.open_short(evalDate,id_instrument,mkt_price,trading_fund,multiplier)
 
     # df_today = df_metric[df_metric['dt_date']==evalDate]
+    # try:
     bkt.mkm_update(evalDate,df_metric_today,'amt_close')
+    # except Exception as e:
+    #     print(e)
     print("%20s %20s" % (evalDate, bkt.npv))
     i += 1
 
