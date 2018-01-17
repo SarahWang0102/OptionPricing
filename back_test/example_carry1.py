@@ -20,8 +20,8 @@ from back_test.bkt_option import BktOption
 from back_test.bkt_option_set import OptionSet
 
 
-start_date = datetime.date(2015, 12, 31)
-# start_date = datetime.date(2016, 4, 27)
+# start_date = datetime.date(2015, 12, 31)
+start_date = datetime.date(2016, 4, 22)
 # end_date = datetime.date(2016, 5, 31)
 end_date = datetime.date(2017, 12, 31)
 # evalDate = datetime.date(2017, 6, 21)
@@ -95,7 +95,7 @@ while bkt_optionset.index < len(bkt_optionset.dt_list):
         bkt_optionset.next()
         continue
     df,res = bkt_optionset.collect_carry(option_list)
-    # print(df)
+    print(df)
     for r in res:
         try:
             conn2.execute(carry.insert(), r)
