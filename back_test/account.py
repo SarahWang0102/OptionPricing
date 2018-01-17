@@ -180,10 +180,7 @@ class Account(object):
     def liquidite_position(self,dt,id_instrument,mkt_price): # 多空平仓
         idx = self.df_holdings[self.util.id_instrument] == id_instrument
         position = self.df_holdings[idx]
-        # try:
         unit = position[self.util.unit].values[0]
-        # except Exception as e:
-        #     print(e)
         long_short = position[self.util.long_short].values[0]
         margin_capital = position[self.util.margin_capital].values[0]
         dt_open = position[self.util.dt_open].values[0]
@@ -193,8 +190,8 @@ class Account(object):
             trade_type = '多平'
         else:
             trade_type = '空平'
-        close_trading_cost = unit*mkt_price*self.fee*multiplier
-        pnl_amt = long_short*(unit*mkt_price*multiplier-cost) - close_trading_cost
+        fee = unit*mkt_price*self.fee*multiplier
+        pnl_amt = long_short*(unit*mkt_price*multiplier-cost) - fee
         position.loc[idx,self.util.dt_close] = dt
         position.loc[idx,self.util.days_holding] = (dt - dt_open).days
         position.loc[idx,self.util.close_price] = mkt_price
@@ -206,7 +203,7 @@ class Account(object):
                                     self.util.dt_trade: [dt],
                                     self.util.trading_type: [trade_type],
                                     self.util.trade_price: [mkt_price],
-                                    self.util.trading_cost: [close_trading_cost],
+                                    self.util.trading_cost: [fee],
                                     self.util.unit: [unit]})
 
         self.df_trading_records = self.df_trading_records.append(record, ignore_index=True)
@@ -245,7 +242,7 @@ class Account(object):
                 cost -= liquidated_cost
                 realized_pnl = long_short*(liquidated_unit*multiplier*mkt_price-liquidated_cost)-fee
                 self.realized_pnl += realized_pnl
-                self.cash = self.cash-margin_add-realized_pnl
+                self.cash = self.cash-margin_add+realized_pnl
 
             self.df_holdings.loc[idx,self.util.unit] = unit
             self.df_holdings.loc[idx,self.util.open_price] = open_price

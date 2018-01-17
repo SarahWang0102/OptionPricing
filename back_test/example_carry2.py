@@ -49,7 +49,7 @@ df_metric = pd.read_sql(query_metric.statement,query_metric.session.bind)
 ##############################################################################################
 bkt = Account()
 print('=' * 50)
-print("%20s %20s" % ("eval date", 'NPV'))
+print("%20s %20s %20s" % ("eval date", 'NPV','cash'))
 date_range = w.tdays(start_date.strftime("%Y-%m-%d"), end_date.strftime("%Y-%m-%d")).Data[0]
 i = 0
 while i < len(date_range)-hp:
@@ -73,7 +73,8 @@ while i < len(date_range)-hp:
     df_buy = df_buy.append(df_put_t5,ignore_index=True)
     df_sell = df_sell.append(df_call_b5,ignore_index=True)
     df_sell = df_sell.append(df_put_b5,ignore_index=True)
-
+    cash = bkt.cash
+    if cash <= bkt.init_fund / 1000: break
     if i%hp == 0:
         # 平仓
         if len(bkt.df_holdings) != 0:
@@ -99,14 +100,12 @@ while i < len(date_range)-hp:
                         print(e)
 
         # 开仓/调仓：
-        cash = bkt.cash
-        if cash <= bkt.init_fund/1000:break
         if mdt_next < end_date:
             for (idx,row) in df_buy.iterrows():
                 id_instrument = row['id_instrument']
                 mkt_price = row['amt_option_price']
                 multiplier = df_optioninfo[df_optioninfo['id_instrument']==id_instrument]['nbr_multiplier'].values[0]
-                trading_fund = cash*(1/10)
+                trading_fund = cash*(1/20)
                 if id_instrument in bkt.df_holdings['id_instrument']:
                     bkt.adjust_unit(evalDate,id_instrument,mkt_price,trading_fund)
                 else:
@@ -116,23 +115,19 @@ while i < len(date_range)-hp:
                 id_instrument = row['id_instrument']
                 mkt_price = row['amt_option_price']
                 multiplier = df_optioninfo[df_optioninfo['id_instrument']==id_instrument]['nbr_multiplier'].values[0]
-                trading_fund = cash*(1/10)
+                trading_fund = cash*(1/20)
                 if id_instrument in bkt.df_holdings['id_instrument']:
                     bkt.adjust_unit(evalDate,id_instrument,mkt_price,trading_fund)
                 else:
                     bkt.open_short(evalDate,id_instrument,mkt_price,trading_fund,multiplier)
 
-    # df_today = df_metric[df_metric['dt_date']==evalDate]
-    # try:
     bkt.mkm_update(evalDate,df_metric_today,'amt_close')
-    # except Exception as e:
-    #     print(e)
-    print("%20s %20s" % (evalDate, bkt.npv))
+    print("%20s %20s %20s" % (evalDate, bkt.npv,cash))
     i += 1
 
 
 
-
+print(bkt.df_holdings)
 
 
 
