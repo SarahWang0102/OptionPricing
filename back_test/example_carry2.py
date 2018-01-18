@@ -5,11 +5,11 @@ import datetime
 from sqlalchemy import *
 from sqlalchemy.orm import sessionmaker
 from data_access.db_tables import DataBaseTables as dbt
-from back_test.account import Account
+from back_test.account import BktAccount
 
 
-# start_date = datetime.date(2015, 12, 31)
-start_date = datetime.date(2017, 9, 30)
+start_date = datetime.date(2015, 12, 31)
+# start_date = datetime.date(2017, 9, 30)
 # end_date = datetime.date(2016, 5, 31)
 end_date = datetime.date(2017, 12, 31)
 # evalDate = datetime.date(2017, 6, 21)
@@ -21,7 +21,7 @@ rf = 0.03
 engineType = 'AnalyticEuropeanEngine'
 dt = 1.0 / 12
 init_fund = 10000
-hp = 10 # days
+hp = 20 # days
 
 engine = create_engine('mysql+pymysql://guest:passw0rd@101.132.148.152/mktdata', echo=False)
 conn = engine.connect()
@@ -34,7 +34,7 @@ metadata2 = MetaData(engine2)
 Session2 = sessionmaker(bind=engine2)
 sess2 = Session2()
 Option_mkt = dbt.OptionMkt
-carry = Table('carry', metadata2, autoload=True)
+carry = Table('carry1', metadata2, autoload=True)
 options = dbt.Options
 
 query = sess2.query(carry)
@@ -45,7 +45,7 @@ query_metric = sess.query(Option_mkt.dt_date,Option_mkt.id_instrument,Option_mkt
 df_metric = pd.read_sql(query_metric.statement,query_metric.session.bind)
 
 ##############################################################################################
-bkt = Account()
+bkt = BktAccount()
 print('=' * 50)
 print("%20s %20s %20s" % ("eval date", 'NPV','cash'))
 date_range = w.tdays(start_date.strftime("%Y-%m-%d"), end_date.strftime("%Y-%m-%d")).Data[0]

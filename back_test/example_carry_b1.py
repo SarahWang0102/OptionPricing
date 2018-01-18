@@ -20,16 +20,13 @@ from back_test.bkt_option import BktUtil
 from back_test.bkt_option_set import OptionSet
 
 
-start_date = datetime.date(2015, 3, 31)
-# start_date = datetime.date(2017, 10, 1)
-# end_date = datetime.date(2017, 10, 10)
-end_date = datetime.date(2017, 12, 31)
+# start_date = datetime.date(2015, 3, 31)
+start_date = datetime.date(2017, 9, 1)
+end_date = datetime.date(2017, 11, 10)
+# end_date = datetime.date(2017, 12, 31)
 # evalDate = datetime.date(2017, 6, 21)
+hp = 20
 
-rf = 0.03
-engineType = 'AnalyticEuropeanEngine'
-dt = 1.0 / 12
-init_fund = 10000
 
 engine = create_engine('mysql+pymysql://guest:passw0rd@101.132.148.152/mktdata', echo=False)
 conn = engine.connect()
@@ -49,7 +46,6 @@ options = dbt.Options
 calendar = ql.China()
 daycounter = ql.ActualActual()
 util = BktUtil()
-fund = init_fund
 open_trades = []
 query_mkt = sess.query(Option_mkt.dt_date,
                         Option_mkt.id_instrument,
@@ -82,7 +78,7 @@ df_50etf = pd.read_sql(query_etf.statement, query_etf.session.bind).rename(colum
 df_option = df_mkt.join(df_contract.set_index('id_instrument'),how='left',on='id_instrument')
 df_option = df_option.join(df_50etf.set_index('dt_date'),how='left',on='dt_date')
 
-bkt_optionset = OptionSet('daily',df_option,20)
+bkt_optionset = OptionSet('daily',df_option,hp)
 bkt_optionset.start()
 
 bktoption_list = bkt_optionset.bktoption_list
@@ -97,6 +93,7 @@ while bkt_optionset.index < len(bkt_optionset.dt_list):
         bkt_optionset.next()
         continue
     df,res = bkt_optionset.collect_carry(option_list)
+
     for r in res:
         try:
             # print(r)

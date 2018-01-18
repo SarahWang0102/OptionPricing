@@ -6,33 +6,38 @@ from back_test.bkt_util import BktUtil
 
 import datetime
 import QuantLib as ql
+import numpy as np
 
 
 class BktOption(object):
 
-    def __init__(self,cd_frequency,df_option_metrics,id_instrument='',
+    def __init__(self,cd_frequency,df_daily_metrics,df_intraday_metrics=None,id_instrument='',
                  pricing_type = 'OptionPlainEuropean',engine_type = 'AnalyticEuropeanEngine'):
-        self.bktutil = BktUtil()
+        self.util = BktUtil()
         self.frequency = cd_frequency
         self.id_instrument = id_instrument
-        self.df_metrics = df_option_metrics # Sorted ascending by date/datetime
-        self.nbr_index = len(df_option_metrics)
-        self.current_index = 0
-        self.last_index = len(df_option_metrics)-1
-        self.daycounter = ql.ActualActual()
-        self.calendar = ql.China()
+        self.df_daily_metrics = df_daily_metrics # Sorted ascending by date/datetime
+        if self.frequency in self.util.cd_frequency_low:
+            self.df_metrics = df_daily_metrics
+        else:
+            self.df_metrics = df_intraday_metrics
+        self.start_index = 0
+        self.nbr_index = len(df_daily_metrics)
+        self.last_index = len(df_daily_metrics)-1
+        self.dt_list = sorted(self.df_metrics[self.util.col_date].unique())
         self.pricing_type = pricing_type
         self.engine_type = engine_type
         self.implied_vol = None
+        self.trade_unit = 0
+        self.daycounter = ql.ActualActual()
+        self.calendar = ql.China()
         self.start()
 
     def start(self):
-        self.start_state = self.df_metrics.loc[0]
-        self.current_index = 0
+        self.current_index = self.start_index
         self.update_current_state()
         self.set_option_basics()
         self.set_pricing_metrics()
-        self.start_index = self.current_index
 
 
     def next(self):
@@ -41,18 +46,18 @@ class BktOption(object):
         self.set_pricing_metrics()
 
 
-    def reset(self):
-        self.current_index = self.start_index
-        self.update_current_state()
-        self.set_pricing_metrics()
-
+    # def reset(self):
+    #     self.current_index = self.start_index
+    #     self.update_current_state()
+    #     self.set_pricing_metrics()
 
 
     def update_current_state(self):
         self.current_state = self.df_metrics.loc[self.current_index]
 
-        if self.frequency in self.bktutil.cd_frequency_low:
-            self.update_current_date()
+        if self.frequency in self.util.cd_frequency_low:
+            self.current_daily_state = self.current_state
+            self.dt_date = self.current_state[self.util.col_date]
             self.update_evaluation()
         else:
             self.update_current_datetime()
@@ -63,42 +68,43 @@ class BktOption(object):
                 self.update_current_state()
                 self.update_current_datetime()
             # set evaluation date
-            if self.dt_datetime.date() != self.dt_date:
-                self.update_current_date()
+            dt_today = self.dt_datetime.date()
+            if dt_today != self.dt_date:
+                self.dt_date = dt_today
+                idx_today = self.dt_list.index(dt_today)
+                self.current_daily_state = self.df_daily_metrics.loc[idx_today]
                 self.update_evaluation()
 
 
     def update_evaluation(self):
         ql_evalDate = ql.Date(self.dt_date.day, self.dt_date.month, self.dt_date.year)
-        # if ql_evalDate != self.evaluation.evalDate:
         evaluation = Evaluation(ql_evalDate, self.daycounter, self.calendar)
         self.evaluation = evaluation
 
 
-    def update_current_datetime(self,col_datetime='dt_datetime'):
+    def update_current_datetime(self):
         try:
-            dt_datetime = self.current_state[col_datetime]
+            dt_datetime = self.current_state[self.util.col_datetime]
         except Exception:
             dt_datetime = None
         self.dt_datetime = dt_datetime
 
 
-    def update_current_date(self,column_date='dt_date',col_datetime='dt_datetime'):
-        try:
-            dt_date = self.current_state[column_date]
-        except:
-            dt = self.current_state[col_datetime]
-            dt_date = datetime.date(dt.year,dt.month,dt.day)
-        self.dt_date = dt_date
+    # def update_current_date(self):
+    #     try:
+    #         dt_date = self.current_state[self.util.col_date]
+    #     except:
+    #         dt = self.current_state[self.util.col_datetime]
+    #         dt_date = datetime.date(dt.year,dt.month,dt.day)
+    #     self.dt_date = dt_date
 
 
-    def set_option_basics(self,col_option_type='cd_option_type',col_strike='amt_strike',
-                          col_maturitydt='dt_maturity',col_code = 'code_instrument'):
-        self.update_option_type(col_option_type)
-        self.update_strike(col_strike)
-        self.update_maturitydt(col_maturitydt)
-        self.update_code_instrument(col_code)
-        # self.update_current_state()
+    def set_option_basics(self):
+        self.update_option_type()
+        self.update_strike()
+        self.update_maturitydt()
+        self.update_code_instrument()
+        self.update_multiplier()
 
 
     def set_pricing_metrics(self):
@@ -123,14 +129,14 @@ class BktOption(object):
         self.pricing_metrics = OptionMetrics(option)
 
 
-    def update_strike(self,col_strike='amt_strike',col_adj_strike = 'adj_strike'):
+    def update_strike(self):
         try:
-            strike = self.current_state[col_strike]
+            strike = self.current_daily_state[self.util.col_strike]
         except Exception as e:
             print(e)
             strike = None
         try:
-            adj_strike = self.current_state[col_adj_strike]
+            adj_strike = self.current_daily_state[self.util.col_adj_strike]
         except Exception as e:
             print(e)
             adj_strike = None
@@ -138,40 +144,40 @@ class BktOption(object):
         self.adj_strike = adj_strike
 
 
-    def update_maturitydt(self,col_maturitydt='dt_maturity'):
+    def update_maturitydt(self):
         try:
-            maturitydt = self.current_state[col_maturitydt]
+            maturitydt = self.current_daily_state[self.util.col_maturitydt]
         except Exception as e:
             print(e)
-            print(self.current_state)
+            print(self.current_daily_state)
             maturitydt = None
         self.maturitydt = maturitydt
 
 
-    def update_option_type(self,col_option_type='cd_option_type'):
+    def update_option_type(self):
         try:
-            option_type = self.current_state[col_option_type]
+            option_type = self.current_daily_state[self.util.col_option_type]
         except Exception as e:
             print(e)
             option_type = None
         self.option_type = option_type
 
-    def update_code_instrument(self,col_code = 'code_instrument'):
+    def update_code_instrument(self):
         try:
-            code_instrument = self.current_state[col_code]
+            code_instrument = self.current_daily_state[self.util.col_code_instrument]
         except Exception as e:
             print(e)
             code_instrument = None
         self.code_instrument = code_instrument
 
-    def update_option_price(self,col_option_price='amt_close',col_adj_option_price = 'adj_option_price'):
+    def update_option_price(self):
         try:
-            option_price = self.current_state[col_option_price]
+            option_price = self.current_state[self.util.col_close_price]
         except Exception as e:
             print(e)
             option_price = None
         try:
-            adj_option_price = self.current_state[col_adj_option_price]
+            adj_option_price = self.current_state[self.util.col_adj_option_price]
         except Exception as e:
             print(e)
             adj_option_price = None
@@ -179,19 +185,20 @@ class BktOption(object):
         self.adj_option_price = adj_option_price
 
 
-    def update_underlying_price(self,col_underlying_price='underlying_price'):
+
+
+    def update_underlying_price(self):
         try:
-            underlying_price = self.current_state[col_underlying_price]
+            underlying_price = self.current_state[self.util.col_underlying_price]
         except Exception as e:
             print(e)
             underlying_price = None
         self.underlying_price = underlying_price
-        # return  underlying_price
 
 
-    def update_rf(self,col_rf='risk_free_rate'):
+    def update_rf(self):
         try:
-            rf = self.current_state[col_rf]
+            rf = self.current_daily_state[self.util.col_rf]
         except Exception as e:
             rf = 0.03
         self.rf = rf
@@ -208,38 +215,99 @@ class BktOption(object):
             implied_vol = None
         self.implied_vol = implied_vol
 
-
-    def get_holding_volume(self,col_holding_volume='amt_holding_volume'):
+    def update_multiplier(self):
         try:
-            holding_volume = self.current_state[col_holding_volume]
+            multiplier = self.current_daily_state[self.util.col_multiplier]
+        except Exception as e:
+            print(e)
+            multiplier = None
+        self.multiplier = multiplier
+
+
+    def get_holding_volume(self):
+        try:
+            holding_volume = self.current_daily_state[self.util.col_holding_volume]
         except Exception as e:
             print(e)
             holding_volume = None
         return holding_volume
 
-    def get_trading_volume(self,col_trading_volume='amt_trading_volume'):
+    def get_trading_volume(self):
         try:
-            trading_volume = self.current_state[col_trading_volume]
+            trading_volume = self.current_daily_state[self.util.col_trading_volume]
         except Exception as e:
             print(e)
             trading_volume = None
         return trading_volume
 
-    def get_multiplier(self,col_multiplier='nbr_multiplier'):
-        try:
-            multiplier = self.current_state[col_multiplier]
-        except Exception as e:
-            print(e)
-            multiplier = None
-        return multiplier
 
-    def get_implied_vol_given(self,col_implied_vol_given='pct_implied_vol'):
+    def get_implied_vol_given(self):
         try:
-            implied_vol = self.current_state[col_implied_vol_given]
+            implied_vol = self.current_daily_state[self.util.col_implied_vol]
         except Exception as e:
             print(e)
             implied_vol = None
         return implied_vol
+
+    def get_close(self):
+        try:
+            option_price = self.current_daily_state[self.util.col_close_price]
+        except Exception as e:
+            print(e)
+            option_price = None
+        return option_price
+
+    def get_underlying_close(self):
+        try:
+            p = self.current_daily_state[self.util.col_underlying_price]
+        except Exception as e:
+            print(e)
+            p = None
+        return p
+
+    def get_settlement(self):
+        try:
+            amt_settle = self.current_daily_state[self.util.col_settlement]
+        except Exception as e:
+            print(e)
+            amt_settle = None
+        return amt_settle
+
+    def get_last_settlement(self):
+        try:
+            amt_pre_settle = self.current_daily_state[self.util.col_last_settlement]
+        except Exception as e:
+            print(e)
+            amt_pre_settle = None
+        if amt_pre_settle == None:
+            idx_date = self.dt_list.index(self.dt_date)
+            if idx_date == 0: return amt_pre_settle
+            dt_last = self.dt_list[self.dt_list.index(self.dt_date) - 1]
+            df_last_state = self.df_daily_metrics.loc[dt_last]
+            amt_pre_settle = df_last_state[self.util.col_last_settlement]
+        return amt_pre_settle
+
+    def get_last_close(self):
+        try:
+            amt_pre_close = self.current_daily_state[self.util.col_last_close]
+        except Exception as e:
+            print(e)
+            amt_pre_close = None
+        if amt_pre_close == None:
+            idx_date = self.dt_list.index(self.dt_date)
+            if idx_date == 0: return amt_pre_close
+            dt_last = self.dt_list[self.dt_list.index(self.dt_date) - 1]
+            df_last_state = self.df_daily_metrics.loc[dt_last]
+            amt_pre_close = df_last_state[self.util.col_last_close]
+        return amt_pre_close
+
+    def get_underlying_last_close(self):
+        idx_date = self.dt_list.index(self.dt_date)
+        if idx_date == 0: return
+        dt_last = self.dt_list[self.dt_list.index(self.dt_date) - 1]
+        df_last_state = self.df_daily_metrics.loc[dt_last]
+        amt_pre_close = df_last_state[self.util.col_last_close]
+        return amt_pre_close
 
     def get_implied_vol(self):
         if self.implied_vol == None : self.update_implied_vol()
@@ -295,17 +363,60 @@ class BktOption(object):
             iv_roll_down = self.get_iv_roll_down(bvs_call,dt)
         else:
             iv_roll_down = self.get_iv_roll_down(bvs_put,dt)
+        if np.isnan(iv_roll_down): iv_roll_down =0.0
         vega = self.get_vega()
         theta = self.get_theta()
         option_carry = (vega*iv_roll_down-theta)/self.option_price-self.rf
-        return option_carry
+        return option_carry,theta,vega,iv_roll_down
 
 
+    def get_init_margin(self):
 
+        # 认购期权义务仓开仓保证金＝[合约前结算价+Max（12%×合约标的前收盘价-认购期权虚值，
+        #                           7%×合约标的前收盘价)]×合约单位
+        # 认沽期权义务仓开仓保证金＝Min[合约前结算价 + Max（12 %×合约标的前收盘价 - 认沽期权虚值，
+        #                               7 %×行权价格），行权价格] ×合约单位
+        amt_last_settle = self.get_last_settlement()
+        amt_underlying_last_close = self.get_underlying_last_close()
+        if self.option_type =='call':
+            otm = max(0,self.strike-self.underlying_price)
+            init_margin = (amt_last_settle+max(0.12*amt_underlying_last_close-otm,
+                                              0.07*amt_underlying_last_close))*self.multiplier
+        else:
+            otm = max(0,self.underlying_price-self.strike)
+            init_margin = min(amt_last_settle+max(0.12*amt_underlying_last_close-otm,
+                                                  0.07*self.strike),self.strike)*self.multiplier
+        return init_margin
 
+    def get_maintain_margin(self):
+        # 认购期权义务仓维持保证金＝[合约结算价 + Max（12 %×合约标的收盘价 - 认购期权虚值，
+        #                                           7 %×合约标的收盘价）]×合约单位
+        # 认沽期权义务仓维持保证金＝Min[合约结算价 + Max（12 %×合标的收盘价 - 认沽期权虚值，7 %×行权价格），行权价格]×合约单位
+        amt_settle = self.get_settlement()
+        amt_underlying_close = self.get_underlying_close()
+        if self.option_type =='call':
+            otm = max(0,self.strike-self.underlying_price)
+            maintain_margin = (amt_settle+max(0.12*amt_underlying_close-otm,
+                                              0.07*amt_underlying_close))*self.multiplier
 
+        else:
+            otm = max(0,self.underlying_price-self.strike)
+            maintain_margin = min(amt_settle+max(0.12*amt_underlying_close-otm,
+                                                 0.07*self.strike),self.strike)*self.multiplier
+        return maintain_margin
 
+    def price_limit(self):
+        # 认购期权最大涨幅＝max｛合约标的前收盘价×0.5 %，min[（2×合约标的前收盘价－行权价格），合约标的前收盘价]×10％｝
+        # 认购期权最大跌幅＝合约标的前收盘价×10％
+        # 认沽期权最大涨幅＝max｛行权价格×0.5 %，min[（2×行权价格－合约标的前收盘价），合约标的前收盘价]×10％｝
+        # 认沽期权最大跌幅＝合约标的前收盘价×10％
+        return None
 
+    def update_trade_unit(self,fund):
+        self.trade_unit = np.floor(fund/(self.option_price * self.multiplier))
+
+    def update_trade_long_short(self,long_short):
+        self.trade_long_short = long_short
 
 
 
