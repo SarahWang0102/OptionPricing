@@ -412,12 +412,8 @@ class BktOption(object):
         # 认沽期权最大跌幅＝合约标的前收盘价×10％
         return None
 
-    def update_trade_unit(self,fund):
-        self.trade_unit = np.floor(fund/(self.option_price * self.multiplier))
-
-    def update_trade_long_short(self,long_short):
-        self.trade_long_short = long_short
-
+    def get_trade_unit(self,fund):
+        return np.floor(fund/(self.option_price * self.multiplier))
 
 
 

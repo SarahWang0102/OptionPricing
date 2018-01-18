@@ -83,7 +83,6 @@ df_option = df_mkt.join(df_contract.set_index('id_instrument'),how='left',on='id
 df_option = df_option.join(df_50etf.set_index('dt_date'),how='left',on='dt_date')
 
 bkt_optionset = OptionSet('daily',df_option,20)
-bkt_optionset.start()
 
 bktoption_list = bkt_optionset.bktoption_list
 print('start_date : ',bkt_optionset.start_date)

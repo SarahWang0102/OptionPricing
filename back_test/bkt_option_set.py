@@ -27,6 +27,7 @@ class OptionSet(object):
         self.eligible_maturities = []
         self.index = 0
         self.update_multiplier_adjustment()
+        self.start()
 
         # if self.frequency in self.bktutil.cd_frequency_intraday:
         #     self.datetime_list = sorted(self.df_metrics[col_datetime].unique())
