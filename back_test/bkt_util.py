@@ -23,7 +23,7 @@ class BktUtil():
 
         self.col_strike = 'amt_strike'
         self.col_adj_strike = 'amt_adj_strike'
-        self.col_close_price = 'amt_close'
+        self.col_close = 'amt_close'
         self.col_adj_option_price = 'amt_adj_option_price'
         self.col_option_price = 'amt_option_price'
         self.col_underlying_price = 'amt_underlying_price'

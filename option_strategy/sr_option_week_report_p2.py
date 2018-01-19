@@ -32,8 +32,8 @@ OptionMkt = dbt.OptionMkt
 Options = dbt.Options
 
 # Eval Settings
-dt_date = datetime.date(2018, 1, 12)  # Set as Friday
-dt_last_week = datetime.date(2017, 12, 5)
+dt_date = datetime.date(2018, 1, 19)  # Set as Friday
+dt_last_week = datetime.date(2017, 1, 12)
 evalDate = dt_date.strftime("%Y-%m-%d")  # Set as Friday
 start_date = w.tdaysoffset(-1, evalDate, "Period=M").Data[0][0].strftime("%Y-%m-%d")
 hist_date = datetime.date(2017, 1, 1).strftime("%Y-%m-%d")

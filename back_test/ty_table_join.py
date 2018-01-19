@@ -22,7 +22,7 @@ conn = engine.connect()
 metadata = MetaData(engine)
 Session = sessionmaker(bind=engine)
 sess = Session()
-engine2 = create_engine('mysql+pymysql://root:liz1128@101.132.148.152/metrics', echo=False)
+engine2 = create_engine('mysql+pymysql://root:liz1128@101.132.148.152/mktdata', echo=False)
 conn2 = engine2.connect()
 metadata2 = MetaData(engine2)
 Session2 = sessionmaker(bind=engine2)
@@ -30,28 +30,17 @@ sess2 = Session2()
 Index_mkt = dbt.IndexMkt
 Option_mkt = dbt.OptionMkt
 option_intd = dbt.OptionMktIntraday
-carry1 = Table('carry1', metadata2, autoload=True)
-options = dbt.Options
-calendar = ql.China()
-daycounter = ql.ActualActual()
-fund = init_fund
-open_trades = []
-query_mkt = sess.query(Option_mkt.dt_date,
-                        Option_mkt.id_instrument,
-                        Option_mkt.code_instrument,
-                        Option_mkt.amt_close,
-                        Option_mkt.amt_settlement,
-                        Option_mkt.amt_last_close,
-                        Option_mkt.amt_last_settlement,
-                        Option_mkt.amt_trading_volume
-                          ) \
-    .filter(Option_mkt.dt_date >= start_date) \
-    .filter(Option_mkt.dt_date <= end_date) \
-    .filter(Option_mkt.datasource == 'wind')
+opt_mkt = Table('options_mktdata', metadata2, autoload=True)
+opt_mkt_old = Table('options_mktdata_old', metadata2, autoload=True)
+
+
+query_mkt = sess.query(opt_mkt_old) \
+    .filter(Option_mkt.id_underlying != 'index_50etf')\
+    .filter(Option_mkt.dt_date == '2018-01-19')
 
 df_mkt = pd.read_sql(query_mkt.statement, query_mkt.session.bind)
+for (idx,row) in df_mkt.iterrows():
+    dic_mkt = row.to_dict()
 
-print(df_mkt.loc[0,'amt_last_close'])
+    print(dic_mkt)
 
-if df_mkt.loc[0,'amt_last_close'] == None:
-    print('T')

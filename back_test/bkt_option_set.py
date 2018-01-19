@@ -20,10 +20,8 @@ class OptionSet(object):
         self.daycounter = ql.ActualActual()
         self.calendar = ql.China()
         self.bktoption_list = []
-        self.bktoption_list_mdt0 = []
-        self.bktoption_list_mdt1 = []
-        self.bktoption_list_mdt2 = []
-        self.bktoption_list_mdt3 = []
+        self.bktoption_list_call = []
+        self.bktoption_list_put = []
         self.eligible_maturities = []
         self.index = 0
         self.update_multiplier_adjustment()
@@ -67,6 +65,8 @@ class OptionSet(object):
         if self.frequency in self.util.cd_frequency_low:
             bkt_ids = []
             bktoption_list = []
+            bktoption_list_call = []
+            bktoption_list_put = []
             df_current = self.df_daily_state
             df_current = self.get_duplicate_strikes_dropped(df_current)
             option_ids = df_current[self.util.col_id_instrument].unique()
@@ -75,6 +75,8 @@ class OptionSet(object):
                     # go to next state
                     bktoption.next()
                     bktoption_list.append(bktoption)
+                    if bktoption.option_type == 'call' : bktoption_list_call.append(bktoption)
+                    else : bktoption_list_put.append(bktoption)
                     bkt_ids.append(bktoption.id_instrument)
             for optionid in option_ids:
                 if optionid in bkt_ids: continue
@@ -82,8 +84,14 @@ class OptionSet(object):
                 if df_option[self.util.col_maturitydt].values[0] not in self.eligible_maturities : continue
                 bktoption = BktOption(self.frequency, df_option,id_instrument=optionid)
                 bktoption_list.append(bktoption)
+                if bktoption.option_type == 'call':
+                    bktoption_list_call.append(bktoption)
+                else:
+                    bktoption_list_put.append(bktoption)
                 bkt_ids.append(optionid)
             self.bktoption_list = bktoption_list
+            self.bktoption_list_call = bktoption_list_call
+            self.bktoption_list_put = bktoption_list_put
             # else:
             #     df_current = self.df_datetime_state
 
@@ -182,7 +190,7 @@ class OptionSet(object):
                 round(row[self.util.col_strike]*row[self.util.col_multiplier]/10000,2)
             # self.df_metrics.loc[idx,'adj_underlying_price'] = round(row[col_underlying_price]*row[col_multiplier]/10000,2)
             self.df_metrics.loc[idx,self.util.col_adj_option_price] = \
-                round(row[self.util.col_close_price]*row[self.util.col_multiplier]/10000,2)
+                round(row[self.util.col_close]*row[self.util.col_multiplier]/10000,2)
 
 
     def add_dtdate_column(self):
@@ -295,6 +303,30 @@ class OptionSet(object):
             res.append(db_row)
         return df,res
 
+    def rank_by_carry(self,bktoption_list):
+        df = pd.DataFrame()
+        bvs_call = self.get_volsurface_squre('call')
+        bvs_put = self.get_volsurface_squre('put')
+
+        for idx,option in enumerate(bktoption_list):
+            iv = option.get_implied_vol()
+            carry, theta, vega, iv_roll_down = option.get_carry(bvs_call, bvs_put, self.hp)
+            if np.isnan(carry): carry = -999.0
+            if np.isnan(theta): theta = -999.0
+            if np.isnan(vega): vega = -999.0
+            if np.isnan(iv_roll_down): iv_roll_down = -999.0
+            if self.frequency in self.util.cd_frequency_low:
+                df.loc[idx, self.util.col_date] = self.eval_date
+            # else:
+            #     df.loc[idx, 'dt_datetime'] = self.eval_datetime
+            option.carry = carry
+            option.theta = theta
+            option.vega = vega
+            option.iv_roll_down = iv_roll_down
+            df.loc[idx, self.util.col_carry] = carry
+            df.loc[idx,'bktoption'] = option
+        df = df.sort_values(by=self.util.col_carry,ascending=False).reset_index()
+        return df
 
     def to_ql_date(self,date):
         return ql.Date(date.day,date.month,date.year)

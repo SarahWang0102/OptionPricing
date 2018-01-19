@@ -29,7 +29,7 @@ optionmkt_table = dbt.OptionMkt
 options_table = dbt.Options
 
 # Eval Settings
-evalDate = datetime.date(2018, 1, 12).strftime("%Y-%m-%d")  # Set as Friday
+evalDate = datetime.date(2018, 1, 19).strftime("%Y-%m-%d")  # Set as Friday
 start_date = w.tdaysoffset(-1, evalDate, "Period=M").Data[0][0].strftime("%Y-%m-%d")
 hist_date = w.tdaysoffset(-2, evalDate, "Period=Y").Data[0][0].strftime("%Y-%m-%d")
 # hist_date = w.tdaysoffset(-60, start_date, "").Data[0][0].strftime("%Y-%m-%d")

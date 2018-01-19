@@ -172,7 +172,7 @@ class BktOption(object):
 
     def update_option_price(self):
         try:
-            option_price = self.current_state[self.util.col_close_price]
+            option_price = self.current_state[self.util.col_close]
         except Exception as e:
             print(e)
             option_price = None
@@ -251,7 +251,7 @@ class BktOption(object):
 
     def get_close(self):
         try:
-            option_price = self.current_daily_state[self.util.col_close_price]
+            option_price = self.current_daily_state[self.util.col_close]
         except Exception as e:
             print(e)
             option_price = None
@@ -304,9 +304,9 @@ class BktOption(object):
     def get_underlying_last_close(self):
         idx_date = self.dt_list.index(self.dt_date)
         if idx_date == 0: return
-        dt_last = self.dt_list[self.dt_list.index(self.dt_date) - 1]
-        df_last_state = self.df_daily_metrics.loc[dt_last]
-        amt_pre_close = df_last_state[self.util.col_last_close]
+        # dt_last = self.dt_list[self.dt_list.index(self.dt_date) - 1]
+        df_last_state = self.df_daily_metrics.loc[idx_date-1]
+        amt_pre_close = df_last_state[self.util.col_close]
         return amt_pre_close
 
     def get_implied_vol(self):
@@ -415,7 +415,14 @@ class BktOption(object):
     def get_trade_unit(self,fund):
         return np.floor(fund/(self.option_price * self.multiplier))
 
-
+    def liquidate(self):
+        self.trade_flag_open = False
+        self.trade_unit = None
+        self.trade_dt_open = None
+        self.trade_long_short = None
+        self.trade_cost = None
+        self.trade_open_price = None
+        self.trade_margin_calital = None
 
 
 

@@ -114,14 +114,15 @@ class BktAccount(object):
 
 
 
-    def open_long(self,dt,bktoption,trade_fund,multiplier=None):# 多开
+    def open_long(self,dt,bktoption,trade_fund):# 多开
         id_instrument = bktoption.id_instrument
         mkt_price = bktoption.option_price
+        multiplier = bktoption.multiplier
         long_short = self.util.long
         trade_type = '多开'
         position = pd.Series()
-        if multiplier==None:
-            multiplier = self.multiplier
+        # if multiplier==None:
+        #     multiplier = self.multiplier
         unit = np.floor(trade_fund*self.leverage/(mkt_price*multiplier))
         fee = unit*mkt_price*self.fee*multiplier
         cost = unit*mkt_price*(1+self.fee)*multiplier
@@ -132,6 +133,7 @@ class BktAccount(object):
         bktoption.trade_cost = cost
         bktoption.trade_open_price = mkt_price
         bktoption.trade_margin_calital = margin_capital
+        bktoption.trade_flag_open = True
 
         record = pd.DataFrame(data={self.util.id_instrument:[id_instrument],
                                     self.util.dt_trade:[dt],
@@ -145,14 +147,15 @@ class BktAccount(object):
         self.cash = self.cash-margin_capital-fee
         self.nbr_trade += 1
 
-    def open_short(self,dt,bktoption,trade_fund,multiplier=None):
+    def open_short(self,dt,bktoption,trade_fund):
         id_instrument = bktoption.id_instrument
         mkt_price = bktoption.option_price
+        multiplier = bktoption.multiplier
         long_short = self.util.short
         trade_type = '空开'
         # position = pd.Series()
-        if multiplier==None:
-            multiplier = self.multiplier
+        # if multiplier==None:
+        #     multiplier = self.multiplier
         unit = np.floor(trade_fund*self.leverage/(mkt_price*multiplier))
         fee = unit * mkt_price * self.fee * multiplier
         cost = unit * mkt_price * (1 + self.fee) * multiplier
@@ -162,7 +165,9 @@ class BktAccount(object):
         bktoption.trade_long_short = long_short
         bktoption.trade_cost = cost
         bktoption.trade_open_price = mkt_price
-        bktoption.margin_calital = margin_capital
+        bktoption.trade_margin_calital = margin_capital
+        bktoption.trade_flag_open = True
+
 
         record = pd.DataFrame(data={self.util.id_instrument:[id_instrument],
                                     self.util.dt_trade:[dt],
@@ -188,6 +193,7 @@ class BktAccount(object):
         multiplier = bktoption.multiplier
         cost = bktoption.trade_cost
         open_price = bktoption.trade_open_price
+
         position = pd.Series()
         position[self.util.id_instrument] = id_instrument
         position[self.util.dt_open] = dt
@@ -214,6 +220,7 @@ class BktAccount(object):
                                     self.util.trade_price: [mkt_price],
                                     self.util.trading_cost: [fee],
                                     self.util.unit: [unit]})
+        bktoption.liquidate()
         self.df_trading_records = self.df_trading_records.append(record, ignore_index=True)
         self.df_trading_book = self.df_trading_book.append(position, ignore_index=True)
         self.holdings.remove(bktoption)
@@ -273,8 +280,7 @@ class BktAccount(object):
                                         self.util.unit: [unit]})
             self.df_trading_records = self.df_trading_records.append(record, ignore_index=True)
             self.nbr_trade += 1
-        else:
-            self.liquidite_position(dt,bktoption)
+
 
     def switch_long(self):
         return None
@@ -288,7 +294,6 @@ class BktAccount(object):
         unrealized_pnl = 0
         mtm_portfolio_value = 0
         total_margin = 0
-        money_utilization = 0
         for bktoption in self.holdings:
             mkt_price = bktoption.option_price
             unit = bktoption.trade_unit

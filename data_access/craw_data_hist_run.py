@@ -30,8 +30,8 @@ future_tick_data = Table('future_tick_data', metadata_intraday, autoload=True)
 index_daily = Table('indexes_mktdata', metadata, autoload=True)
 dc = DataCollection()
 #####################################################################################
-beg_date = datetime.date(2018, 1, 1)
-end_date = datetime.date(2018, 1, 6)
+beg_date = datetime.date(2018, 1, 16)
+end_date = datetime.date(2018, 1, 19)
 
 date_range = w.tdays(beg_date, end_date, "").Data[0]
 for dt in date_range:
@@ -333,22 +333,26 @@ for dt in date_range:
         print('equity index intraday -- already exists')
 
     ####################option_mktdata_intraday######################################
-    res = option_mktdata_intraday.select(option_mktdata_intraday.c.dt_datetime == dt_date + " 09:30:00").execute()
-    if res.rowcount == 0:
-        df = dc.table_option_tick().wind_option_chain(dt_date)
-        for (idx_oc, row) in df.iterrows():
+    df = dc.table_options().get_option_contracts(dt_date)
+    for (idx_oc, row) in df.iterrows():
+        # print(row)
+        id_instrument = row['id_instrument']
+        res = option_mktdata_intraday.select((option_mktdata_intraday.c.dt_datetime == dt_date + " 09:30:00")&
+            (option_mktdata_intraday.c.id_instrument == id_instrument)).execute()
+        if res.rowcount == 0:
             db_data = dc.table_option_intraday().wind_data_50etf_option_intraday(dt_date, row)
             try:
                 conn_intraday.execute(option_mktdata_intraday.insert(), db_data)
                 print(idx_oc, ' option_mktdata_intraday -- inserted into data base succefully')
             except Exception as e:
                 print(e)
-    else:
-        print('option intraday -- already exists')
+        else:
+            print(idx_oc,'option intraday -- already exists')
     ####################option_tick_data######################################
     # res = option_tick_data.select(option_tick_data.c.dt_datetime == dt_date+" 09:30:00").execute()
     # if res.rowcount == 0:
-    df = dc.table_option_tick().wind_option_chain(dt_date)
+    df = dc.table_options().get_option_contracts(dt_date)
+    # df = dc.table_option_tick().wind_option_chain(dt_date)
     for (idx_oc, row) in df.iterrows():
         db_data = dc.table_option_tick().wind_50etf_option_tick(dt_date, row)
         print(db_data)

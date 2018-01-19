@@ -26,6 +26,7 @@ for db_data in db_datas:
     if res.rowcount > 0: continue
     try:
         conn.execute(option_contracts.insert(), db_data)
+        print('option_contracts -- inserted into data base succefully')
     except Exception as e:
         print(e)
         print(db_data)
@@ -38,6 +39,8 @@ for db_data in db_datas:
     if res.rowcount > 0: continue
     try:
         conn.execute(option_contracts.insert(), db_data)
+        print('option_contracts -- inserted into data base succefully')
+
     except Exception as e:
         print(e)
         print(db_data)
@@ -50,6 +53,8 @@ for db_data in db_datas:
     if res.rowcount > 0: continue
     try:
         conn.execute(option_contracts.insert(), db_data)
+        print('option_contracts -- inserted into data base succefully')
+
     except Exception as e:
         print(e)
         print(db_data)
@@ -65,6 +70,8 @@ for db_data in db_datas:
     if res.rowcount > 0: continue
     try:
         conn.execute(future_contracts.insert(), db_data)
+        print('future_contracts -- inserted into data base succefully')
+
     except Exception as e:
         print(e)
         print(db_data)
@@ -79,6 +86,8 @@ for db_data in db_datas:
     if res.rowcount > 0: continue
     try:
         conn.execute(future_contracts.insert(), db_data)
+        print('future_contracts -- inserted into data base succefully')
+
     except Exception as e:
         print(e)
         print(db_data)
@@ -93,6 +102,8 @@ for db_data in db_datas:
     if res.rowcount > 0: continue
     try:
         conn.execute(future_contracts.insert(), db_data)
+        print('future_contracts -- inserted into data base succefully')
+
     except Exception as e:
         print(e)
         print(db_data)
