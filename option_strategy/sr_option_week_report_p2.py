@@ -33,7 +33,7 @@ Options = dbt.Options
 
 # Eval Settings
 dt_date = datetime.date(2018, 1, 19)  # Set as Friday
-dt_last_week = datetime.date(2017, 1, 12)
+dt_last_week = datetime.date(2018, 1, 12)
 evalDate = dt_date.strftime("%Y-%m-%d")  # Set as Friday
 start_date = w.tdaysoffset(-1, evalDate, "Period=M").Data[0][0].strftime("%Y-%m-%d")
 hist_date = datetime.date(2017, 1, 1).strftime("%Y-%m-%d")
@@ -75,8 +75,18 @@ for idx,row in df_call.iterrows():
     strike = row['amt_strike']
     rowlw_call = dflw_call[dflw_call['amt_strike'] == strike]
     rowlw_put = dflw_put[dflw_put['amt_strike'] == strike]
-    call_delta = row['amt_holding_volume']-rowlw_call['amt_holding_volume'].values[0]
-    put_delta = row_put['amt_holding_volume']-rowlw_put['amt_holding_volume'].values[0]
+    last_holding_call = 0.0
+    last_holding_put = 0.0
+    try:
+        last_holding_call = rowlw_call['amt_holding_volume'].values[0]
+    except:
+        pass
+    try:
+        last_holding_put = rowlw_put['amt_holding_volume'].values[0]
+    except:
+        pass
+    call_delta = row['amt_holding_volume']- last_holding_call
+    put_delta = row_put['amt_holding_volume']- last_holding_put
     call_deltas.append(call_delta)
     put_deltas.append(put_delta)
 w = 30
