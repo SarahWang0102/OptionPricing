@@ -30,7 +30,7 @@ future_tick_data = Table('future_tick_data', metadata_intraday, autoload=True)
 index_daily = Table('indexes_mktdata', metadata, autoload=True)
 dc = DataCollection()
 #####################################################################################
-beg_date = datetime.date(2018, 1, 16)
+beg_date = datetime.date(2018, 1, 19)
 end_date = datetime.date(2018, 1, 19)
 
 date_range = w.tdays(beg_date, end_date, "").Data[0]

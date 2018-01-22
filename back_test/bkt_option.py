@@ -41,15 +41,10 @@ class BktOption(object):
 
 
     def next(self):
-        self.current_index = min(self.current_index+1,self.last_index)
+        # self.current_index = min(self.current_index+1,self.last_index)
+        self.current_index = self.current_index+1
         self.update_current_state()
         self.set_pricing_metrics()
-
-
-    # def reset(self):
-    #     self.current_index = self.start_index
-    #     self.update_current_state()
-    #     self.set_pricing_metrics()
 
 
     def update_current_state(self):
@@ -89,14 +84,6 @@ class BktOption(object):
             dt_datetime = None
         self.dt_datetime = dt_datetime
 
-
-    # def update_current_date(self):
-    #     try:
-    #         dt_date = self.current_state[self.util.col_date]
-    #     except:
-    #         dt = self.current_state[self.util.col_datetime]
-    #         dt_date = datetime.date(dt.year,dt.month,dt.day)
-    #     self.dt_date = dt_date
 
 
     def set_option_basics(self):
@@ -371,7 +358,7 @@ class BktOption(object):
 
 
     def get_init_margin(self):
-
+        if self.trade_long_short == self.util.long: return 0.0
         # 认购期权义务仓开仓保证金＝[合约前结算价+Max（12%×合约标的前收盘价-认购期权虚值，
         #                           7%×合约标的前收盘价)]×合约单位
         # 认沽期权义务仓开仓保证金＝Min[合约前结算价 + Max（12 %×合约标的前收盘价 - 认沽期权虚值，
@@ -389,6 +376,9 @@ class BktOption(object):
         return init_margin
 
     def get_maintain_margin(self):
+        if self.trade_long_short == self.util.long: return 0.0
+        if self.frequency in self.util.cd_frequency_low and self.trade_dt_open == self.dt_date:
+            return self.get_init_margin()
         # 认购期权义务仓维持保证金＝[合约结算价 + Max（12 %×合约标的收盘价 - 认购期权虚值，
         #                                           7 %×合约标的收盘价）]×合约单位
         # 认沽期权义务仓维持保证金＝Min[合约结算价 + Max（12 %×合标的收盘价 - 认沽期权虚值，7 %×行权价格），行权价格]×合约单位
@@ -413,16 +403,22 @@ class BktOption(object):
         return None
 
     def get_trade_unit(self,fund):
-        return np.floor(fund/(self.option_price * self.multiplier))
+        if self.trade_long_short == self.util.long:
+            unit = np.floor(fund/(self.option_price*self.multiplier))
+        else:
+            unit = np.floor(fund/self.get_init_margin())
+        return unit
 
     def liquidate(self):
         self.trade_flag_open = False
         self.trade_unit = None
         self.trade_dt_open = None
         self.trade_long_short = None
-        self.trade_cost = None
+        self.premium = None
         self.trade_open_price = None
-        self.trade_margin_calital = None
+        self.trade_margin_capital = None
+        self.transaction_fee = None
+        self.open_price = None
 
 
 

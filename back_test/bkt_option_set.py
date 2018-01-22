@@ -4,19 +4,20 @@ from back_test.bkt_option import BktOption
 from back_test.bkt_util import BktUtil
 import QuantLib as ql
 import numpy as np
-
+from WindPy import w
 
 class OptionSet(object):
 
 
-    def __init__(self, cd_frequency, df_option_metrics,n=2,col_date='dt_date',col_datetime='dt_datetime',
+    def __init__(self, cd_frequency, df_option_metrics,hp,min_ttm =2,col_date='dt_date',col_datetime='dt_datetime',
                  pricing_type='OptionPlainEuropean', engine_type='AnalyticEuropeanEngine'):
         self.util = BktUtil()
         self.frequency = cd_frequency
         self.df_metrics = df_option_metrics
         self.pricing_type = pricing_type
         self.engine_type = engine_type
-        self.hp = n
+        self.hp = hp
+        self.min_ttm = min_ttm
         self.daycounter = ql.ActualActual()
         self.calendar = ql.China()
         self.bktoption_list = []
@@ -71,7 +72,8 @@ class OptionSet(object):
             df_current = self.get_duplicate_strikes_dropped(df_current)
             option_ids = df_current[self.util.col_id_instrument].unique()
             for bktoption in self.bktoption_list:
-                if bktoption.id_instrument in option_ids and bktoption.maturitydt in self.eligible_maturities:
+                # if bktoption.id_instrument in option_ids and bktoption.maturitydt in self.eligible_maturities:
+                if bktoption.id_instrument in option_ids :
                     # go to next state
                     bktoption.next()
                     bktoption_list.append(bktoption)
@@ -81,7 +83,7 @@ class OptionSet(object):
             for optionid in option_ids:
                 if optionid in bkt_ids: continue
                 df_option = self.df_metrics[self.df_metrics[self.util.col_id_instrument] == optionid].reset_index()
-                if df_option[self.util.col_maturitydt].values[0] not in self.eligible_maturities : continue
+                # if df_option[self.util.col_maturitydt].values[0] not in self.eligible_maturities: continue
                 bktoption = BktOption(self.frequency, df_option,id_instrument=optionid)
                 bktoption_list.append(bktoption)
                 if bktoption.option_type == 'call':
@@ -97,8 +99,8 @@ class OptionSet(object):
 
     def update_eval_date(self):
         self.index += 1
-        self.eval_date = self.dt_list[min(self.dt_list.index(self.eval_date)+1
-                            ,len(self.dt_list)-1)]
+        # self.eval_date = self.dt_list[min(self.dt_list.index(self.eval_date)+1,len(self.dt_list)-1)]
+        self.eval_date = self.dt_list[self.dt_list.index(self.eval_date)+1]
 
 
     # def update_eval_datetime(self):
@@ -116,14 +118,14 @@ class OptionSet(object):
 
 
     def update_eligible_maturities(self): # n: 要求合约剩余期限大于n（天）
-        if self.hp < 2:
-            print('要求合约剩余期限大于2日！')
-            self.hp = 2
+
         maturity_dates = self.df_daily_state[self.util.col_maturitydt].unique()
         maturity_dates2 = []
+        # hp_enddate = w.tdaysoffset(self.hp, self.eval_date).Data[0][0].date()
         for mdt in maturity_dates:
+            # if mdt > hp_enddate: maturity_dates2.append(mdt)
             ttm = (mdt-self.eval_date).days
-            if ttm > self.hp : maturity_dates2.append(mdt)
+            if ttm > self.min_ttm : maturity_dates2.append(mdt)
         self.eligible_maturities = maturity_dates2
 
 
@@ -134,7 +136,7 @@ class OptionSet(object):
             mdt = option.maturitydt
             ttm = (mdt-self.eval_date).days
             cd_type = option.option_type
-            if cd_type == option_type and ttm > self.hp:
+            if cd_type == option_type and ttm > self.min_ttm:
                 option_list.append(option)
         df = self.get_duplicate_strikes_dropped(self.collect_implied_vol(option_list))
         df_mdt_list = []

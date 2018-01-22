@@ -66,7 +66,7 @@ bktoption_list = bkt_optionset.bktoption_list
 print('start_date : ',bkt_optionset.start_date)
 print('end_date : ',bkt_optionset.end_date)
 
-last_trading_date = bkt_optionset.dt_list[-1]
+# last_trading_date = bkt_optionset.dt_list[-1]
 while bkt_optionset.index < len(bkt_optionset.dt_list):
     if bkt_optionset.index == 0 :
         bkt_optionset.next()
@@ -83,20 +83,33 @@ while bkt_optionset.index < len(bkt_optionset.dt_list):
     df_buy = df_call_ranked.loc[0:4]
     df_sell = df_call_ranked.loc[len(df_call_ranked) - 5:]
     df_metrics_today = df_option[(df_option['dt_date']==evalDate)]
+
+    # 到期全部清仓
+    if evalDate == bkt_optionset.end_date:
+        print(' Liquidate all possitions !!! ')
+        bkt.liquidate_all(evalDate)
+        break
+
+    for bktoption in bkt.holdings:
+        if bktoption.maturitydt == evalDate:
+            print('Liquidate position at maturity')
+            bkt.liquidite_position(evalDate, bktoption)
+
     if (bkt_optionset.index-1) % hp == 0:
+        print('调仓 : ',evalDate)
 
         # 平仓
         for bktoption in bkt.holdings:
-            if evalDate == last_trading_date:
-                bkt.liquidite_position(evalDate,bktoption)
+            if bktoption.maturitydt <= hp_enddate:
+                bkt.liquidite_position(evalDate, bktoption)
             else:
                 if bktoption.trade_long_short == 1 and bktoption in df_buy['bktoption']: continue
                 if bktoption.trade_long_short == -1 and bktoption in df_sell['bktoption']: continue
                 bkt.liquidite_position(evalDate,bktoption)
 
         # 开仓
-        cash = bkt.cash
-        if hp_enddate < last_trading_date:
+        cash = bkt.cash*0.2
+        if hp_enddate < bkt_optionset.end_date:
             for (idx,row) in df_buy.iterrows():
                 bktoption = row['bktoption']
                 if bktoption in bkt.holdings:
@@ -113,12 +126,13 @@ while bkt_optionset.index < len(bkt_optionset.dt_list):
 
     bkt.mkm_update(evalDate,df_metrics_today,'amt_close')
 
-    print(evalDate,' : ',bkt.npv)
+    print(evalDate , ' : ',bkt.npv,' , ',bkt.cash)
 
     bkt_optionset.next()
 
-
-
+print(evalDate , ' : ',bkt.npv,' , ',bkt.cash)
+# print(bkt.df_account)
+print(bkt.holdings)
 
 
 
