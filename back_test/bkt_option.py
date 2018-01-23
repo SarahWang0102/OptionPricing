@@ -290,8 +290,8 @@ class BktOption(object):
 
     def get_underlying_last_close(self):
         idx_date = self.dt_list.index(self.dt_date)
-        if idx_date == 0: return
-        # dt_last = self.dt_list[self.dt_list.index(self.dt_date) - 1]
+        if idx_date == 0:
+            return self.current_daily_state[self.util.col_close]
         df_last_state = self.df_daily_metrics.loc[idx_date-1]
         amt_pre_close = df_last_state[self.util.col_close]
         return amt_pre_close
@@ -346,6 +346,9 @@ class BktOption(object):
 
     def get_carry(self,bvs_call,bvs_put,n=1):
         dt = n/365.0
+        ttm = (self.maturitydt-self.dt_date).days/365.0
+        if ttm-dt <= 0:
+            return None,None,None,None
         if self.option_type == 'call':
             iv_roll_down = self.get_iv_roll_down(bvs_call,dt)
         else:

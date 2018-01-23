@@ -67,6 +67,9 @@ print('start_date : ',bkt_optionset.start_date)
 print('end_date : ',bkt_optionset.end_date)
 
 # last_trading_date = bkt_optionset.dt_list[-1]
+money_utilization = 0.2
+buy_ratio = 0.5
+sell_ratio = 0.5
 while bkt_optionset.index < len(bkt_optionset.dt_list):
     if bkt_optionset.index == 0 :
         bkt_optionset.next()
@@ -90,45 +93,50 @@ while bkt_optionset.index < len(bkt_optionset.dt_list):
         bkt.liquidate_all(evalDate)
         break
 
-    for bktoption in bkt.holdings:
-        if bktoption.maturitydt == evalDate:
-            print('Liquidate position at maturity')
-            bkt.liquidite_position(evalDate, bktoption)
+    for bktoption in  bkt.holdings:
+        if bktoption.maturitydt <= evalDate:
+            print('Liquidate position at maturity : ',evalDate,' , ',bktoption.maturitydt)
+            bkt.close_position(evalDate, bktoption)
 
     if (bkt_optionset.index-1) % hp == 0:
         print('调仓 : ',evalDate)
 
         # 平仓
-        for bktoption in bkt.holdings:
+        for bktoption in  bkt.holdings:
             if bktoption.maturitydt <= hp_enddate:
-                bkt.liquidite_position(evalDate, bktoption)
+                bkt.close_position(evalDate, bktoption)
             else:
                 if bktoption.trade_long_short == 1 and bktoption in df_buy['bktoption']: continue
                 if bktoption.trade_long_short == -1 and bktoption in df_sell['bktoption']: continue
-                bkt.liquidite_position(evalDate,bktoption)
+                bkt.close_position(evalDate,bktoption)
 
         # 开仓
-        cash = bkt.cash*0.2
+        fund_buy = bkt.cash*money_utilization*buy_ratio
+        fund_sell = bkt.cash*money_utilization*sell_ratio
         if hp_enddate < bkt_optionset.end_date:
+            n1 = len(df_buy)
+            n2 = len(df_sell)
+
             for (idx,row) in df_buy.iterrows():
                 bktoption = row['bktoption']
-                if bktoption in bkt.holdings:
-                    bkt.adjust_unit(evalDate,bktoption,cash/20)
+                if bktoption in bkt.holdings and bktoption.trade_flag_open:
+                    bkt.rebalance_position(evalDate,bktoption,fund_buy/n1)
                 else:
-                    bkt.open_long(evalDate,bktoption,cash/20)
+                    bkt.open_long(evalDate,bktoption,fund_buy/n1)
 
             for (idx,row) in df_sell.iterrows():
                 bktoption = row['bktoption']
-                if bktoption in bkt.holdings:
-                    bkt.adjust_unit(evalDate, bktoption, cash/20)
+                if bktoption in bkt.holdings and bktoption.trade_flag_open:
+                    bkt.rebalance_position(evalDate, bktoption, fund_sell/n2)
                 else:
-                    bkt.open_short(evalDate, bktoption, cash/20)
+                    bkt.open_short(evalDate, bktoption, fund_sell/n2)
 
     bkt.mkm_update(evalDate,df_metrics_today,'amt_close')
 
     print(evalDate , ' : ',bkt.npv,' , ',bkt.cash)
 
     bkt_optionset.next()
+    print(bkt.df_account)
 
 print(evalDate , ' : ',bkt.npv,' , ',bkt.cash)
 # print(bkt.df_account)

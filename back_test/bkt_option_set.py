@@ -97,6 +97,7 @@ class OptionSet(object):
             # else:
             #     df_current = self.df_datetime_state
 
+
     def update_eval_date(self):
         self.index += 1
         # self.eval_date = self.dt_list[min(self.dt_list.index(self.eval_date)+1,len(self.dt_list)-1)]
@@ -309,14 +310,12 @@ class OptionSet(object):
         df = pd.DataFrame()
         bvs_call = self.get_volsurface_squre('call')
         bvs_put = self.get_volsurface_squre('put')
-
         for idx,option in enumerate(bktoption_list):
-            iv = option.get_implied_vol()
             carry, theta, vega, iv_roll_down = option.get_carry(bvs_call, bvs_put, self.hp)
-            if np.isnan(carry): carry = -999.0
-            if np.isnan(theta): theta = -999.0
-            if np.isnan(vega): vega = -999.0
-            if np.isnan(iv_roll_down): iv_roll_down = -999.0
+            if carry == None or np.isnan(carry): carry = -999.0
+            if theta == None or  np.isnan(theta): theta = -999.0
+            if vega == None or  np.isnan(vega): vega = -999.0
+            if iv_roll_down == None or  np.isnan(iv_roll_down): iv_roll_down = -999.0
             if self.frequency in self.util.cd_frequency_low:
                 df.loc[idx, self.util.col_date] = self.eval_date
             # else:
