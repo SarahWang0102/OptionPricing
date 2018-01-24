@@ -133,7 +133,6 @@ class FactorStrategyBkt(object):
             """按当日价格调整保证金，计算投资组合盯市价值"""
             bkt.mkm_update(evalDate, df_metrics_today, self.util.col_close)
             print(evalDate,' , ' ,bkt.npv) # npv是组合净值，期初为1
-            
             bkt_optionset.next()
 
 
