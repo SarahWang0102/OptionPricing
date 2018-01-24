@@ -4,9 +4,19 @@ from back_test.bkt_option import BktOption
 from back_test.bkt_util import BktUtil
 import QuantLib as ql
 import numpy as np
-from WindPy import w
 
-class OptionSet(object):
+class BktOptionSet(object):
+
+
+    """
+    Feature:
+
+    To Collect BktOption Set
+    To Calculate Vol Surface and Metrics
+    To Manage Back Test State of all BktOption Objects
+
+    """
+    #TODO: 目前只能处理日频数据，高频数据还需调整结构进一步完善（目前注释未删的部分）
 
 
     def __init__(self, cd_frequency, df_option_metrics,hp,min_ttm =2,col_date='dt_date',col_datetime='dt_datetime',
@@ -164,7 +174,7 @@ class OptionSet(object):
         for i in range(vol_matrix.rows()):
             for j in range(vol_matrix.columns()):
                 vol_matrix[i][j] = volset[j][i]
-        ql_evalDate = self.to_ql_date(self.eval_date)
+        ql_evalDate = self.util.to_ql_date(self.eval_date)
         black_var_surface = ql.BlackVarianceSurface(
             ql_evalDate, self.calendar, ql_maturities, strikes, vol_matrix, self.daycounter)
         return black_var_surface
@@ -328,15 +338,6 @@ class OptionSet(object):
             df.loc[idx,'bktoption'] = option
         df = df.sort_values(by=self.util.col_carry,ascending=False).reset_index()
         return df
-
-    def to_ql_date(self,date):
-        return ql.Date(date.day,date.month,date.year)
-
-
-
-
-
-
 
 
 

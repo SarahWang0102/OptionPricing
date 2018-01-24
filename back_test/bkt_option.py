@@ -11,6 +11,11 @@ import numpy as np
 
 class BktOption(object):
 
+    """
+    Contain metrics and trading position info as attributes
+
+    """
+
     def __init__(self,cd_frequency,df_daily_metrics,df_intraday_metrics=None,id_instrument='',
                  pricing_type = 'OptionPlainEuropean',engine_type = 'AnalyticEuropeanEngine'):
         self.util = BktUtil()
@@ -384,7 +389,8 @@ class BktOption(object):
             return self.get_init_margin()
         # 认购期权义务仓维持保证金＝[合约结算价 + Max（12 %×合约标的收盘价 - 认购期权虚值，
         #                                           7 %×合约标的收盘价）]×合约单位
-        # 认沽期权义务仓维持保证金＝Min[合约结算价 + Max（12 %×合标的收盘价 - 认沽期权虚值，7 %×行权价格），行权价格]×合约单位
+        # 认沽期权义务仓维持保证金＝Min[合约结算价 + Max（12 %×合标的收盘价 - 认沽期权虚值，7 %×行权价格），
+        #                               行权价格]×合约单位
         amt_settle = self.get_settlement()
         amt_underlying_close = self.get_underlying_close()
         if self.option_type =='call':
@@ -422,6 +428,7 @@ class BktOption(object):
         self.trade_margin_capital = None
         self.transaction_fee = None
         self.open_price = None
+
 
 
 

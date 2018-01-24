@@ -1,13 +1,11 @@
 import pandas as pd
 import QuantLib as ql
 import datetime
-from WindPy import w
 from sqlalchemy import *
 from sqlalchemy.orm import sessionmaker
 from data_access.db_tables import DataBaseTables as dbt
 from back_test.bkt_option import BktUtil
-from back_test.bkt_account import FactorStrategyBkt
-from back_test.bkt_account import BktAccount
+from back_test.strategy_factor__carry import FactorStrategyBkt
 
 
 
@@ -17,15 +15,11 @@ start_date = datetime.date(2017, 9, 1)
 end_date = datetime.date(2017, 12, 1)
 # end_date = datetime.date(2017, 12, 31)
 # evalDate = datetime.date(2017, 6, 21)
-money_utilization = 0.2
-buy_ratio = 0.5
-sell_ratio = 0.5
 hp = 20
 
 
 
 """Collect Mkt Date"""
-w.start()
 engine = create_engine('mysql+pymysql://guest:passw0rd@101.132.148.152/mktdata', echo=False)
 conn = engine.connect()
 metadata = MetaData(engine)
@@ -39,7 +33,6 @@ sess2 = Session2()
 Index_mkt = dbt.IndexMkt
 Option_mkt = dbt.OptionMkt
 option_intd = dbt.OptionMktIntraday
-carry1 = Table('carry1', metadata2, autoload=True)
 options = dbt.Options
 calendar = ql.China()
 daycounter = ql.ActualActual()
@@ -70,7 +63,7 @@ df_option = df_mkt.join(df_contract.set_index('id_instrument'),how='left',on='id
 df_option_metrics = df_option.join(df_50etf.set_index('dt_date'),how='left',on='dt_date')
 
 
-"""Run Back Test"""
+"""Run Backtest"""
 
 bkt = FactorStrategyBkt(df_option_metrics,hp,money_utilization=0.2,buy_ratio = 0.5,sell_ratio = 0.5)
 bkt.set_option_type('call')
